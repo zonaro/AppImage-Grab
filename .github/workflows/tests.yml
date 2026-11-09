@@ -1,0 +1,31 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Python unit tests
+        run: python3 -m unittest discover -s tests -v
+      - name: Validate extension JavaScript
+        run: |
+          node --check extension/common/background.js
+          node --check extension/common/popup.js
+      - name: Shell syntax and build
+        run: |
+          bash -n install.sh uninstall.sh scripts/build-extensions.sh
+          bash scripts/build-extensions.sh
+      - name: Validate extension manifests
+        run: |
+          python3 -m json.tool dist/chromium/manifest.json >/dev/null
+          python3 -m json.tool dist/firefox/manifest.json >/dev/null
