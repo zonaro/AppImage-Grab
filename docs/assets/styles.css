@@ -23,8 +23,7 @@ a:focus-visible, button:focus-visible, summary:focus-visible { outline: 3px soli
 .ambient { position: absolute; pointer-events: none; width: 560px; height: 560px; border-radius: 50%; filter: blur(110px); opacity: .13; z-index: 0; }
 .ambient-one { background: #98ff80; top: 130px; left: -390px; }
 .ambient-two { background: #627cf2; top: 60px; right: -350px; }
-.site-header { position: relative; z-index: 20; border-bottom: 1px solid rgba(230,255,255,.08); background: rgba(10,16,24,.76); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
-@supports (animation-timeline: scroll()) { .site-header { position: sticky; top: 0; } }
+.site-header { position: sticky; top: 0; z-index: 20; border-bottom: 1px solid rgba(230,255,255,.08); background: rgba(10,16,24,.76); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
 .header-inner { min-height: 88px; display: flex; align-items: center; gap: 25px; }
 .brand { display: inline-flex; align-items: center; gap: 11px; white-space: nowrap; font-weight: 700; font-size: 18px; letter-spacing: -.65px; }
 .brand strong { color: var(--accent); }
@@ -166,7 +165,7 @@ h1 span { display: block; }
 .faq-items details[open] summary::after { content: "−"; }
 .faq-items details p { margin: 0; padding: 0 34px 23px 0; font-size: 13px; line-height: 1.8; color: #a9b7c4; }
 
-.closing { margin-block: 24px 100px; overflow: hidden; padding: 68px 70px; border-radius: 26px; background: radial-gradient(circle at 83% 48%, rgba(184,247,125,.27), transparent 34%), linear-gradient(120deg, #213c2a, #14292a); border: 1px solid rgba(191,247,159,.25); }
+.closing { position: relative; margin-block: 24px 100px; overflow: hidden; padding: 68px 70px; border-radius: 26px; background: radial-gradient(circle at 83% 48%, rgba(184,247,125,.27), transparent 34%), linear-gradient(120deg, #213c2a, #14292a); border: 1px solid rgba(191,247,159,.25); }
 .closing-content { max-width: 650px; position: relative; z-index: 1; }
 .closing h2 { margin-bottom: 20px; }
 .closing .button { margin-top: 14px; }
