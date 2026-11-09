@@ -34,7 +34,7 @@ class LinkResolverTests(unittest.TestCase):
                 choices = resolve_link(url)
                 self.assertEqual(len(choices), 1)
                 self.assertEqual(choices[0]["url"], url)
-                self.assertIn("architecture", choices)
+                self.assertIn("architecture", choices[0])
 
     def test_github_latest_shows_all_architectures(self):
         body = {"assets": [
