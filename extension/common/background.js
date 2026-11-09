@@ -6,6 +6,54 @@ if (typeof importScripts === 'function' && !globalThis.GLGUpdate) {
 const api = globalThis.browser || globalThis.chrome;
 const HOST = 'br.com.redclaw.gear_lever_grab';
 const working = new Set();
+const SUCCESSFUL_INTEGRATIONS = new Set([
+  'integrated_with_source', 'integrated_without_source',
+  'embedded_source_preserved', 'existing_source_preserved'
+]);
+
+async function notifyIntegrated(download, reply) {
+  if (!SUCCESSFUL_INTEGRATIONS.has(reply.status) || !reply.installedPath) return;
+  const name = (reply.installedPath.split('/').pop() || 'AppImage').slice(0, 100);
+  try {
+    await api.notifications.create('glg-integrated-' + download.id, {
+      type: 'basic',
+      iconUrl: api.runtime.getURL('icons/icon-48.png'),
+      title: 'AppImage adicionada ao Gear Lever',
+      message: name + ' foi integrada com sucesso.'
+    });
+  } catch (error) {
+    // Notifications can be blocked by browser/OS; integration already succeeded.
+    console.warn('Gear Lever Grab notification unavailable:', error);
+  }
+}
+
+async function startManagedDownload(request) {
+  const link = String(request.link || '');
+  const selected = String(request.assetUrl || '');
+  // Revalidate in the privileged background, not just in the manager UI.
+  const resolution = await GLGNative.request({action: 'resolveLink', url: link});
+  const asset = (resolution.choices || []).find(candidate => candidate.url === selected);
+  if (!asset || !asset.name || !/\.appimage$/i.test(asset.name)) {
+    throw new Error('Arquivo não pertence à fonte selecionada');
+  }
+  const id = await api.downloads.download({url: asset.url, saveAs: false, conflictAction: 'uniquify'});
+  if (!Number.isInteger(id)) throw new Error('O navegador não iniciou o download');
+  const {pending = {}} = await api.storage.local.get('pending');
+  pending[id] = {manual: true, url: asset.url, sourceName: asset.name};
+  await api.storage.local.set({pending});
+  // Handle the rare case where the download finishes before the entry is stored.
+  const downloads = await api.downloads.search({id});
+  if (downloads[0]?.state === 'complete') void finished({id, state:{current:'complete'}});
+  return {downloadId: id, name: asset.name};
+}
+
+api.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message?.action !== 'startManagedDownload') return false;
+  void startManagedDownload(message)
+    .then(data => sendResponse({ok:true, ...data}))
+    .catch(error => sendResponse({ok:false, error:String(error?.message || error)}));
+  return true;
+});
 
 async function badge() {
   const { enabled = false, updateStatus } = await api.storage.local.get(['enabled', 'updateStatus']);
@@ -58,6 +106,7 @@ async function created(item) {
   const state = await api.storage.local.get(['enabled', 'pending']);
   if (!state.enabled) return;
   const pending = state.pending || {};
+  if (pending[item.id]?.manual) return;
   pending[item.id] = {
     url: item.url || '', finalUrl: item.finalUrl || '',
     referrer: item.referrer || ''
@@ -68,9 +117,20 @@ async function created(item) {
 }
 
 async function finished(delta) {
+  if (delta.state?.current === 'interrupted') {
+    const {pending = {}} = await api.storage.local.get('pending');
+    if (pending[delta.id]?.manual) {
+      delete pending[delta.id];
+      await api.storage.local.set({pending});
+      await result('error', 'Download da AppImage interrompido ou cancelado');
+    }
+    return;
+  }
   if (delta.state?.current !== 'complete') return;
   const settings = await api.storage.local.get(['enabled', 'pending', 'processed']);
-  if (!settings.enabled || working.has(delta.id) || (settings.processed || []).includes(delta.id)) return;
+  const manual = Boolean(settings.pending?.[delta.id]?.manual);
+  if ((!settings.enabled && !manual) || working.has(delta.id) ||
+      (settings.processed || []).includes(delta.id)) return;
   const entries = await api.downloads.search({ id: delta.id });
   const item = entries[0];
   if (!item || !appimage(item) || item.state !== 'complete') return;
@@ -86,6 +146,9 @@ async function finished(delta) {
     };
     const reply = await sendNative(payload);
     if (!reply?.ok) throw new Error(reply?.error || 'Falha não identificada');
+    if (!SUCCESSFUL_INTEGRATIONS.has(reply.status) && reply.status !== 'already_processed') {
+      throw new Error('O Gear Lever não confirmou uma integração concluída');
+    }
 
     const latest = await api.storage.local.get(['processed', 'pending']);
     const processed = [...(latest.processed || []), delta.id].slice(-250);
@@ -100,6 +163,7 @@ async function finished(delta) {
           ? 'Arquivo já processado'
           : 'Integrado sem fonte automática (origem não identificada)';
     await result('success', details);
+    await notifyIntegrated(item, reply);
   } catch (error) {
     await result('error', item.filename + ': ' + (error?.message || String(error)));
   } finally {

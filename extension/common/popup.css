@@ -42,3 +42,5 @@ footer{padding-top:14px;margin-top:13px;border-top:1px solid var(--line);font-si
 .update-actions button{padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text);font-size:11px;font-weight:650;cursor:pointer}
 .update-actions button:first-child{background:light-dark(#fae8c7,#624824)}
 #update-command{display:block;margin-top:9px;font-size:9px;overflow-wrap:anywhere;color:var(--muted)}
+
+img.brand-mark{object-fit:contain;padding:0}

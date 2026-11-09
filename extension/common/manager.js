@@ -339,3 +339,57 @@ api.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.updateStatus) renderGrabUpdate(changes.updateStatus.newValue);
 });
 void GLGUpdate.check();
+
+
+// Explicit user-initiated downloads are independent from the automatic ON/OFF toggle.
+let resolvedLink = '';
+let resolvedAssets = [];
+$('link-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  const url = $('link-url').value.trim();
+  $('link-resolve').disabled = true;
+  $('link-choices').hidden = true;
+  resolvedAssets = [];
+  resolvedLink = '';
+  $('link-feedback').textContent = 'Consultando a fonte…';
+  try {
+    const reply = await GLGNative.request({action: 'resolveLink', url});
+    if (!Array.isArray(reply.choices) || !reply.choices.length) throw Error('Nenhuma AppImage compatível');
+    resolvedAssets = reply.choices;
+    resolvedLink = url;
+    $('link-asset').replaceChildren();
+    for (let i = 0; i < resolvedAssets.length; i++) {
+      const option = document.createElement('option');
+      option.value = String(i);
+      option.textContent = resolvedAssets[i].name +
+        (resolvedAssets[i].architecture ? ' · ' + resolvedAssets[i].architecture : ' · arquitetura não identificada');
+      $('link-asset').append(option);
+    }
+    $('link-choices').hidden = false;
+    $('link-feedback').textContent = resolvedAssets.length + ' AppImage(s) encontrada(s). Confira a arquitetura antes de baixar.';
+  } catch (error) {
+    $('link-feedback').textContent = 'Não foi possível identificar a fonte: ' + (error?.message || String(error));
+  } finally {
+    $('link-resolve').disabled = false;
+  }
+});
+$('link-download').addEventListener('click', async () => {
+  const choice = resolvedAssets[Number($('link-asset').value)];
+  if (!choice || !resolvedLink) return;
+  if (!window.confirm('Baixar "' + choice.name + '" de ' + choice.source +
+      ' e adicionar ao Gear Lever? Confirme que você confia nesta origem.')) return;
+  $('link-download').disabled = true;
+  $('link-feedback').textContent = 'Iniciando download no navegador…';
+  try {
+    const result = await api.runtime.sendMessage({
+      action:'startManagedDownload', link:resolvedLink, assetUrl:choice.url
+    });
+    if (!result?.ok) throw Error(result?.error || 'Falha ao iniciar download');
+    $('link-feedback').textContent = 'Download iniciado: ' + result.name +
+      '. Uma notificação confirmará quando o Gear Lever concluir a integração.';
+  } catch (error) {
+    $('link-feedback').textContent = 'Não foi possível baixar: ' + (error?.message || String(error));
+  } finally {
+    $('link-download').disabled = false;
+  }
+});

@@ -14,7 +14,7 @@
 <body>
 <div class="app-layout">
   <aside class="sidebar">
-    <div class="brand"><span class="brand-icon" aria-hidden="true">↓</span><div><strong>Gear Lever Grab</strong><small>Gerenciador de AppImages</small></div></div>
+    <div class="brand"><img src="icons/icon-48.png" class="brand-icon" width="42" height="42" alt=""><div><strong>Gear Lever Grab</strong><small>Gerenciador de AppImages</small></div></div>
     <nav aria-label="Navegação do gerenciador">
       <button type="button" class="nav-item active" id="nav-installed"><span aria-hidden="true">▣</span> Instalados</button>
       <button type="button" class="nav-item" id="nav-updates"><span aria-hidden="true">↻</span> Atualizações</button>
@@ -42,7 +42,26 @@
         <article class="stat"><span class="stat-symbol purple" aria-hidden="true">⌁</span><div><span>Com fonte de atualização</span><strong id="sources-count">—</strong></div></article>
         <article class="stat"><span class="stat-symbol blue" aria-hidden="true">↻</span><div><span>Atualizações encontradas</span><strong id="updates-count">—</strong></div></article>
       </section>
-      <section class="catalog" aria-labelledby="catalog-title">
+      <section class="catalog" aria-labelledby="link-title" id="link-panel">
+        <div class="catalog-header">
+          <div><h2 id="link-title">Adicionar AppImage por link</h2>
+          <p>Cole um release do GitHub ou o link direto de uma AppImage no GitHub, GitLab ou Codeberg.</p></div>
+        </div>
+        <form id="link-form" class="link-input-row">
+          <label for="link-url" class="sr-only">Link da fonte do AppImage</label>
+          <input id="link-url" type="url" required placeholder="https://github.com/autor/projeto/releases/latest"
+            autocomplete="url" spellcheck="false" maxlength="2048">
+          <button class="button primary" id="link-resolve" type="submit">Buscar AppImages</button>
+        </form>
+        <div id="link-choices" hidden class="link-result">
+          <label for="link-asset">Arquivo para baixar</label>
+          <select id="link-asset"></select>
+          <button type="button" id="link-download" class="button primary">Baixar e adicionar ao Gear Lever</button>
+        </div>
+        <p id="link-feedback" role="status" aria-live="polite" class="notice"></p>
+        <p class="source-help">O navegador fará o download; a extensão confirmará a integração pelo Gear Lever. Escolha a arquitetura correta e instale apenas arquivos de fontes confiáveis.</p>
+      </section>
+            <section class="catalog" aria-labelledby="catalog-title">
         <div class="catalog-header">
           <div><h2 id="catalog-title">Aplicativos instalados</h2><p id="list-subtitle">Carregando aplicativos do Gear Lever…</p></div>
           <button type="button" id="check-updates" class="button primary">Verificar atualizações</button>

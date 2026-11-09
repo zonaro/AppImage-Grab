@@ -23,3 +23,12 @@ dialog{padding:0;border:1px solid var(--line);background:var(--panel);color:var(
 .source-details{color:var(--green);overflow-wrap:anywhere}
 .source-warning{color:light-dark(#a35b27,#ebc38c)!important}
 [hidden]{display:none!important}
+
+.link-input-row{display:flex;gap:10px;align-items:center;margin:18px 0 12px}
+.link-input-row input{flex:1;min-width:0;border:1px solid var(--line);background:var(--bg);padding:12px 14px;border-radius:10px;color:var(--text)}
+.link-result{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0}
+.link-result[hidden]{display:none}
+.link-result label{font-weight:650;font-size:12px}
+.link-result select{flex:1;min-width:180px;border:1px solid var(--line);border-radius:9px;background:var(--bg);padding:10px;color:var(--text)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+@media(max-width:610px){.link-input-row{flex-wrap:wrap}.link-input-row input,.link-input-row button{width:100%}}

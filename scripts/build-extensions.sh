@@ -15,7 +15,7 @@ fi
 rm -rf -- "$ROOT/dist/packages"
 for family in chromium firefox; do
   mkdir -p "$ROOT/dist/$family"
-  cp "$ROOT/extension/common/"* "$ROOT/dist/$family/"
+  cp -a "$ROOT/extension/common/." "$ROOT/dist/$family/"
   cp "$ROOT/extension/$family/manifest.json" "$ROOT/dist/$family/manifest.json"
   printf '{"commit":"%s","branch":"main","repository":"zonaro/gear-lever-grab"}\n' \
     "$REVISION" > "$ROOT/dist/$family/version.json"

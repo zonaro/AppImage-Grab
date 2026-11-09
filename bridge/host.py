@@ -11,6 +11,7 @@ import sys
 
 from .gearlever import GearLever, GearLeverError
 from .manager import AppManager
+from .link_resolver import resolve_link
 from .sources import architecture, detect_source, verify_source
 
 def installed_commit() -> str | None:
@@ -142,6 +143,8 @@ def handle(request, adapter_factory=GearLever):
         return {"ok": True, "status": "ready", "version": 2}
     if action == "getVersion":
         return {"ok": True, "commit": installed_commit(), "branch": "main"}
+    if action == "resolveLink":
+        return {"ok": True, "choices": resolve_link(request.get("url"))}
     if action == "integrate":
         return _integrate(request, adapter_factory)
     if action not in ("listInstalled", "listUpdates", "updateApp", "removeApp",
