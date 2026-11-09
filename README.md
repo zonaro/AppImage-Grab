@@ -16,12 +16,20 @@ Fontes desconhecidas não são adivinhadas: a AppImage pode ser integrada, mas s
 
 ## Instalação (Linux)
 
-Requisitos: Python 3.10+, Gear Lever com CLI e `--list-installed --json` (recomendamos versão recente), navegador compatível, Bash.
+Requisitos: Python 3.10+, Gear Lever com CLI e `--list-installed --json` (recomendamos versão recente), navegador compatível, Bash, Git e curl.
+
+**Instalação rápida — copie e cole uma única linha no terminal:**
 
 ```bash
-git clone https://github.com/zonaro/gear-lever-grab.git
-cd gear-lever-grab
-bash install.sh
+curl -fsSL https://raw.githubusercontent.com/zonaro/gear-lever-grab/main/install.sh | bash
+```
+
+O comando obtém o instalador diretamente deste repositório; ele baixa uma cópia temporária dos arquivos, instala o host Native Messaging e remove a cópia temporária ao concluir. Como qualquer instalador remoto executado no terminal, revise [o script](install.sh) antes de executar se não confiar na origem.
+
+**Alternativa usando um clone local** (útil para desenvolvimento e testes):
+
+```bash
+git clone https://github.com/zonaro/gear-lever-grab.git && cd gear-lever-grab && bash install.sh
 ```
 
 O instalador copia os componentes para `~/.local/share/gear-lever-grab`, registra o host Native Messaging nos navegadores **detectados** (Chrome, Chromium, Brave, Vivaldi, Edge, Opera, Thorium, Firefox, Floorp e Waterfox) e prepara os diretórios das extensões.
