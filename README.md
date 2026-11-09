@@ -2,6 +2,12 @@
 
 **AppImage baixado → Gear Lever → fonte de atualização.** Extensão WebExtension + host Python para Linux. O Gear Lever continua responsável pela instalação, organização dos arquivos e atualização.
 
+## Landing page
+
+Site do projeto (pt-BR, English, Español): **https://zonaro.github.io/gear-lever-grab/** — disponível depois que o GitHub Pages for habilitado com `main` / `/docs`.
+
+A landing está em [`docs/`](docs/README.md), usa HTML/CSS/JavaScript puro com i18n, e destaca o [instalador em um comando](install.sh).
+
 ## Funcionamento
 
 Quando a extensão está **ON**, ela observa downloads de arquivos `.AppImage` (sem alterar o download normal). Após o navegador concluir um download HTTPS:
