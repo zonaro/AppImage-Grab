@@ -7,8 +7,9 @@ from bridge import host
 
 
 class FakeResponse:
-    def __init__(self, result):
+    def __init__(self, result, host='api.github.com'):
         self.result = json.dumps(result).encode()
+        self.host = host
 
     def __enter__(self):
         return self
@@ -17,7 +18,7 @@ class FakeResponse:
         return False
 
     def geturl(self):
-        return "https://api.github.com/repos/demo/widget/releases/latest"
+        return "https://" + self.host + "/test"
 
     def read(self, maximum):
         return self.result
@@ -50,6 +51,33 @@ class LinkResolverTests(unittest.TestCase):
             choices = resolve_link("https://github.com/demo/widget/releases/latest")
         self.assertEqual(len(choices), 2)
         self.assertEqual({x["architecture"] for x in choices}, {"x86_64", "arm64"})
+
+    def test_gitlab_repository_resolves_asset_links(self):
+        body = {"assets": {"links": [
+            {"name": "Widget", "direct_asset_url":
+                "https://gitlab.com/group/widget/-/releases/v1.2/downloads/widget-1.2-x86_64.AppImage"},
+            {"name": "Untrusted", "direct_asset_url": "https://evil.example/other.AppImage"}
+        ]}}
+        with patch("bridge.link_resolver.urlopen", return_value=FakeResponse(body, "gitlab.com")):
+            assets = resolve_link("https://gitlab.com/group/widget/-/releases")
+        self.assertEqual(len(assets), 1)
+        self.assertEqual(assets[0]["architecture"], "x86_64")
+        self.assertEqual(assets[0]["source"], "https://gitlab.com/group/widget")
+
+    def test_codeberg_repository_resolves_assets_with_canonical_urls(self):
+        body = {"tag_name": "v1.2", "assets": [
+            {"name": "widget-1.2-aarch64.AppImage",
+             "browser_download_url": "https://codeberg.org/attachments/example"},
+            {"name": "widget-1.2-x86_64.AppImage",
+             "browser_download_url": "https://codeberg.org/attachments/another"},
+            {"name": "notes.txt", "browser_download_url": "https://codeberg.org/a/b"}
+        ]}
+        with patch("bridge.link_resolver.urlopen", return_value=FakeResponse(body, "codeberg.org")):
+            assets = resolve_link("https://codeberg.org/demo/widget/releases")
+        self.assertEqual(len(assets), 2)
+        self.assertEqual({x["architecture"] for x in assets}, {"x86_64", "arm64"})
+        self.assertEqual(assets[0]["url"],
+            "https://codeberg.org/demo/widget/releases/download/v1.2/widget-1.2-aarch64.AppImage")
 
     def test_refuses_generic_hosts_and_non_https(self):
         for url in ("http://github.com/demo/widget/releases/latest",
