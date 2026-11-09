@@ -23,11 +23,12 @@ jobs:
           node --check extension/common/native-client.js
           node --check extension/common/manager.js
           node --check extension/common/popup.js
-          node --check extension/common/popup.js
       - name: Shell syntax and build
         run: |
           bash -n install.sh uninstall.sh scripts/build-extensions.sh
           bash scripts/build-extensions.sh
+          python3 scripts/package_extensions.py --root . --skip-crx
+          test -f dist/packages/gear-lever-grab.xpi
       - name: Validate extension manifests
         run: |
           python3 -m json.tool dist/chromium/manifest.json >/dev/null
@@ -36,3 +37,9 @@ jobs:
           test -f dist/chromium/native-client.js
           test -f dist/firefox/manager.html
           test -f dist/firefox/native-client.js
+          python3 - <<'PY'
+          import zipfile
+          with zipfile.ZipFile("dist/packages/gear-lever-grab.xpi") as archive:
+              assert "manifest.json" in archive.namelist()
+              assert archive.testzip() is None
+          PY

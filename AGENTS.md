@@ -14,3 +14,8 @@
 - Após v0.2, não gerar wildcard que misture arquiteturas/edições: validar asset original e correspondência única contra API do release; quando não for possível, manter fonte desconhecida.
 - Interface web: Native Messaging API com ações allowlisted, confirmação explícita e path conferido na lista do Gear Lever; atualizações não podem forçar execução de apps abertos.
 - Testes devem incluir novas rotas de gestão e carregamento dos recursos `manager.html`/`native-client.js`.
+
+- Package files in `dist/packages` with `scripts/package_extensions.py`; sign CRX with the browser packer only (CRX3), store private key outside repo and dist, and never commit a `.pem`.
+- Do not modify browser profiles or use enterprise forced-install policies. Signed CRX may be manually installed where supported; fallback is developer-mode unpacked. Unsigned Firefox XPI is for temporary install only.
+- Preserve old unpacked extension ID for existing users; pass both unpacked and packaged IDs to Native Messaging when a packed ID is available.
+- README.md must be fully in English. Update i18n in `docs/assets/i18n.js` together for pt-BR/en/es when describing installation.

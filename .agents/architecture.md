@@ -35,3 +35,12 @@ bridge.host
 - O host Native Messaging aceita `listInstalled`, `listUpdates`, `updateApp`, `removeApp`, `setSource`, `unsetSource`, além de `integrate` e `ping`. Operações mutáveis exigem `confirmed: true` e caminho exatamente presente na lista do Gear Lever.
 - Popup oferece acesso rápido e toggle; `manager.html` abre em aba própria para tela completa, com busca, status e ações, sem executar programas arbitrários.
 - O frontend imita conceitos do fluxo Gear Lever, mas não embute a janela GTK nem copia interface binária.
+
+## Local browser extension packaging
+
+- `scripts/package_extensions.py` always creates an unsigned Firefox `dist/packages/gear-lever-grab.xpi` from the built `dist/firefox` files.
+- If a Chromium-family browser's `--pack-extension` CLI is available, it packages a real locally signed CRX3 into `dist/packages/gear-lever-grab.crx`; no fake renamed ZIP files.
+- CRX signing private key is generated and persisted only under `~/.local/share/gear-lever-grab-keys/chromium.pem`, never in the repo, built artifacts, or installed extension folder.
+- The CRX ID can differ from `extension/chromium/id.txt` (legacy unpacked manifest key), so the host manifest allowlist includes both IDs.
+- Silent installation is intentionally unsupported: no browser profile manipulation, enterprise policy injection, or forced extension loading. Print manual `Load unpacked` fallback for Chromium and temporary debug install for unsigned Firefox XPI.
+- `scripts/open_browser_extensions.py` opens only the preferred detected browser's management page in an interactive graphical terminal. Suppress with `GLG_OPEN_BROWSER=0`.

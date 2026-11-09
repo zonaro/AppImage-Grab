@@ -8,4 +8,7 @@ ID="$(tr -d '\n' < "$ROOT/extension/chromium/id.txt")"
 python3 "$ROOT/scripts/register_hosts.py" --host-path "$BIN" --extension-id "$ID" --remove
 if [ -f "$BIN" ] && grep -q 'python3 -m bridge.host' "$BIN"; then rm -f "$BIN"; fi
 if [ -f "$DEST/bridge/host.py" ]; then rm -rf -- "$DEST"; fi
-echo 'Host removido. Remova as extensões manualmente. Logs preservados em ~/.local/state/gear-lever-grab.'
+echo 'Native Messaging host removed. Uninstall the browser extension manually.'
+echo 'Downloaded apps and Gear Lever settings are untouched.'
+echo 'Signing key preserved in ~/.local/share/gear-lever-grab-keys/ (back it up securely).'
+echo 'Logs preserved in ~/.local/state/gear-lever-grab.'

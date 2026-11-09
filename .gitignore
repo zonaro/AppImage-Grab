@@ -5,3 +5,9 @@ dist/
 *.log
 .coverage
 .env
+
+# Never commit CRX signing identities
+keys/
+*.pem
+*.crx
+*.xpi
