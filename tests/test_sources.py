@@ -64,7 +64,9 @@ class SourceTests(unittest.TestCase):
     def test_one_matching_asset_registers_source(self):
         source = detect_source("https://github.com/a/b/releases/download/v1.2/app-1.2-x86_64.AppImage")
         names = ["app-1.2-x86_64.AppImage", "app-1.2-arm64.AppImage", "app-lite-1.2-x86_64.AppImage"]
-        self.assertIsNotNone(verify_source(source, elf_arch="x86_64", asset_fetcher=lambda _: names))
+        verified = verify_source(source, elf_arch="x86_64", asset_fetcher=lambda _: names)
+        self.assertIsNotNone(verified)
+        self.assertEqual(verified.pattern, "app-[0-9]*-x86_64.AppImage")
 
     def test_other_arch_rejected_even_when_asset_matches(self):
         source = detect_source("https://github.com/a/b/releases/download/v1.2/app-1.2-arm64.AppImage")
