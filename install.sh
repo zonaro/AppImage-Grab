@@ -1,7 +1,17 @@
 #!/usr/bin/env bash
 # User-scoped setup. Browser security requires manual approval for unpacked extensions.
 set -euo pipefail
-ROOT="$(cd "$(dirname "$0")" && pwd)"
+# Quando executado por curl | bash, baixa temporariamente o repositório.
+# Quando executado de um clone local, utiliza diretamente os arquivos locais.
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]:-$PWD/install.sh}")" && pwd)"
+if [[ ! -f "$ROOT/bridge/host.py" || ! -f "$ROOT/scripts/build-extensions.sh" ]]; then
+  command -v git >/dev/null || { echo 'git é obrigatório para instalação remota' >&2; exit 1; }
+  TEMP_DIR="$(mktemp -d)"
+  trap 'rm -rf -- "$TEMP_DIR"' EXIT
+  git clone --quiet --depth 1 https://github.com/zonaro/gear-lever-grab.git "$TEMP_DIR/repository"
+  bash "$TEMP_DIR/repository/install.sh"
+  exit $?
+fi
 DEST="$HOME/.local/share/gear-lever-grab"
 if [ -n "$(printenv XDG_DATA_HOME || :)" ]; then DEST="$(printenv XDG_DATA_HOME)/gear-lever-grab"; fi
 BIN="$HOME/.local/bin/gear-lever-grab-host"
