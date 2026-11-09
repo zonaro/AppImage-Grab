@@ -24,3 +24,5 @@
 - bridge/host.py getVersion exposes installed version.json without initializing Gear Lever. Write installed revision LAST after successful installation.
 - The extension periodically compares GitHub commits/main against its embedded commit and host commit; badge NEW and UI alerts do not run shell scripts and must not toggle ON/OFF.
 - Keep README.md English and do not claim locally packaged CRX/XPI can be silently updated inside a browser.
+
+- Local CRX3 is an experimental packaging artifact, not a reliable install route for Edge/Chrome. CRX_REQUIRED_PROOF_MISSING indicates missing browser-store proof. In installer/README recommend Developer mode → Load unpacked first, with no force-install, policy modification or profile injection.

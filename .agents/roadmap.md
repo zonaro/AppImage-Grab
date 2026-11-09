@@ -37,3 +37,9 @@ Futuro: publicar CRX/Web Store e extensão assinada Firefox/AMO, detectar origen
 - [x] Keep AppImage automation OFF/ON unrelated to checking extension updates.
 - [ ] Test Edge/Firefox real installation/reinstallation and badge behavior.
 - [ ] Provide future in-browser update flow only if browser-store distribution supports a compliant signed auto-update channel.
+
+## CRX_REQUIRED_PROOF_MISSING (2026-11-09)
+- [x] Document that local CRX3 key signing is not equivalent to Web Store / Edge Add-ons distribution proof.
+- [x] Make Load unpacked the recommended Chromium-family setup route and ensure install.sh prints exact directory.
+- [ ] Publish official browser-store packages for no-developer-mode installation with user approval.
+- [ ] Test Edge's extension details, native host connectivity and browser restart with unpacked extension.

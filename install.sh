@@ -79,21 +79,25 @@ Browsers do not support reliable, silent user-profile installation of local
 extensions. No browser preferences or enterprise policies were modified.
 
 CHROMIUM FAMILY (Chrome, Chromium, Edge, Brave, Vivaldi, Opera, Thorium)
-  Open your browser's extensions page (e.g., edge://extensions or chrome://extensions).
+  RECOMMENDED: Install with Developer mode (avoids CRX_REQUIRED_PROOF_MISSING).
+  1. Open your browser's extensions page (e.g., edge://extensions).
+  2. Enable Developer mode.
+  3. Click Load unpacked and select the DIRECTORY:
+     $DEST/dist/chromium
+  4. Keep browser permission prompts under your control. Turn ON the
+     Grab download automation separately when you want it.
+
 EOF
 if [ -f "$PACKAGE_DIR/gear-lever-grab.crx" ]; then
   cat <<EOF
-  Signed local CRX3 package:
+  ADVANCED / EXPERIMENTAL: A locally signed CRX3 package was also built:
     $PACKAGE_DIR/gear-lever-grab.crx
-  If your browser allows local CRX installation, drag the file into the
-  extensions page and approve the installation. Some browsers reject this
-  installation method; use the fallback below if it fails.
+  This package has a local signing key, but NOT a browser store signature.
+  Chrome/Edge may reject it with CRX_REQUIRED_PROOF_MISSING. This is NOT
+  fixed by repacking it. Use Load unpacked above if the browser rejects it.
 EOF
 fi
 cat <<EOF
-  Reliable developer-mode fallback:
-  Enable Developer mode -> Load unpacked -> choose the directory:
-    $DEST/dist/chromium
 
 FIREFOX / FLOORP / WATERFOX
   Package (unsigned, for temporary development installation):

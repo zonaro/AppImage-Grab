@@ -22,8 +22,8 @@ You can [review the installer](install.sh) before running it. The installer is *
 - The native host launcher at `~/.local/bin/gear-lever-grab-host`.
 - Native Messaging manifests for detected Chrome, Chromium, Edge, Brave, Vivaldi, Opera, Thorium, Firefox, Floorp, and Waterfox installations.
 - A Firefox `.xpi` archive for temporary testing.
-- When a compatible Chromium-based browser can create one, a locally signed **CRX3** `.crx` package.
-- Unpacked extension files as a fallback when browser policies reject a local package.
+- When a compatible Chromium-based browser can create one, an **experimental locally signed CRX3** `.crx` package (not store-signed and not always installable).
+- Unpacked Chromium extension files as the **recommended install method** until store-signed packages are available.
 
 After installation, the script prints the detected browsers, extension URLs, and exact paths. In an interactive graphical terminal, it attempts to open the **default installed browser's** extension management page automatically. Set `GLG_OPEN_BROWSER=0` to skip that step.
 
@@ -33,20 +33,20 @@ After installation, the script prints the detected browsers, extension URLs, and
 
 Open the relevant extension management page: `chrome://extensions`, `edge://extensions`, `brave://extensions`, or the corresponding URL for your browser.
 
-If packaging succeeded, a CRX3 file is available at:
+**Recommended installation for Edge, Chrome, Brave, and other Chromium browsers:** use the unpacked extension. This avoids local CRX signature restrictions, while still using the same production extension files and Native Messaging bridge.
+
+1. Open `edge://extensions` (Edge), `chrome://extensions` (Chrome/Chromium), `brave://extensions` (Brave), or your browser's equivalent page.
+2. Enable **Developer mode**.
+3. Click **Load unpacked** and select the DIRECTORY `~/.local/share/gear-lever-grab/dist/chromium` (or `$XDG_DATA_HOME/gear-lever-grab/dist/chromium` if customized).
+4. If the browser leaves the extension disabled, enable it. The extension's **download automation remains OFF** until you turn it ON from its popup.
+
+The installer may additionally build a locally signed CRX3 at:
 
 ```text
 ~/.local/share/gear-lever-grab/dist/packages/gear-lever-grab.crx
 ```
 
-On **Linux browsers that permit local CRX installation**, drag this package into the extensions page and explicitly approve the browser's install prompt. Some Chrome/Chromium derivatives or policies reject locally signed CRX packages. This is expected; use the supported developer-mode fallback:
-
-1. Enable **Developer mode** on the extensions page.
-2. Click **Load unpacked** (or the equivalent option).
-3. Select the directory `~/.local/share/gear-lever-grab/dist/chromium` (or your `$XDG_DATA_HOME` equivalent).
-4. Enable the extension in the browser if it was added in a disabled state. Then open its popup and set **ON** only when you want automation.
-
-This fallback loads an unpacked directory because a rejected CRX cannot be converted into a silently installed extension.
+**Local CRX3 is an experimental distribution artifact, NOT the recommended installation method.** A self-signed-by-publisher CRX is not equivalent to a Chrome Web Store / Edge Add-ons signature. Some browsers reject local CRX installation even when the archive is structurally valid. Never force-install it or modify browser policies to work around that.
 
 ### Firefox, Floorp, Waterfox
 
@@ -138,11 +138,19 @@ python3 scripts/package_extensions.py --root . --key-dir "$HOME/.local/share/gea
 
 Generated extension packages are written to `dist/packages/` and excluded from Git. **Do not place a private signing key in the repository or a web-accessible directory.**
 
+## Troubleshooting: `CRX_REQUIRED_PROOF_MISSING`
+
+If installing `gear-lever-grab.crx` shows **"Package is invalid: CRX_REQUIRED_PROOF_MISSING"**, the browser is rejecting its signing proof. This is common with locally generated CRX3 extensions that are not delivered by a supported browser store. **This does not mean Gear Lever or the Python bridge failed.**
+
+**Fix (no need to reinstall the bridge):** open `edge://extensions` or `chrome://extensions`, turn on **Developer mode**, click **Load unpacked**, and select the installed `dist/chromium` DIRECTORY described above. Select the folder, not the `.crx` file or `manifest.json` itself. The extension's existing Native Messaging ID is allowlisted by the installer.
+
+For installation from a single packaged file without developer mode, the proper next step is official extension store publication/signing and user-approved installation. Rebuilding a local CRX does not add the missing store proof.
+
 ## Current limitations
 
 - Browser-specific installation restrictions require manual extension approval.
 - Firefox XPI is unsigned: persistent distribution requires AMO signing.
-- Chrome-derived CRX support depends on the browser and its packaging/install policy.
+- Chrome/Edge may reject locally signed CRX3 with `CRX_REQUIRED_PROOF_MISSING`; use **Load unpacked** instead.
 - Some sandboxed browsers (for example Flatpak) need additional Native Messaging integration.
 - CDN redirects can hide the original release URL; uncertain sources are not registered.
 - API rate limits and ambiguous release asset names may prevent automatic source registration.
