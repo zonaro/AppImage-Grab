@@ -14,10 +14,14 @@ const examples = [
   ['https://github.com/acme/widget','https://github.com/acme/widget','GitHub'],
   ['https://www.github.com/acme/widget/releases/latest?utm_source=news#assets','https://github.com/acme/widget/releases/latest','GitHub'],
   ['https://github.com/acme/widget/releases/tag/v1.2','https://github.com/acme/widget/releases/tag/v1.2','GitHub'],
+  ['https://github.com/acme/widget/tree/main/src','https://github.com/acme/widget','GitHub'],
+  ['https://github.com/acme/widget/issues/123','https://github.com/acme/widget','GitHub'],
   ['https://gitlab.com/group/subgroup/widget/-/releases','https://gitlab.com/group/subgroup/widget/-/releases','GitLab'],
   ['https://gitlab.com/group/subgroup/widget/-/releases/v1.2','https://gitlab.com/group/subgroup/widget/-/releases/v1.2','GitLab'],
+  ['https://gitlab.com/group/subgroup/widget/-/tree/main','https://gitlab.com/group/subgroup/widget','GitLab'],
   ['https://codeberg.org/group/widget/releases/tag/v1.2','https://codeberg.org/group/widget/releases/tag/v1.2','Codeberg'],
-  ['https://codeberg.org/group/widget','https://codeberg.org/group/widget','Codeberg']
+  ['https://codeberg.org/group/widget','https://codeberg.org/group/widget','Codeberg'],
+  ['https://codeberg.org/group/widget/src/branch/main','https://codeberg.org/group/widget','Codeberg']
 ];
 for (const [url,expected,provider] of examples) {
   const result = parse(url);
@@ -29,7 +33,7 @@ const invalid = [
   'http://github.com/acme/widget','https://github.com/acme/widget/issues',
   'https://github.com/acme/widget/settings','https://github.com/acme',
   'https://example.org/acme/widget','https://gist.github.com/acme/widget',
-  'https://gitlab.com/a/b/-/issues','https://codeberg.org/a/b/src/branch/main',
+  'https://gitlab.com/a/b/-/not-a-repo-section','https://codeberg.org/a/b/admin/secret',
   'https://gitlab.com/a/b/-/releases/v1/downloads/app.AppImage',
   'https://user:password@github.com/acme/widget',
   'https://github.com:9999/acme/widget'
