@@ -28,3 +28,8 @@
 - Keep README.md English and do not claim locally packaged CRX/XPI can be silently updated inside a browser.
 
 - Local CRX3 packages are no longer created or distributed. Install browser extensions manually: Load unpacked on Chromium-family browsers, Load Temporary Add-on with manifest.json on Firefox.
+
+- An update manager name is not evidence of an available update. The browser Update button appears only for exact paths returned by Gear Lever --list-updates --json, and the Python host rechecks that command immediately before --update.
+- The public Gear Lever list-installed JSON omits existing source parameter values. bridge/source_config.py reads the selected Gear Lever's gearlever.conf read-only (Flatpak or native), keyed by MD5 of the exact installed AppImage path. Do NOT write the INI file.
+- Preserve pre-existing sources: embedded sources are read-only; if existing config cannot be verified, block replacement/removal; unsupported managers must not be silently mapped to GithubUpdater.
+- Regression tests: tests/test_source_config.py and tests/test_manager.py. Maintain exact path matching and fail-closed behavior on offline/missing config.

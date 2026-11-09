@@ -58,8 +58,10 @@
 <dialog id="source-dialog" aria-labelledby="source-title">
   <form method="dialog" id="source-form">
     <div class="dialog-header"><div><p class="eyebrow">FONTE DE ATUALIZAÇÃO</p><h2 id="source-title">Configurar fonte</h2><p id="source-app"></p></div><button type="button" id="close-source" class="close" aria-label="Fechar">×</button></div>
+    <p id="source-summary" class="source-help"></p>
+    <p id="source-warning" class="source-help source-warning" hidden></p>
     <p class="source-help">Informe a origem exata do aplicativo. O padrão de arquivo pode usar um <code>*</code> na posição da versão, preservando a arquitetura, por exemplo: <code>MeuApp-*-x86_64.AppImage</code>.</p>
-    <label>Tipo de fonte<select id="source-manager">
+    <label id="source-manager-row">Tipo de fonte<select id="source-manager">
       <option value="GithubUpdater">GitHub Releases</option>
       <option value="GitlabUpdater">GitLab Releases</option>
       <option value="CodebergUpdater">Codeberg Releases</option>

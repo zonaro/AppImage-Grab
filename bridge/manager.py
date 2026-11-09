@@ -72,7 +72,7 @@ class AppManager:
                 value.lower().endswith(".appimage") and
                 "/" not in value and "\\" not in value and "\x00" not in value and
                 not any(ord(c) < 32 for c in value) and
-                not any(c in value for c in "[]?") and
+                not any(c in value.replace("[0-9]", "") for c in "[]?") and
                 value.count("*") <= 1)
 
     @classmethod

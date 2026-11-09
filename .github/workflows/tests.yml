@@ -25,6 +25,7 @@ jobs:
           node --check extension/common/update-check.js
           node --check extension/common/popup.js
           node scripts/test-update-check.mjs
+          node scripts/test-manager-ui.mjs
       - name: Shell syntax and build unpacked extensions
         run: |
           bash -n install.sh uninstall.sh scripts/build-extensions.sh

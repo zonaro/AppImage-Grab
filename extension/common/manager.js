@@ -69,23 +69,39 @@ function render() {
     const description = node('div', 'app-main');
     const title = node('div', 'app-title');
     title.append(node('strong', '', app.name || 'AppImage'));
-    if (state.updatePaths.has(app.path)) title.append(node('span', 'badge update', 'Nova versão'));
+    if (state.checked && state.updatePaths.has(app.path)) title.append(node('span', 'badge update', 'Nova versão'));
     if (app.running === true) title.append(node('span', 'badge', 'Em execução'));
     description.append(title);
 
     const details = [app.current_version ? 'Versão: ' + app.current_version : 'Versão não informada',
       app.manager ? 'Fonte: ' + app.manager.replace('Updater', '') : 'Sem fonte de atualização'];
     description.append(node('div', 'app-details', details.join(' • ')));
+    // Gear Lever's list-installed JSON includes the manager name, but not
+    // existing source options. Those are loaded read-only by the Python host.
+    const config = app.source_options || {};
+    const origin = config.repo || config.repo_url || config.url || '';
+    const pattern = config.repo_filename || config.filename || '';
+    if (origin || pattern) {
+      description.append(node('div', 'app-details source-details',
+        [origin, pattern].filter(Boolean).join(' • ')));
+    } else if (app.manager && app.source_status === 'embedded') {
+      description.append(node('div', 'app-details', 'Fonte incorporada ao AppImage'));
+    } else if (app.manager && app.source_status !== 'loaded') {
+      description.append(node('div', 'app-details source-warning',
+        'Configuração da fonte não pôde ser recuperada; somente leitura'));
+    }
     const file = node('div', 'app-path', app.path);
     file.title = app.path;
     description.append(file);
 
     const actions = node('div', 'app-actions');
-    if (app.manager) {
+    // Only Gear Lever's --list-updates --json can confirm an available update.
+    // Having a manager (GitHub, GitLab, etc.) does NOT imply a new version.
+    if (state.checked && state.updatePaths.has(app.path)) {
       addButton(actions, 'Atualizar', () => updateApp(app), 'primary', app.running === true);
     }
     addButton(actions, app.embedded_source ? 'Fonte embutida' : 'Fonte', () => editSource(app),
-      'secondary', Boolean(app.embedded_source));
+      'secondary');
     addButton(actions, 'Remover', () => removeApp(app), 'danger-outline', app.running === true);
     card.append(avatar, description, actions);
     content.append(card);
@@ -114,6 +130,10 @@ async function withBusy(operation, label) {
 async function fetchApps({ keepNotice = false } = {}) {
   const reply = await GLGNative.request({ action: 'listInstalled' });
   state.apps = Array.isArray(reply.apps) ? reply.apps : [];
+  // A refresh can change the files and their sources. Old update results must
+  // not survive a manual refresh or a source edit.
+  state.checked = false;
+  state.updatePaths.clear();
   if (!keepNotice) notice('Aplicativos carregados.', 'success');
 }
 
@@ -123,15 +143,20 @@ function refreshApps() {
 
 function checkUpdates() {
   return withBusy(async () => {
+    state.checked = false;
+    state.updatePaths.clear();
     const reply = await GLGNative.request({ action: 'listUpdates' });
-    state.updatePaths = new Set((reply.apps || []).map(app => app.path).filter(Boolean));
+    if (!Array.isArray(reply.apps)) throw new Error('A lista de atualizações do Gear Lever é inválida.');
+    const installed = new Set(state.apps.map(app => app.path));
+    state.updatePaths = new Set(reply.apps.map(app => app.path).filter(path => installed.has(path)));
     state.checked = true;
-    notice(state.updatePaths.size + ' atualização(ões) encontrada(s).', 'success');
+    notice(state.updatePaths.size + ' atualização(ões) confirmada(s) pelo Gear Lever.', 'success');
   }, 'Verificando atualizações no Gear Lever…');
 }
 
 async function updateApp(app) {
-  if (!window.confirm('Atualizar "' + app.name + '" pelo Gear Lever? O download pode demorar.')) return;
+  if (!state.checked || !state.updatePaths.has(app.path)) return;
+  if (!window.confirm('Atualizar "' + app.name + '" pelo Gear Lever? Uma nova verificação será feita antes de atualizar.')) return;
   return withBusy(async () => {
     await GLGNative.request({ action: 'updateApp', path: app.path, confirmed: true });
     state.checked = false;
@@ -163,19 +188,46 @@ function syncEditor() {
   $('dialog-error').hidden = true;
 }
 
+const EDITABLE_MANAGERS = new Set([
+  'GithubUpdater', 'GitlabUpdater', 'CodebergUpdater', 'StaticFileUpdater'
+]);
+
 function editSource(app) {
-  if (state.busy || app.embedded_source) return;
+  if (state.busy) return;
   state.editor = app;
+  const existing = Boolean(app.manager);
+  const loaded = app.source_status === 'loaded' && app.source_options;
+  const editable = !app.embedded_source &&
+    (!existing || (loaded && EDITABLE_MANAGERS.has(app.manager)));
+  const config = loaded ? app.source_options : {};
   $('source-app').textContent = app.name + ' · ' + app.path;
-  $('source-manager').value = ['GithubUpdater','GitlabUpdater','CodebergUpdater','StaticFileUpdater'].includes(app.manager)
+  $('source-summary').textContent = existing
+    ? 'Gerenciador existente no Gear Lever: ' + app.manager
+    : 'Nenhuma fonte configurada no Gear Lever.';
+  $('source-manager').value = EDITABLE_MANAGERS.has(app.manager)
     ? app.manager : 'GithubUpdater';
-  $('source-repo').value = '';
-  $('source-pattern').value = app.path.split('/').pop() || '';
-  $('source-url').value = '';
-  $('source-prerelease').checked = false;
-  $('unset-source').hidden = !app.manager;
+  $('source-repo').value = config.repo || config.repo_url || '';
+  $('source-pattern').value = config.repo_filename || app.path.split('/').pop() || '';
+  $('source-url').value = config.url || '';
+  $('source-prerelease').checked = ['true', '1', 'yes', 'on']
+    .includes(String(config.allow_prereleases || '').toLowerCase());
+  $('source-manager').disabled = !editable;
+  for (const id of ['source-repo', 'source-pattern', 'source-url', 'source-prerelease']) {
+    $(id).disabled = !editable;
+  }
+  $('source-manager-row').hidden = !editable;
+  $('repo-fields').hidden = !editable;
+  $('static-fields').hidden = !editable;
+  $('source-warning').hidden = editable;
+  $('source-warning').textContent = app.embedded_source
+    ? 'O Gear Lever usa uma fonte embutida neste AppImage, que não pode ser editada por aqui.'
+    : !EDITABLE_MANAGERS.has(app.manager) && existing
+      ? 'Este gerenciador não tem editor nesta extensão. As informações existentes permanecem preservadas.'
+      : 'Não foi possível recuperar com segurança a configuração já existente do Gear Lever. Edição e remoção estão bloqueadas para evitar perda de dados.';
+  $('unset-source').hidden = !editable || !existing;
+  $('save-source').hidden = !editable;
   $('dialog-error').hidden = true;
-  syncEditor();
+  if (editable) syncEditor();
   $('source-dialog').showModal();
 }
 
@@ -196,7 +248,7 @@ function editorOptions() {
 async function saveSource(event) {
   event.preventDefault();
   const app = state.editor;
-  if (!app || state.busy) return;
+  if (!app || state.busy || $('save-source').hidden) return;
   const { manager, options } = editorOptions();
   if (app.manager && !window.confirm('Substituir a fonte de atualização de "' + app.name + '"?')) return;
   $('save-source').disabled = true;
@@ -217,7 +269,7 @@ async function saveSource(event) {
 
 async function unsetSource() {
   const app = state.editor;
-  if (!app || !window.confirm('Remover a fonte personalizada de "' + app.name + '"?')) return;
+  if (!app || $('unset-source').hidden || !window.confirm('Remover a fonte personalizada de "' + app.name + '"?')) return;
   $('unset-source').disabled = true;
   try {
     await GLGNative.request({ action: 'unsetSource', path: app.path, confirmed: true });

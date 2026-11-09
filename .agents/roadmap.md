@@ -55,3 +55,12 @@ Futuro: publicar CRX/Web Store e extensão assinada Firefox/AMO, detectar origen
 - [ ] Perform real Fedora/Edge/Firefox installation QA using the guide.
 
 Legacy CRX/XPI milestones above are superseded; there is **no package builder** in the current distribution flow.
+
+## State accuracy regression (2026-11-09)
+
+- [x] Fix false Update actions caused by using presence of an update manager as a proxy for an update.
+- [x] Use Gear Lever --list-updates --json as the authoritative update source and revalidate server-side before starting updates.
+- [x] Read existing source configuration (repo, pattern, prereleases, static URL) from Gear Lever's INI read-only; distinguish Flatpak and native config roots.
+- [x] Prefill existing settings in the browser manager, preserve embedded and unsupported managers, and block writes when settings cannot be safely loaded.
+- [ ] Validate against real user installations/Flatpak config path, including saved Forgejo/FTP sources and update checks when offline.
+- [ ] Ask upstream Gear Lever for an official --get-update-source --json endpoint to eliminate read-only reliance on private INI layout.

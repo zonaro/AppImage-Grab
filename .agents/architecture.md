@@ -53,3 +53,11 @@ bridge.host
 - Python Native Messaging handles getVersion without touching Gear Lever. Browser extension GLGUpdate checks https://api.github.com/repos/zonaro/gear-lever-grab/commits/main at most once per 12h, using storage.local cached result and an MV3 alarm.
 - Background action badge says NEW if main revision differs from extension revision or bridge revision, otherwise ON/OFF as before. Popup and manager show the three SHAs and a copyable install one-liner. No automatic remote script execution.
 - Reloading an unpacked extension is still required after the installer refreshes the on-disk extension directories; the bridge updates immediately.
+
+## Gear Lever state accuracy: sources and updates
+
+- The CLI `--list-installed --json` gives name, path, current_version, manager, embedded_source and running, but not source-specific config keys. `bridge/source_config.py` reads the selected Gear Lever's `gearlever.conf` *read-only* and matches `app.<md5(path)>.update_manager` using the exact file path from the CLI.
+- Flatpak target: `~/.var/app/it.mijorus.gearlever/config/gearlever.conf`. Native target: `$XDG_CONFIG_HOME/gearlever.conf` or `~/.config/gearlever.conf`. Never combine profiles or guess custom installations.
+- Exposed fields `source_status` and `source_options` are read-only. When source info is missing/mismatched, show unavailable; do not replace existing configs with empty form defaults.
+- The browser manager shows Update **only** when exact path is included in the latest Gear Lever `--list-updates --json` response. Python AppManager.update calls the same CLI again before `--update`. On error/refresh, stale update results are discarded.
+- The update manager can exist without an update. The user must explicitly request the update check, and a Gear Lever CLI failure means state is unverified, not up-to-date.

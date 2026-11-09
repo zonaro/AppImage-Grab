@@ -78,7 +78,22 @@ The extension **does not run downloaded AppImages directly**, but Gear Lever may
 
 ## Browser-based AppImage manager
 
-The extension's popup includes the ON/OFF toggle, a quick view of installed AppImages and last activity. The **Manage in browser** screen opens a tab with search, installed versions, update sources, update checks, manual updates and removals. Confirmations are required before modifying installed apps or their sources. This is a browser frontend for the Gear Lever CLI, not a clone of the GTK implementation.
+The extension's popup includes the ON/OFF toggle, a quick view of installed AppImages and last activity. The **Manage in browser** screen opens a tab with search, installed versions, update sources, update checks, manual updates and removals. Only verified available updates are offered; confirmations are required before modifying installed apps or their sources. This is a browser frontend for the Gear Lever CLI, not a clone of the GTK implementation.
+
+## Update status and existing Gear Lever source settings
+
+**An update source does not mean a new version is available.** The browser manager now shows an **Update** action only after running Gear Lever's public `--list-updates --json` command and finding the exact installed AppImage path in its results. No update is assumed solely from a configured GitHub/GitLab/Codeberg/FTP manager. The Python bridge **rechecks** the current list immediately before executing an update; if Gear Lever no longer confirms availability, no update is started. An offline/error result does not display stale updates.
+
+Gear Lever's public `--list-installed --json` reports the source manager and whether it is embedded, but **does not include the source configuration fields**. For existing manually configured sources, Grab reads the same `gearlever.conf` used by the selected Gear Lever variant, **read-only**:
+
+- Flatpak Gear Lever: `~/.var/app/it.mijorus.gearlever/config/gearlever.conf`.
+- Native Gear Lever: `$XDG_CONFIG_HOME/gearlever.conf` (defaults to `~/.config/gearlever.conf`).
+
+The adapter uses Gear Lever's existing per-AppImage configuration key (`app.<md5-of-installed-file-path>.update_manager`). It displays source settings such as repository, filename pattern, pre-release preference and custom URL without changing the config. These settings are re-read when refreshing the browser manager.
+
+If the source is **embedded**, Grab displays that fact but keeps it read-only. If a custom source is configured but its details **cannot be verified** (missing/unreadable INI, mismatched manager, or an unsupported/custom provider), Grab shows a warning or read-only details instead of inserting fake defaults or silently overwriting the user's existing settings. Existing configuration changes still use **Gear Lever's own CLI**, never direct writes to its config.
+
+This read-only compatibility layer depends on Gear Lever's current INI layout. If a later Gear Lever release introduces an official JSON source-details CLI, that API should replace the INI reader.
 
 ## Development and tests
 
