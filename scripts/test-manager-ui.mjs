@@ -19,6 +19,7 @@ class FakeElement {
     this.firstChild = { textContent: '' };
   }
   addEventListener(name, callback) { this.handlers[name] = callback; }
+  setAttribute(name, value) { this[name] = value; }
   append(...nodes) { this.children.push(...nodes); }
   replaceChildren(...nodes) { this.children = [...nodes]; }
   showModal() { this.open = true; }
