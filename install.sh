@@ -3,8 +3,13 @@
 set -euo pipefail
 # Quando executado por curl | bash, baixa temporariamente o repositório.
 # Quando executado de um clone local, utiliza diretamente os arquivos locais.
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]:-$PWD/install.sh}")" && pwd)"
-if [[ ! -f "$ROOT/bridge/host.py" || ! -f "$ROOT/scripts/build-extensions.sh" ]]; then
+# Prefer local files only when actually invoked from a script file.
+# A curl | bash execution must not silently reuse files from the current directory.
+ROOT=""
+if [[ -n "${BASH_SOURCE[0]:-}" && -f "${BASH_SOURCE[0]}" ]]; then
+  ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+fi
+if [[ -z "$ROOT" || ! -f "$ROOT/bridge/host.py" || ! -f "$ROOT/scripts/build-extensions.sh" ]]; then
   command -v git >/dev/null || { echo 'git é obrigatório para instalação remota' >&2; exit 1; }
   TEMP_DIR="$(mktemp -d)"
   trap 'rm -rf -- "$TEMP_DIR"' EXIT
