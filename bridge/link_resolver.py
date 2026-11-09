@@ -66,6 +66,116 @@ def _github_release_assets(url):
     return choices
 
 
+def _read_provider_release(endpoint: str, host: str) -> dict:
+    request = Request(endpoint, headers={"Accept": "application/json",
+                                          "User-Agent": "GearLeverGrab/0.5"})
+    try:
+        with urlopen(request, timeout=12) as response:
+            if urlsplit(response.geturl()).hostname != host:
+                raise ValueError("Origem da API não confiável")
+            payload = response.read(2_000_001)
+            if len(payload) > 2_000_000:
+                raise ValueError("Release muito grande")
+        release = json.loads(payload)
+        if not isinstance(release, dict):
+            raise ValueError("Release inválido")
+        return release
+    except (OSError, ValueError, TypeError) as exc:
+        raise ValueError("Não foi possível consultar o release do provedor") from exc
+
+
+def _gitlab_release_assets(value: str):
+    parsed = urlsplit(value)
+    if parsed.hostname != "gitlab.com" or parsed.query or parsed.fragment:
+        return None
+    parts = parsed.path.strip("/").split("/")
+    if not parts or len(parts) < 2:
+        return None
+    tag = None
+    if "-" in parts:
+        marker = parts.index("-")
+        after = parts[marker:]
+        if len(after) == 2 and after == ["-", "releases"]:
+            tag = None
+        elif len(after) == 3 and after[:2] == ["-", "releases"]:
+            tag = after[2]
+        else:
+            return None
+        parts = parts[:marker]
+    if len(parts) < 2 or not all(re.fullmatch(PART, x) and x not in (".", "..") for x in parts):
+        return None
+    if tag is not None and (not re.fullmatch(PART, tag) or tag in (".", "..")):
+        return None
+    project = "/".join(parts)
+    endpoint = ("https://gitlab.com/api/v4/projects/" + quote(project, safe="") +
+                ("/releases/" + quote(tag, safe="") if tag else "/releases/permalink/latest"))
+    release = _read_provider_release(endpoint, "gitlab.com")
+    assets = release.get("assets", {})
+    links = assets.get("links", []) if isinstance(assets, dict) else []
+    choices = []
+    for item in links[:MAX_ASSETS] if isinstance(links, list) else []:
+        if not isinstance(item, dict):
+            continue
+        url = item.get("direct_asset_url")
+        src = detect_source(url) if isinstance(url, str) else None
+        if (src and src.manager == "GitlabUpdater" and src.origin ==
+                f"https://gitlab.com/{project}" and src.asset_name.lower().endswith(".appimage")):
+            choices.append({"name": src.asset_name, "url": url,
+                            "architecture": architecture(src.asset_name),
+                            "source": src.origin})
+    if not choices:
+        raise ValueError("Nenhuma AppImage compatível no release do GitLab")
+    return choices
+
+
+def _codeberg_release_assets(value: str):
+    parsed = urlsplit(value)
+    if parsed.hostname != "codeberg.org" or parsed.query or parsed.fragment:
+        return None
+    parts = parsed.path.strip("/").split("/")
+    if len(parts) not in (2, 3, 4, 5):
+        return None
+    owner, repo = parts[:2]
+    if not all(re.fullmatch(PART, p) and p not in (".", "..") for p in (owner, repo)):
+        return None
+    tag = None
+    tail = parts[2:]
+    if tail == [] or tail == ["releases"]:
+        pass
+    elif len(tail) == 3 and tail[:2] == ["releases", "tag"]:
+        tag = tail[2]
+        if not re.fullmatch(PART, tag) or tag in (".", ".."):
+            return None
+    else:
+        return None
+    endpoint = (f"https://codeberg.org/api/v1/repos/{owner}/{repo}/releases/"
+                + ("tags/" + quote(tag, safe="") if tag else "latest"))
+    release = _read_provider_release(endpoint, "codeberg.org")
+    release_tag = release.get("tag_name")
+    if not isinstance(release_tag, str) or not re.fullmatch(PART, release_tag):
+        raise ValueError("Tag do release inválida")
+    assets = release.get("assets")
+    choices = []
+    for item in assets[:MAX_ASSETS] if isinstance(assets, list) else []:
+        if not isinstance(item, dict):
+            continue
+        name = item.get("name")
+        if not isinstance(name, str) or not name.lower().endswith(".appimage"):
+            continue
+        # Codeberg's attachment URLs do not identify the repository/source;
+        # use the canonical public release route instead.
+        download = (f"https://codeberg.org/{owner}/{repo}/releases/download/"
+                    + quote(release_tag, safe="") + "/" + quote(name, safe=""))
+        src = detect_source(download)
+        if src and src.manager == "CodebergUpdater" and src.asset_name == name:
+            choices.append({"name": name, "url": download,
+                            "architecture": architecture(name),
+                            "source": src.origin})
+    if not choices:
+        raise ValueError("Nenhuma AppImage compatível no release do Codeberg")
+    return choices
+
+
 def resolve_link(value):
     if not isinstance(value, str) or not 0 < len(value) <= 2048:
         raise ValueError("Cole um link HTTPS de um release compatível")
@@ -81,7 +191,8 @@ def resolve_link(value):
         return [{"name": source.asset_name, "url": value.strip(),
                  "architecture": architecture(source.asset_name),
                  "source": source.origin}]
-    choices = _github_release_assets(value.strip())
-    if choices:
-        return choices
-    raise ValueError("Link incompatível: use uma AppImage direta de GitHub/GitLab/Codeberg ou um repositório GitHub")
+    for resolver in (_github_release_assets, _gitlab_release_assets, _codeberg_release_assets):
+        choices = resolver(value.strip())
+        if choices:
+            return choices
+    raise ValueError("Link incompatível: use uma AppImage direta ou uma página de releases do GitHub, GitLab ou Codeberg")
