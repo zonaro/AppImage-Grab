@@ -308,7 +308,15 @@ const toggle = $('enabled');
 api.storage.local.get('enabled').then(settings => { toggle.checked = Boolean(settings.enabled); });
 toggle.addEventListener('change', () => { void api.storage.local.set({ enabled: toggle.checked }); });
 api.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && changes.enabled) toggle.checked = Boolean(changes.enabled.newValue);
+  if (area !== 'local') return;
+  if (changes.enabled) toggle.checked = Boolean(changes.enabled.newValue);
+  // Reflect a completed browser download in the manager without manual refresh.
+  const result = changes.lastResult?.newValue;
+  if (result?.status === 'success' && !state.busy) {
+    void refreshApps().then(() => notice(result.detail || 'AppImage adicionada ao Gear Lever.', 'success'));
+  } else if (result?.status === 'error' && !state.busy) {
+    notice(result.detail || 'Ocorreu um erro na integração.', 'error');
+  }
 });
 void refreshApps();
 

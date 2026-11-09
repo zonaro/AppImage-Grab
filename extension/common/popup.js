@@ -60,8 +60,10 @@ toggle.addEventListener('change', async () => {
   render(await api.storage.local.get(['enabled', 'lastResult']));
 });
 api.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && (changes.enabled || changes.lastResult))
+  if (area === 'local' && (changes.enabled || changes.lastResult)) {
     void api.storage.local.get(['enabled', 'lastResult']).then(render);
+    if (changes.lastResult?.newValue?.status === 'success') void loadApps();
+  }
 });
 refreshButton.addEventListener('click', loadApps);
 document.getElementById('manage').addEventListener('click', () => {
