@@ -9,6 +9,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from .gearlever import GearLever, GearLeverError
+from .source_config import GearLeverSourceReader
 
 NAME = re.compile(r"^[A-Za-z0-9_.-]+$")
 PROJECT = re.compile(r"^[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)+$")
@@ -19,7 +20,11 @@ class AppManager:
         self.gear = gear if gear is not None else GearLever()
 
     def list_installed(self):
-        return [self._sanitize(app) for app in self.gear.installed()
+        # The public CLI exposes manager names; read-only Gear Lever INI provides
+        # the already-saved options. Never write to the configuration file.
+        reader = GearLeverSourceReader(getattr(self.gear, "command", []))
+        return [{**self._sanitize(app), **reader.for_app(app)}
+                for app in self.gear.installed()
                 if isinstance(app.get("path"), str) and isinstance(app.get("name"), str)]
 
     @staticmethod
@@ -51,6 +56,11 @@ class AppManager:
 
     def update(self, path: str):
         checked, _ = self._installed_path(path, allow_running=False)
+        # A configured update manager is NOT proof an update exists.
+        # The same public Gear Lever command powering the update list is
+        # authoritative and must be rechecked immediately before changing files.
+        if checked not in {item["path"] for item in self.updates()}:
+            raise ValueError("O Gear Lever não confirma atualização disponível para este AppImage")
         self.gear.run("--update", checked, "--yes", timeout=3600)
         return {"path": checked, "status": "updated"}
 
@@ -121,6 +131,9 @@ class AppManager:
         checked, app = self._installed_path(path)
         if app.get("embedded_source"):
             raise ValueError("Fonte embutida no AppImage: preserve-a no Gear Lever")
+        if app.get("manager") and GearLeverSourceReader(
+                getattr(self.gear, "command", [])).for_app(app)["source_status"] != "loaded":
+            raise ValueError("A configuração existente não foi recuperada com segurança; alteração bloqueada")
         args = self._config_arguments(manager, options)
         self.gear.run("--set-update-source", checked, "--manager", manager, *args, timeout=90)
         return {"path": checked, "status": "source_saved", "manager": manager}
@@ -131,6 +144,9 @@ class AppManager:
             raise ValueError("Não é possível remover uma fonte embutida")
         if not app.get("manager"):
             return {"path": checked, "status": "source_not_set"}
+        if GearLeverSourceReader(
+                getattr(self.gear, "command", [])).for_app(app)["source_status"] != "loaded":
+            raise ValueError("A configuração existente não foi recuperada com segurança; remoção bloqueada")
         # Gear Lever requires a manager even for --unset.
         self.gear.run("--set-update-source", checked, "--manager", "GithubUpdater", "--unset", timeout=60)
         return {"path": checked, "status": "source_unset"}
