@@ -18,6 +18,18 @@ REVISION="$(git -C "$ROOT" rev-parse --verify HEAD)"
 [[ "$REVISION" =~ ^[[:xdigit:]]{40}$ ]] || { echo "Invalid Git commit SHA." >&2; exit 1; }
 DEST="$HOME/.local/share/gear-lever-grab"
 if [ -n "$(printenv XDG_DATA_HOME || :)" ]; then DEST="$(printenv XDG_DATA_HOME)/gear-lever-grab"; fi
+# Report the installed SHA versus the freshly fetched main SHA.
+PREVIOUS_COMMIT=""
+if [[ -f "$DEST/version.json" ]]; then
+  PREVIOUS_COMMIT="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("commit",""))' "$DEST/version.json" 2>/dev/null || :)"
+fi
+if [[ -z "$PREVIOUS_COMMIT" ]]; then
+  printf 'Installing Gear Lever Grab at main commit: %s\n' "$REVISION"
+elif [[ "$PREVIOUS_COMMIT" == "$REVISION" ]]; then
+  printf 'Already at latest main commit: %s (refreshing files)\n' "$REVISION"
+else
+  printf 'Updating Gear Lever Grab from %s to %s\n' "$PREVIOUS_COMMIT" "$REVISION"
+fi
 BIN="$HOME/.local/bin/gear-lever-grab-host"
 KEY_DIR="$HOME/.local/share/gear-lever-grab-keys"
 EXT_ID="$(tr -d '\n' < "$ROOT/extension/chromium/id.txt")"
