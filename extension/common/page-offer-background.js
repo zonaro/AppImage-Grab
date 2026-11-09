@@ -121,10 +121,14 @@
     return true;
   });
 
-  // Catch the current repository when the extension first loads.
-  api.runtime.onStartup?.addListener(() => {
+  // Catch an already open repository after installation, startup, or a
+  // developer-mode reload (none of these should force a download).
+  function scanActiveTab() {
     void api.tabs.query({active:true,lastFocusedWindow:true})
       .then(tabs => tabs.forEach(tab => {void notifyIfAvailable(tab);}))
       .catch(() => {});
-  });
+  }
+  api.runtime.onStartup?.addListener(scanActiveTab);
+  api.runtime.onInstalled?.addListener(scanActiveTab);
+  scanActiveTab();
 })();
