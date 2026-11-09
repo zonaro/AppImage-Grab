@@ -30,7 +30,7 @@ for (const [url,expected,provider] of examples) {
   assert.equal(result.provider,provider);
 }
 const invalid = [
-  'http://github.com/acme/widget','https://github.com/acme/widget/issues',
+  'http://github.com/acme/widget','https://github.com/acme/widget/not-a-repo-section',
   'https://github.com/acme/widget/settings','https://github.com/acme',
   'https://example.org/acme/widget','https://gist.github.com/acme/widget',
   'https://gitlab.com/a/b/-/not-a-repo-section','https://codeberg.org/a/b/admin/secret',
