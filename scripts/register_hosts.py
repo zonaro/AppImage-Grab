@@ -26,10 +26,7 @@ def main():
     parser.add_argument("--host-path", required=True)
     parser.add_argument("--extension-id", required=True)
     parser.add_argument("--remove", action="store_true")
-    parser.add_argument("--packed-extension-id", default="", help="Locally packed CRX ID, when available")
     args = parser.parse_args()
-    if args.packed_extension_id and not re.fullmatch(r"[a-p]{32}", args.packed_extension_id):
-        parser.error("Invalid CRX extension ID")
     if not re.fullmatch(r"[a-p]{32}", args.extension_id):
         parser.error("Invalid unpacked extension ID")
     home = Path.home()
@@ -58,8 +55,7 @@ def main():
         if family == "firefox":
             manifest["allowed_extensions"] = ["gear-lever-grab@redclaw.com.br"]
         else:
-            ids = list(dict.fromkeys(x for x in [args.extension_id, args.packed_extension_id] if x))
-            manifest["allowed_origins"] = [f"chrome-extension://{value}/" for value in ids]
+            manifest["allowed_origins"] = [f"chrome-extension://{args.extension_id}/"]
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_text(json.dumps(manifest, indent=2) + "\n")
         destination.chmod(0o600)

@@ -2,170 +2,124 @@
 
 **Download an AppImage in your browser. Let Gear Lever take care of the rest.**
 
-Gear Lever Grab is a Linux browser extension and a small Python Native Messaging bridge. When enabled, it watches for completed HTTPS AppImage downloads, integrates them through **Gear Lever's public CLI**, and attempts to register a trustworthy update source. Gear Lever remains responsible for app storage and updates.
+Gear Lever Grab is a Linux browser extension with a small Python Native Messaging bridge. When you enable it, the extension detects completed HTTPS AppImage downloads and integrates them into **Gear Lever**. For recognized GitHub, GitLab, and Codeberg release assets, it attempts to configure the correct update source while preserving the AppImage's architecture and edition.
 
-[Project website](https://zonaro.github.io/gear-lever-grab/) · [GitHub issues](https://github.com/zonaro/gear-lever-grab/issues) · [Architecture](.agents/architecture.md)
+[Website](https://zonaro.github.io/gear-lever-grab/) · [Issues](https://github.com/zonaro/gear-lever-grab/issues) · [Architecture](.agents/architecture.md)
 
-## Install with one command
+## Install and update in one command
 
-Prerequisites: Linux, Python 3.10+, Git, curl, and a recent Gear Lever installation with `--list-installed --json` support.
+Requirements: Linux, Python 3.10+, Git, curl, and Gear Lever (recent enough to support `--list-installed --json`).
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/zonaro/gear-lever-grab/main/install.sh | bash
 ```
 
-You can [review the installer](install.sh) before running it. The installer is **user-scoped**: it does not require `sudo`, change your browser preferences, or apply enterprise policies.
+This same command **installs or updates** the Python Native Messaging bridge and the unpacked browser extension files to the latest commit on `main`. The full Git commit SHA is the installed revision. You can [inspect the installer](install.sh) before running it. No root privileges or changes to managed browser policies are required.
 
-**What it installs**
+The script:
 
-- The Python bridge under `~/.local/share/gear-lever-grab/` (or `$XDG_DATA_HOME/gear-lever-grab`).
-- The native host launcher at `~/.local/bin/gear-lever-grab-host`.
-- Native Messaging manifests for detected Chrome, Chromium, Edge, Brave, Vivaldi, Opera, Thorium, Firefox, Floorp, and Waterfox installations.
-- A Firefox `.xpi` archive for temporary testing.
-- When a compatible Chromium-based browser can create one, an **experimental locally signed CRX3** `.crx` package (not store-signed and not always installable).
-- Unpacked Chromium extension files as the **recommended install method** until store-signed packages are available.
+- Detects locally installed browsers and registers their Native Messaging host manifest (when supported).
+- Builds **unpacked browser extension directories only**, including the correct commit stamp.
+- Installs the Chromium-family extension at `$XDG_DATA_HOME/gear-lever-grab/dist/chromium` (defaults to `~/.local/share/gear-lever-grab/dist/chromium`).
+- Installs the Firefox extension at `$XDG_DATA_HOME/gear-lever-grab/dist/firefox`.
+- Installs or updates the Python bridge at `$XDG_DATA_HOME/gear-lever-grab/bridge` and its launcher at `~/.local/bin/gear-lever-grab-host`.
+- Generates a **standalone local HTML installation guide** at `$XDG_DATA_HOME/gear-lever-grab/install-guide.html`, with absolute paths that match this computer, detected browsers, extension-page links, copy buttons, and PT-BR/EN/ES instructions.
+- Attempts to open the guide in the default web browser after installation. The exact path is also printed in the terminal in case it cannot be opened automatically.
+- Removes obsolete local package artifacts from older Grab installations; previous signing keys, if present, are deliberately preserved rather than deleted.
 
-After installation, the script prints the detected browsers, extension URLs, and exact paths. In an interactive graphical terminal, it attempts to open the **default installed browser's** extension management page automatically. Set `GLG_OPEN_BROWSER=0` to skip that step.
+**No CRX or XPI packages are generated, and browser extensions are never silently injected or activated.** The browser installation step is yours to complete. The extension's download automation remains **OFF until you turn it ON**, even after the installer is updated.
 
-**Browser installation still needs your approval.** Local `.crx`/`.xpi` packaging is not permission to silently modify browser profiles. The installer does not secretly inject, activate, force-install, or bypass browser safeguards.
+## Load the extension into your browser
 
-### Chromium family: Chrome, Edge, Brave, Chromium, Vivaldi, Opera, Thorium
+After running the installer, follow the HTML guide that opens automatically. You can reopen it at any time:
 
-Open the relevant extension management page: `chrome://extensions`, `edge://extensions`, `brave://extensions`, or the corresponding URL for your browser.
+```text
+~/.local/share/gear-lever-grab/install-guide.html
+```
 
-**Recommended installation for Edge, Chrome, Brave, and other Chromium browsers:** use the unpacked extension. This avoids local CRX signature restrictions, while still using the same production extension files and Native Messaging bridge.
+The guide lists your detected browsers, their extension-page addresses, and the **real absolute filesystem path** of the appropriate extension. You can copy these using the buttons in the guide. Browsers may block navigation to internal pages (such as `edge://extensions`) from a local HTML file. If the direct link doesn't work, copy its address and paste it into the browser address bar.
 
-1. Open `edge://extensions` (Edge), `chrome://extensions` (Chrome/Chromium), `brave://extensions` (Brave), or your browser's equivalent page.
+### Edge, Chrome, Brave, Chromium, Vivaldi, Opera, and Thorium
+
+1. Open the relevant extension management page, such as `edge://extensions`, `chrome://extensions` or `brave://extensions`.
 2. Enable **Developer mode**.
-3. Click **Load unpacked** and select the DIRECTORY `~/.local/share/gear-lever-grab/dist/chromium` (or `$XDG_DATA_HOME/gear-lever-grab/dist/chromium` if customized).
-4. If the browser leaves the extension disabled, enable it. The extension's **download automation remains OFF** until you turn it ON from its popup.
+3. Choose **Load unpacked**.
+4. Select the directory indicated in the guide. By default it is `~/.local/share/gear-lever-grab/dist/chromium`. **Select the directory**, not `manifest.json`.
+5. If necessary, enable the extension in the browser. Open its popup and turn **ON** only if you want automatic AppImage integration.
 
-The installer may additionally build a locally signed CRX3 at:
+### Firefox, Floorp, and Waterfox
 
-```text
-~/.local/share/gear-lever-grab/dist/packages/gear-lever-grab.crx
-```
+1. Open `about:debugging#/runtime/this-firefox`.
+2. Choose **Load Temporary Add-on**.
+3. Select the actual `dist/firefox/manifest.json` file shown by the guide.
+4. Open the extension popup and optionally enable its ON/OFF toggle.
 
-**Local CRX3 is an experimental distribution artifact, NOT the recommended installation method.** A self-signed-by-publisher CRX is not equivalent to a Chrome Web Store / Edge Add-ons signature. Some browsers reject local CRX installation even when the archive is structurally valid. Never force-install it or modify browser policies to work around that.
+**Unsigned Firefox add-ons are temporary.** They must be loaded again after a browser restart. Permanent installation requires an appropriately signed extension published through Mozilla's supported distribution process.
 
-### Firefox, Floorp, Waterfox
+### What happens on update?
 
-The installer creates an **unsigned** package:
+Run the same one-liner. The bridge and unpacked extension folders are refreshed from the latest main commit. The installer regenerates the local guide and opens it again (when graphical). **Reload the extension from your browser's extensions page** so the new JavaScript is activated. Previously saved ON/OFF settings remain in browser storage.
 
-```text
-~/.local/share/gear-lever-grab/dist/packages/gear-lever-grab.xpi
-```
+The extension itself checks GitHub's latest main SHA periodically, and shows a **NEW** badge and an update command when your installed extension/bridge is behind. This check does **not** execute any remote code automatically.
 
-For temporary development use, open `about:debugging#/runtime/this-firefox`, choose **Load Temporary Add-on**, and select the `.xpi` package (or `dist/firefox/manifest.json` if the browser rejects the package). Unsigned temporary add-ons are removed when Firefox restarts. **Permanent Firefox installation requires Mozilla AMO signing**; the generated XPI is not a signed store release.
+To avoid automatically opening the HTML guide, set `GLG_OPEN_BROWSER=0` in the environment used to run the installer.
 
-### What about automatic extension installation?
+## How AppImage integration works
 
-Our installer detects browsers and registers the native host automatically, but **ordinary user-scoped scripts cannot consistently pre-install local extensions across these browsers while preserving user consent**. Extension stores and managed enterprise deployment have different requirements. We intentionally do **not** write directly to browser profile databases, tamper with `Preferences`, inject policies, or use forced extension deployment. When browsers reject the packaged extension, the installer prints the exact manual fallback steps.
+When the extension's toggle is **ON**:
 
-### CRX signing identity and Native Messaging
+1. It observes completed HTTPS downloads ending in `.AppImage`.
+2. Native Messaging sends the filename and download URL to the local Python bridge. No permanent background daemon is required.
+3. The bridge validates the file and tries to identify a GitHub, GitLab or Codeberg release asset.
+4. The asset's version is replaced by a wildcard while retaining the architecture and product edition, for example `App-v2.6.1-x86_64.AppImage` → `App-*-x86_64.AppImage`. Ambiguous wildcard patterns are verified against the release assets; if a reliable source cannot be identified, no custom update source is registered.
+5. The bridge invokes the **Gear Lever CLI** to integrate the file and, when safe, register its update source. Gear Lever determines the integration destination and manages future updates.
 
-A CRX needs a cryptographic signing key; merely renaming a ZIP to `.crx` is not valid. For local builds, the script asks an installed Chromium-based browser to pack a **real CRX3**, generating a private key the first time and reusing it for subsequent packages. The key remains only on your computer:
+The extension **does not run downloaded AppImages directly**, but Gear Lever may inspect their contents. File-format checks do not verify software authenticity: download only from sources you trust.
 
-```text
-~/.local/share/gear-lever-grab-keys/chromium.pem
-```
+## Browser-based AppImage manager
 
-**Back up this file securely if you intend to keep using that CRX identity. Never commit or share it.** A locally generated CRX ID may differ from the existing unpacked extension ID. The installer registers **both** in the Native Messaging allowlist. A future publicly distributed/store-signed version will need one maintained publisher signing identity.
+The extension's popup includes the ON/OFF toggle, a quick view of installed AppImages and last activity. The **Manage in browser** screen opens a tab with search, installed versions, update sources, update checks, manual updates and removals. Confirmations are required before modifying installed apps or their sources. This is a browser frontend for the Gear Lever CLI, not a clone of the GTK implementation.
 
-If no compatible browser packer is available, packaging fails, or CRX installation is blocked, the unpacked directory remains usable. The XPI is always generated as long as its source files are present.
-
-## How it works
-
-With its **ON/OFF toggle**, the extension never changes normal browser downloads. When ON and an AppImage download completes:
-
-1. The extension sends the local path and download URL to the user-scoped Python host via Native Messaging.
-2. The host checks for a regular user-owned AppImage file and an HTTPS download.
-3. It identifies direct GitHub, GitLab, or Codeberg release assets when possible.
-4. It converts a versioned filename such as `App-2.6.1-x86_64.AppImage` into a source pattern like `App-*-x86_64.AppImage`. Architecture and product edition are preserved; ambiguous patterns are checked against the release's actual asset list before registration.
-5. The host calls Gear Lever's `--integrate` command. **Gear Lever decides the destination folder** and whether to move or keep the downloaded file.
-6. If a verified source exists and Gear Lever did not discover an existing or embedded source, it uses `--set-update-source`. Otherwise the app is integrated without making up an update source.
-
-The bridge does not launch the downloaded AppImage, although Gear Lever may inspect or extract its metadata during integration. **A valid AppImage header is not proof of publisher authenticity.** Download from sources you trust.
-
-## Manage AppImages from the browser
-
-The extension popup shows its ON/OFF toggle, recent activity, and a compact list of installed AppImages. **Manage in browser** opens a larger tab-based UI with search, installed app versions, update source information, available updates, update/remove actions, and source editing.
-
-All management requests go through the **Gear Lever CLI**, not a separate app database. Updates and removals require explicit confirmation. Removal uses Gear Lever's default Trash behavior rather than permanent deletion. The browser UI is inspired by Gear Lever's workflow, not a pixel-perfect clone of its GTK interface.
-
-## Updating by Git commit SHA
-
-**The Git commit ID of the latest `main` commit is the release identifier.** No extra version registry, tags, or separate update server is needed.
-
-The installer is also the updater. Run exactly the same command at any time:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/zonaro/gear-lever-grab/main/install.sh | bash
-```
-
-Every invocation fetches a fresh shallow clone of **`main`**, even when the script is executed from an older local checkout. It builds both extension variants using that commit SHA, updates the local Python Native Messaging bridge, regenerates the CRX/XPI packages, and writes `version.json` to the installed application only when the preceding steps succeed. The same SHA is embedded into both extension bundles as `version.json` and `build-revision.js`.
-
-**Update awareness:** while installed, the extension checks GitHub's public `commits/main` API roughly every 12 hours (and on browser startup). It compares the latest main commit with its packaged commit and the Python host's installed commit, which is exposed by a read-only `getVersion` Native Messaging action. When any component is behind, the extension displays a **NEW** badge, a notice in the popup and a notice in the full browser manager; its copy button provides the installer command. The user can request an immediate check.
-
-The updater only **notifies**; the extension never downloads or executes remote scripts automatically. The ON/OFF switch continues to control **AppImage download automation only**. Commit notifications work even with automation OFF.
-
-**Browser approval is still required after updating extension packages.** The installer refreshes files on disk and the Native Messaging host, but browsers do not automatically adopt a newly built CRX or unsigned XPI. Reload the existing unpacked extension via `chrome://extensions` or `edge://extensions` after installing; for packed packages, install the new CRX/XPI with the browser's approval. If the bridge has the newest commit but your loaded extension does not, the interface shows a reload reminder.
-
-A cache and 12-hour interval limit GitHub API requests. A network error preserves any existing update warning rather than claiming you are current.
-
-## Updating
-
-Re-run the one-line installer above to update the Python bridge and extension bundles from the newest main commit. Reload an unpacked extension or manually reinstall a locally packaged CRX/XPI; browser extension auto-update is not supported for these local packages.
-
-## Local development and tests
+## Development and tests
 
 ```bash
 git clone https://github.com/zonaro/gear-lever-grab.git
 cd gear-lever-grab
 bash scripts/build-extensions.sh
-python3 scripts/package_extensions.py --root . --skip-crx  # unsigned Firefox XPI
 python3 -m unittest discover -s tests -v
-node --check extension/common/background.js
-node --check extension/common/manager.js
+node scripts/test-update-check.mjs
+node scripts/check-docs.mjs
 bash -n install.sh uninstall.sh scripts/build-extensions.sh
 ```
 
-To try a CRX3 package using a compatible installed browser, run:
+Both extension builds are always directories in `dist/chromium` and `dist/firefox`. To test the guide generator using those builds:
 
 ```bash
-python3 scripts/package_extensions.py --root . --key-dir "$HOME/.local/share/gear-lever-grab-keys"
+python3 scripts/generate_install_guide.py \
+  --output /tmp/gear-lever-grab-guide.html \
+  --chromium dist/chromium \
+  --firefox-manifest dist/firefox/manifest.json \
+  --commit "$(git rev-parse HEAD)"
 ```
 
-Generated extension packages are written to `dist/packages/` and excluded from Git. **Do not place a private signing key in the repository or a web-accessible directory.**
+The generated HTML is a local, self-contained file. The guide uses no external assets or telemetry. It does not install or activate browser extensions.
 
-## Troubleshooting: `CRX_REQUIRED_PROOF_MISSING`
+## Limitations
 
-If installing `gear-lever-grab.crx` shows **"Package is invalid: CRX_REQUIRED_PROOF_MISSING"**, the browser is rejecting its signing proof. This is common with locally generated CRX3 extensions that are not delivered by a supported browser store. **This does not mean Gear Lever or the Python bridge failed.**
-
-**Fix (no need to reinstall the bridge):** open `edge://extensions` or `chrome://extensions`, turn on **Developer mode**, click **Load unpacked**, and select the installed `dist/chromium` DIRECTORY described above. Select the folder, not the `.crx` file or `manifest.json` itself. The extension's existing Native Messaging ID is allowlisted by the installer.
-
-For installation from a single packaged file without developer mode, the proper next step is official extension store publication/signing and user-approved installation. Rebuilding a local CRX does not add the missing store proof.
-
-## Current limitations
-
-- Browser-specific installation restrictions require manual extension approval.
-- Firefox XPI is unsigned: persistent distribution requires AMO signing.
-- Chrome/Edge may reject locally signed CRX3 with `CRX_REQUIRED_PROOF_MISSING`; use **Load unpacked** instead.
-- Some sandboxed browsers (for example Flatpak) need additional Native Messaging integration.
-- CDN redirects can hide the original release URL; uncertain sources are not registered.
-- API rate limits and ambiguous release asset names may prevent automatic source registration.
-- Real-world browser/Flatpak compatibility testing is still in progress; see [issues](https://github.com/zonaro/gear-lever-grab/issues).
+- Browsers require the user's explicit approval for manually loaded extensions.
+- Firefox temporary unsigned extensions do not survive a browser restart.
+- Some browsers distributed inside Flatpak sandboxes need extra Native Messaging configuration.
+- If redirects obscure a release URL or the release's asset names are ambiguous, Gear Lever Grab may integrate the AppImage without a custom update source.
+- Real-world QA on all supported browsers and Fedora configurations is ongoing; please see the [issue tracker](https://github.com/zonaro/gear-lever-grab/issues).
 
 ## Uninstall
-
-Once installed, run:
 
 ```bash
 bash "$HOME/.local/share/gear-lever-grab/uninstall.sh"
 ```
 
-Remove the browser extension using the browser's own interface. Already integrated AppImages remain managed by Gear Lever. The uninstall script **preserves** the local CRX signing key in `~/.local/share/gear-lever-grab-keys/` to prevent accidental loss of its signing identity.
+If `XDG_DATA_HOME` is customized, use that location instead. Uninstall the browser extension from the browser's own management page. Already integrated AppImages remain managed by Gear Lever. Signing keys left from older releases are not removed automatically.
 
 ## License
 
-See [LICENSE](LICENSE). Gear Lever Grab is an independent open-source project, not an official component of Gear Lever.
+See [LICENSE](LICENSE). Gear Lever Grab is an independent open-source project and is not officially affiliated with Gear Lever.

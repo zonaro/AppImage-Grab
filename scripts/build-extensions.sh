@@ -10,6 +10,9 @@ if [[ ! "$REVISION" =~ ^[[:xdigit:]]{40}$ ]]; then
   echo "A full Git commit SHA is required (set GLG_BUILD_SHA or run from a Git clone)." >&2
   exit 1
 fi
+# Clean up package artifacts produced by previous versions.
+# This build ONLY creates unpacked extension folders.
+rm -rf -- "$ROOT/dist/packages"
 for family in chromium firefox; do
   mkdir -p "$ROOT/dist/$family"
   cp "$ROOT/extension/common/"* "$ROOT/dist/$family/"

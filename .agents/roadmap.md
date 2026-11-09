@@ -43,3 +43,15 @@ Futuro: publicar CRX/Web Store e extensão assinada Firefox/AMO, detectar origen
 - [x] Make Load unpacked the recommended Chromium-family setup route and ensure install.sh prints exact directory.
 - [ ] Publish official browser-store packages for no-developer-mode installation with user approval.
 - [ ] Test Edge's extension details, native host connectivity and browser restart with unpacked extension.
+
+## Simplified unpacked-only distribution
+
+- [x] Remove CRX/XPI packaging code, tests and generated files.
+- [x] Install/update only unpacked extension directories and Python Native Messaging bridge.
+- [x] Generate one standalone local HTML setup guide with canonical install paths, detected browser URLs, copy buttons and pt-BR/en/es instructions.
+- [x] Open the guide in the default browser when a graphical desktop is available; opt out via GLG_OPEN_BROWSER=0.
+- [x] Show terminal instructions when the guide cannot be opened.
+- [x] Update README in English and landing i18n in PT-BR/EN/ES.
+- [ ] Perform real Fedora/Edge/Firefox installation QA using the guide.
+
+Legacy CRX/XPI milestones above are superseded; there is **no package builder** in the current distribution flow.

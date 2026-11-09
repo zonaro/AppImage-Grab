@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Gear Lever Grab · Installation Guide</title>
+  <style>
+    :root {color-scheme:dark;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--bg:#0c111a;--card:#171f2b;--line:#35404c;--text:#eff5f9;--muted:#a6b6c6;--accent:#b9f68c}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 80% 0%,#254333 0%,transparent 48%),var(--bg);color:var(--text);line-height:1.65}
+    a{color:inherit}
+    button,select{font:inherit}
+    button{cursor:pointer}
+    button:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+    .shell{width:min(910px,calc(100% - 36px));margin-inline:auto}
+    header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:31px 0 21px;border-bottom:1px solid var(--line)}
+    .brand{display:flex;align-items:center;gap:13px;font-size:17px;font-weight:800;letter-spacing:-.02em}
+    .mark{width:43px;height:43px;display:grid;place-items:center;border-radius:13px;background:var(--accent);color:#142119;font-size:25px}
+    .lang{display:flex;gap:4px;padding:4px;border:1px solid var(--line);border-radius:10px}
+    .lang button{background:transparent;border:0;color:var(--muted);border-radius:7px;font-size:12px;padding:5px 8px}
+    .lang button[aria-pressed=true]{background:#36513a;color:var(--accent)}
+    main{padding-block:46px 64px}
+    .eyebrow{font-size:12px;letter-spacing:.15em;font-weight:900;color:var(--accent);text-transform:uppercase}
+    h1{font-size:clamp(32px,5vw,52px);line-height:1.12;letter-spacing:-.055em;margin:12px 0 15px;max-width:690px}
+    .lead{max-width:740px;color:var(--muted);font-size:16px;margin-bottom:28px}
+    .status{padding:14px 18px;background:#1b3429;border:1px solid #41664a;border-radius:13px;color:#cfefc1;font-size:13px;margin-bottom:26px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:19px}
+    .panel{border:1px solid var(--line);border-radius:18px;background:var(--card);padding:23px;margin-bottom:17px}
+    .panel h2{font-size:20px;letter-spacing:-.035em;margin:0 0 11px}
+    .panel p{color:var(--muted);font-size:13px;margin:0 0 16px}
+    label{display:block;font-size:13px;font-weight:750;margin-bottom:8px}
+    select{width:100%;border-radius:11px;background:#222e3d;border:1px solid var(--line);padding:13px;color:var(--text)}
+    .path{background:#0c1520;border:1px solid #304455;padding:13px;line-height:1.65;font-size:12px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;word-break:break-all;border-radius:10px;color:#d3f7bb;margin-top:10px}
+    .btns{display:flex;flex-wrap:wrap;gap:9px;margin-top:13px}
+    .btn{display:inline-flex;align-items:center;gap:7px;justify-content:center;text-align:center;border:1px solid #648767;border-radius:10px;padding:10px 13px;font-size:13px;font-weight:750;background:#2f4639;color:#ecffe5;text-decoration:none}
+    .btn-primary{background:var(--accent);color:#152718;border-color:var(--accent)}
+    .btn:hover{filter:brightness(1.12)}
+    .note{font-size:12px;color:var(--muted);line-height:1.7}
+    ol{counter-reset:step;padding:0;margin:0;list-style:none}
+    ol li{position:relative;padding:0 0 20px 52px;color:var(--muted);font-size:14px}
+    ol li:last-child{padding-bottom:2px}
+    ol li::before{counter-increment:step;content:counter(step,decimal-leading-zero);position:absolute;left:0;top:0;display:grid;place-items:center;border:1px solid #507153;color:var(--accent);background:#24372c;border-radius:50%;width:36px;height:36px;font-weight:800;font-size:12px}
+    ol li strong{color:var(--text);display:block;font-size:14px}
+    ol li span{display:block}
+    .fineprint{font-size:13px;color:var(--muted);line-height:1.8}
+    .fineprint code{color:#d0edb8}
+    footer{border-top:1px solid var(--line);padding:24px 0 38px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    @media(max-width:730px){.grid{grid-template-columns:1fr}main{padding-top:28px}.panel{padding:19px}.lead{font-size:14px}header{padding-top:18px}.btns .btn{flex:1}}
+  </style>
+</head>
+<body>
+  <header class="shell">
+    <div class="brand"><span class="mark" aria-hidden="true">↓</span>Gear Lever Grab</div>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-lang="pt-BR" aria-pressed="true">PT</button>
+      <button type="button" data-lang="en" aria-pressed="false">EN</button>
+      <button type="button" data-lang="es" aria-pressed="false">ES</button>
+    </div>
+  </header>
+  <main class="shell">
+    <span class="eyebrow" data-text="eyebrow">INSTALAÇÃO MANUAL NO NAVEGADOR</span>
+    <h1 data-text="title">Seu Gear Lever Grab está preparado.</h1>
+    <p class="lead" data-text="intro">O serviço Python já está instalado. Falta carregar a extensão descompactada no seu navegador. Leva poucos cliques e não exige instalar nenhum pacote.</p>
+    <div class="status"><span data-text="ready">Versão instalada (commit da main):</span> <strong id="commit"></strong></div>
+    <div class="grid">
+      <section class="panel">
+        <h2 data-text="browserTitle">1. Escolha seu navegador</h2>
+        <p data-text="browserIntro">Detectamos estes navegadores neste computador. Escolha em qual deseja adicionar a extensão.</p>
+        <label for="browser" data-text="browserLabel">Navegador</label>
+        <select id="browser"></select>
+        <div class="btns">
+          <a href="edge://extensions/" target="_blank" rel="noopener noreferrer" class="btn btn-primary" id="open-browser-page" data-text="openSettings">Abrir extensões ↗</a>
+          <button type="button" class="btn" id="copy-url" data-text="copyUrl">Copiar endereço</button>
+        </div>
+        <div class="path" id="browser-url" aria-label="Extensions page address"></div>
+        <p class="note" style="margin-top:12px" data-text="browserNote">O navegador pode bloquear links internos abertos por páginas locais. Se não abrir, copie o endereço acima e cole na barra de endereços.</p>
+      </section>
+      <section class="panel">
+        <h2 data-text="pathTitle">2. Copie o caminho exato</h2>
+        <p data-text="pathIntro">Este é o local real da extensão instalada no seu computador. No Chromium selecione a pasta; no Firefox, o arquivo manifest.json.</p>
+        <div class="path" id="extension-path" aria-label="Local extension path"></div>
+        <div class="btns"><button type="button" class="btn btn-primary" id="copy-path" data-text="copyPath">Copiar caminho</button></div>
+        <p class="note" style="margin-top:12px" data-text="pathNote">No seletor de arquivos, você pode usar Ctrl+L para colar o caminho, quando disponível.</p>
+      </section>
+    </div>
+    <section class="panel">
+      <h2 data-text="stepsTitle">3. Carregue a extensão</h2>
+      <ol id="steps"></ol>
+    </section>
+    <section class="panel">
+      <h2 data-text="nextTitle">Pronto para usar</h2>
+      <p data-text="nextText">Depois de carregar a extensão, abra seu popup e ative o toggle ON somente se desejar integrar downloads automaticamente. O Gear Lever continua responsável pelos aplicativos e atualizações.</p>
+      <p class="fineprint" data-text="updates">Para atualizar o Gear Lever Grab depois, rode o mesmo install.sh e recarregue a extensão pelo gerenciador do navegador. O controle ON/OFF permanece independente.</p>
+    </section>
+    <p class="fineprint" data-text="privacy">Este guia é um arquivo HTML local: não instala nada no navegador, não altera configurações e não transmite dados. Os botões apenas abrem ou copiam endereços.</p>
+    <p id="copy-status" class="sr-only" role="status" aria-live="polite"></p>
+  </main>
+  <footer class="shell"><span>Gear Lever Grab · Linux</span><a href="https://github.com/zonaro/gear-lever-grab" target="_blank" rel="noopener noreferrer">GitHub ↗</a></footer>
+  <script type="application/json" id="guide-data">__GLG_INSTALLATION_DATA__</script>
+  <script>
+  (() => {
+    "use strict";
+    const data = JSON.parse(document.getElementById('guide-data').textContent);
+    const $ = id => document.getElementById(id);
+    const strings = {
+      'pt-BR': {
+        eyebrow:'INSTALAÇÃO MANUAL NO NAVEGADOR',title:'Seu Gear Lever Grab está preparado.',
+        intro:'O serviço Python já está instalado. Falta carregar a extensão descompactada no navegador. Leva poucos cliques e não exige pacotes adicionais.',
+        ready:'Versão instalada (commit da main):',
+        browserTitle:'1. Escolha seu navegador',browserIntro:'Navegadores detectados neste computador. Selecione onde deseja carregar a extensão.',browserLabel:'Navegador',
+        openSettings:'Abrir extensões ↗',copyUrl:'Copiar endereço',
+        browserNote:'Links para páginas internas podem ser bloqueados a partir de arquivos locais. Se não abrir, copie o endereço e cole na barra do navegador.',
+        pathTitle:'2. Copie o caminho exato',pathIntro:'O caminho abaixo é absoluto. No Chromium selecione a pasta; no Firefox selecione o arquivo manifest.json.',copyPath:'Copiar caminho',
+        pathNote:'No seletor de arquivos, use Ctrl+L para colar o caminho, quando disponível.',
+        stepsTitle:'3. Carregue a extensão',nextTitle:'Pronto para usar',
+        nextText:'Abra o popup da extensão e ligue o toggle ON somente quando desejar integrar downloads automaticamente. O Gear Lever continua responsável pelos aplicativos.',
+        updates:'Para atualizar depois, rode o mesmo install.sh e recarregue a extensão no navegador. O ON/OFF permanece independente.',
+        privacy:'Este é um guia HTML local. Ele não instala extensões, não modifica perfis e não envia dados. Botões apenas abrem ou copiam endereços.',
+        copied:'Copiado!',selectCopy:'Selecione o texto e pressione Ctrl+C.',
+        chromiumSteps:[
+          ['Abra a página de extensões.','Use o botão acima ou cole o endereço na barra do navegador.'],
+          ['Ative o Modo do desenvolvedor.','Normalmente há um toggle na própria página.'],
+          ['Clique em Carregar sem compactação.','Selecione a pasta exata indicada acima.'],
+          ['Confirme o carregamento.','Se necessário, habilite a extensão no navegador; a automação de downloads inicia em OFF.']
+        ],
+        firefoxSteps:[
+          ['Abra about:debugging.','Use o botão acima ou cole o endereço na barra do navegador.'],
+          ['Selecione Este Firefox.','Clique em Carregar extensão temporária.'],
+          ['Selecione o arquivo manifest.json.','Use o caminho exato exibido acima.'],
+          ['Confirme a instalação.','Sem assinatura AMO, a extensão temporária precisa ser recarregada ao reiniciar o Firefox.']
+        ],
+        noBrowser:'Chromium / Edge (manual)',firefoxManual:'Firefox (manual)'
+      },
+      en: {
+        eyebrow:'MANUAL BROWSER INSTALLATION',title:'Gear Lever Grab is ready.',
+        intro:'The Python bridge is installed. You only need to load the unpacked extension in your browser. No extension packages or system policy changes.',
+        ready:'Installed revision (main commit):',
+        browserTitle:'1. Select your browser',browserIntro:'Browsers detected on this computer. Choose where to load the extension.',browserLabel:'Browser',
+        openSettings:'Open extensions ↗',copyUrl:'Copy address',
+        browserNote:'Browsers may block internal-page links opened from local files. If it fails, copy the address and paste it into the address bar.',
+        pathTitle:'2. Copy the exact path',pathIntro:'This is the actual absolute path. Select the directory for Chromium browsers, or manifest.json for Firefox.',copyPath:'Copy path',
+        pathNote:'In the file chooser, try Ctrl+L to paste the path when supported.',
+        stepsTitle:'3. Load the extension',nextTitle:'Ready to go',
+        nextText:'Open the extension popup and turn ON only when you want to integrate downloads automatically. Gear Lever remains responsible for installed apps.',
+        updates:'To update later, run the same install.sh and reload the extension in your browser. The ON/OFF setting is independent.',
+        privacy:'This local HTML guide does not install extensions, modify browser profiles or send data. Buttons only open or copy addresses.',
+        copied:'Copied!',selectCopy:'Select the text and press Ctrl+C.',
+        chromiumSteps:[
+          ['Open your browser extensions page.','Use the button above, or paste the URL into the address bar.'],
+          ['Enable Developer mode.','There is usually a toggle on the extensions page.'],
+          ['Click Load unpacked.','Select the exact directory shown above.'],
+          ['Confirm the installation.','Enable the extension if required; download automation stays OFF until you enable it.']
+        ],
+        firefoxSteps:[
+          ['Open about:debugging.','Use the button or paste the address into the URL bar.'],
+          ['Choose This Firefox.','Click Load Temporary Add-on.'],
+          ['Select manifest.json.','Choose the exact file shown above.'],
+          ['Confirm installation.','Unsigned temporary add-ons must be reloaded after Firefox restarts.']
+        ],
+        noBrowser:'Chromium / Edge (manual)',firefoxManual:'Firefox (manual)'
+      },
+      es: {
+        eyebrow:'INSTALACIÓN MANUAL EN EL NAVEGADOR',title:'Gear Lever Grab está preparado.',
+        intro:'El servicio Python ya está instalado. Solo falta cargar la extensión descomprimida. No se requieren paquetes ni cambios en las políticas del navegador.',
+        ready:'Versión instalada (commit de main):',
+        browserTitle:'1. Elige tu navegador',browserIntro:'Navegadores detectados en este equipo. Elige dónde cargar la extensión.',browserLabel:'Navegador',
+        openSettings:'Abrir extensiones ↗',copyUrl:'Copiar dirección',
+        browserNote:'Los navegadores pueden bloquear enlaces internos desde archivos locales. Si falla, copia la dirección y pégala en la barra del navegador.',
+        pathTitle:'2. Copia la ruta exacta',pathIntro:'Esta es la ruta absoluta real. En Chromium selecciona la carpeta; en Firefox, el archivo manifest.json.',copyPath:'Copiar ruta',
+        pathNote:'En el selector de archivos prueba Ctrl+L para pegar la ruta, cuando sea posible.',
+        stepsTitle:'3. Carga la extensión',nextTitle:'Listo para usar',
+        nextText:'Abre la extensión y activa ON solo cuando quieras integrar descargas automáticamente. Gear Lever sigue gestionando las aplicaciones.',
+        updates:'Para actualizar, ejecuta el mismo install.sh y recarga la extensión en el navegador. El ON/OFF es independiente.',
+        privacy:'Esta guía HTML local no instala extensiones, no modifica perfiles ni envía datos. Los botones solo abren o copian direcciones.',
+        copied:'¡Copiado!',selectCopy:'Selecciona el texto y presiona Ctrl+C.',
+        chromiumSteps:[
+          ['Abre la página de extensiones.','Utiliza el botón o pega la dirección en la barra del navegador.'],
+          ['Activa el modo desarrollador.','Normalmente existe un interruptor en la página.'],
+          ['Haz clic en Cargar descomprimida.','Selecciona la carpeta exacta indicada arriba.'],
+          ['Confirma la instalación.','Habilita la extensión si es necesario; la automatización sigue OFF hasta que la actives.']
+        ],
+        firefoxSteps:[
+          ['Abre about:debugging.','Utiliza el botón o pega la dirección en la barra.'],
+          ['Selecciona Este Firefox.','Haz clic en Cargar complemento temporal.'],
+          ['Selecciona manifest.json.','Utiliza la ruta exacta indicada arriba.'],
+          ['Confirma la instalación.','Los complementos temporales sin firma deben cargarse nuevamente al reiniciar Firefox.']
+        ],
+        noBrowser:'Chromium / Edge (manual)',firefoxManual:'Firefox (manual)'
+      }
+    };
+    const browserSelect = $('browser');
+    const detected = data.browsers || [];
+    const browsers = detected.length ? detected : [
+      {name:'Microsoft Edge', family:'chromium', url:'edge://extensions/'},
+      {name:'Google Chrome', family:'chromium', url:'chrome://extensions/'},
+      {name:'Firefox', family:'firefox', url:'about:debugging#/runtime/this-firefox'}
+    ];
+    for (const entry of browsers) {
+      const option = document.createElement('option');
+      option.value = String(browserSelect.options.length);
+      option.textContent = entry.name;
+      browserSelect.append(option);
+    }
+    const initialLocale = (navigator.language || '').toLowerCase();
+    let locale = initialLocale.startsWith('es') ? 'es' : initialLocale.startsWith('en') ? 'en' : 'pt-BR';
+    const txt = key => strings[locale][key];
+    $('commit').textContent = data.commit.slice(0,12);
+    $('commit').title = data.commit;
+
+    function display() {
+      document.documentElement.lang = locale;
+      document.title = 'Gear Lever Grab · ' + txt('stepsTitle');
+      document.querySelectorAll('[data-text]').forEach(element => {
+        element.textContent = txt(element.dataset.text);
+      });
+      document.querySelectorAll('[data-lang]').forEach(button => {
+        button.setAttribute('aria-pressed', String(button.dataset.lang === locale));
+      });
+      const current = browsers[Number(browserSelect.value) || 0];
+      const isFirefox = current.family === 'firefox';
+      $('browser-url').textContent = current.url;
+      $('open-browser-page').href = current.url;
+      $('extension-path').textContent = isFirefox ? data.firefoxPath : data.chromiumPath;
+      const list = $('steps');
+      list.replaceChildren();
+      for (const [head,body] of (isFirefox ? txt('firefoxSteps') : txt('chromiumSteps'))) {
+        const li = document.createElement('li');
+        const title = document.createElement('strong');
+        title.textContent = head;
+        const details = document.createElement('span');
+        details.textContent = body;
+        li.append(title,details);
+        list.append(li);
+      }
+    }
+    function legacyCopy(text) {
+      const field = document.createElement('textarea');
+      field.value = text;
+      field.setAttribute('readonly','');
+      field.style.position = 'fixed';
+      field.style.opacity = '0';
+      document.body.append(field);
+      field.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch {}
+      field.remove();
+      return ok;
+    }
+    async function copy(text) {
+      let success = false;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+          success = true;
+        }
+      } catch {}
+      if (!success) success = legacyCopy(text);
+      $('copy-status').textContent = success ? txt('copied') : txt('selectCopy');
+      if (!success) {
+        const pre = text === $('browser-url').textContent ? $('browser-url') : $('extension-path');
+        const range = document.createRange();
+        range.selectNodeContents(pre);
+        const selection = window.getSelection();
+        if (selection) {selection.removeAllRanges();selection.addRange(range);}
+      }
+    }
+    browserSelect.addEventListener('change', display);
+    document.querySelectorAll('[data-lang]').forEach(button =>
+      button.addEventListener('click', () => {locale=button.dataset.lang;display();})
+    );
+    $('copy-path').addEventListener('click', () => copy($('extension-path').textContent));
+    $('copy-url').addEventListener('click', () => copy($('browser-url').textContent));
+    display();
+  })();
+  </script>
+</body>
+</html>

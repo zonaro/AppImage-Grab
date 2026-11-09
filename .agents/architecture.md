@@ -36,14 +36,15 @@ bridge.host
 - Popup oferece acesso rápido e toggle; `manager.html` abre em aba própria para tela completa, com busca, status e ações, sem executar programas arbitrários.
 - O frontend imita conceitos do fluxo Gear Lever, mas não embute a janela GTK nem copia interface binária.
 
-## Local browser extension packaging
+## Manual browser extension installation
 
-- `scripts/package_extensions.py` always creates an unsigned Firefox `dist/packages/gear-lever-grab.xpi` from the built `dist/firefox` files.
-- If a Chromium-family browser's `--pack-extension` CLI is available, it packages a real locally signed CRX3 into `dist/packages/gear-lever-grab.crx`; no fake renamed ZIP files.
-- CRX signing private key is generated and persisted only under `~/.local/share/gear-lever-grab-keys/chromium.pem`, never in the repo, built artifacts, or installed extension folder.
-- The CRX ID can differ from `extension/chromium/id.txt` (legacy unpacked manifest key), so the host manifest allowlist includes both IDs.
-- Silent installation is intentionally unsupported: no browser profile manipulation, enterprise policy injection, or forced extension loading. Print manual `Load unpacked` fallback for Chromium and temporary debug install for unsigned Firefox XPI.
-- `scripts/open_browser_extensions.py` opens only the preferred detected browser's management page in an interactive graphical terminal. Suppress with `GLG_OPEN_BROWSER=0`.
+- `install.sh` clones the latest main, builds only `dist/chromium` and `dist/firefox`, updates the Python Native Messaging host, and stamps the Git main SHA in the extension and bridge.
+- It removes previous `dist/packages` CRX/XPI artifacts, but retains any legacy private signing keys stored outside the application to avoid destructive loss.
+- The host allowlist registers only the stable Chromium unpacked extension ID and the existing Firefox ID.
+- `scripts/generate_install_guide.py` renders `scripts/install-guide-template.html` as the self-contained `$XDG_DATA_HOME/gear-lever-grab/install-guide.html`, using canonical local paths, safely JSON-escaped metadata, detected browsers and PT-BR/EN/ES text.
+- The guide includes extension-page links, copy-address buttons, exact extension directory/manifest paths with copy buttons, and explanatory instructions. Since browser-internal pages may reject navigation from file://, users can paste the address into the URL bar.
+- With graphical DISPLAY/WAYLAND and xdg-open, installation ends by opening the HTML guide in the default browser. `GLG_OPEN_BROWSER=0` skips launch. Without a graphical session, the guide is still written and its location printed.
+- Nothing silently installs or activates the browser extension. Chrome-like browsers use Developer Mode → Load unpacked; Firefox uses temporary loading of manifest.json until official signed distribution is implemented.
 
 ## Git main commit-based updates
 
@@ -51,4 +52,4 @@ bridge.host
 - scripts/build-extensions.sh reads GLG_BUILD_SHA (or git HEAD), stamps dist/{chromium,firefox}/version.json and build-revision.js. The root version.json is copied to the installed bridge after all preceding steps complete.
 - Python Native Messaging handles getVersion without touching Gear Lever. Browser extension GLGUpdate checks https://api.github.com/repos/zonaro/gear-lever-grab/commits/main at most once per 12h, using storage.local cached result and an MV3 alarm.
 - Background action badge says NEW if main revision differs from extension revision or bridge revision, otherwise ON/OFF as before. Popup and manager show the three SHAs and a copyable install one-liner. No automatic remote script execution.
-- Browser reload or manual CRX/XPI reinstallation is still required after the installer refreshes package files; the bridge updates immediately.
+- Reloading an unpacked extension is still required after the installer refreshes the on-disk extension directories; the bridge updates immediately.
