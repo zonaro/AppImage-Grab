@@ -61,3 +61,12 @@ bridge.host
 - Exposed fields `source_status` and `source_options` are read-only. When source info is missing/mismatched, show unavailable; do not replace existing configs with empty form defaults.
 - The browser manager shows Update **only** when exact path is included in the latest Gear Lever `--list-updates --json` response. Python AppManager.update calls the same CLI again before `--update`. On error/refresh, stale update results are discarded.
 - The update manager can exist without an update. The user must explicitly request the update check, and a Gear Lever CLI failure means state is unverified, not up-to-date.
+
+## Browser notifications and download by source URL
+
+- `bridge/link_resolver.py` validates direct AppImage assets from GitHub, GitLab and Codeberg, and resolves supported provider repository/release pages through their fixed public APIs. User-chosen assets are listed by filename and architecture; do not infer architecture if missing.
+- `extension/common/manager.js` presents a link-input form and asks for confirmation after choosing an asset. Background `startManagedDownload` re-resolves the origin and only starts browser downloads for assets confirmed by the native resolver; no direct Python shell/download execution.
+- Manual downloads are recorded in `storage.local.pending` and processed even with automatic download toggle OFF. Downloads that are interrupted do not yield success.
+- Native Messaging `integrate` must confirm a successful Gear Lever status and an installed path before a browser desktop notification is shown. `already_processed` and failed imports never trigger a success notification. Browser/OS notification permission may suppress display without undoing a completed integration.
+- A successful integration refreshes the popup and browser manager app list via changes to `lastResult`. Keep this behavior independent from the extension's own Git commit update indicator.
+- Browser extension icons are PNG 16/32/48 derived from the green gear-and-glove graphic, stored under `extension/common/icons/`; site `docs/assets/favicon.png` shares the icon. `build-extensions.sh` must recursively copy all common assets.

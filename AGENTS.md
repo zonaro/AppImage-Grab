@@ -33,3 +33,7 @@
 - The public Gear Lever list-installed JSON omits existing source parameter values. bridge/source_config.py reads the selected Gear Lever's gearlever.conf read-only (Flatpak or native), keyed by MD5 of the exact installed AppImage path. Do NOT write the INI file.
 - Preserve pre-existing sources: embedded sources are read-only; if existing config cannot be verified, block replacement/removal; unsupported managers must not be silently mapped to GithubUpdater.
 - Regression tests: tests/test_source_config.py and tests/test_manager.py. Maintain exact path matching and fail-closed behavior on offline/missing config.
+
+- When editing link imports: never download arbitrary URL schemes or hosts; trust only explicit provider release assets and fixed GitHub/GitLab/Codeberg APIs; confirm selected architecture and user intent before browser download. Browser background must revalidate the selected asset.
+- Native host must confirm Gear Lever integration before sending desktop success notifications. No success toast for failed/duplicate imports. Automated ON/OFF does not block explicit user-initiated downloads.
+- Preserve icon assets from `extension/common/icons` in both unpacked extension builds and use matching favicon under `docs/assets/favicon.png`.

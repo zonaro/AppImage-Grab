@@ -80,7 +80,7 @@ The extension **does not run downloaded AppImages directly**, but Gear Lever may
 
 When the download integration completes and Gear Lever confirms the new installation, the extension issues an OS/browser **notification** using its icon. A failed download or failed integration never produces a success notification. Notification delivery depends on browser and desktop notification permissions.
 
-The manager's **Add AppImage by link** field accepts direct GitHub, GitLab, and Codeberg release-asset links, plus GitHub repository and release pages. For a repository, it lists matching AppImage assets and their detected architecture; the user chooses which file to download and confirms the action. The browser performs the download, and the Native Messaging bridge asks Gear Lever to integrate it after completion. This manual action works independently of the automatic download toggle. Only trusted provider domains and release URLs are accepted.
+The manager's **Add AppImage by link** field accepts direct GitHub, GitLab, and Codeberg release-asset links, plus GitHub, GitLab, and Codeberg repository/release pages. For a repository, it lists matching AppImage assets and their detected architecture; the user chooses which file to download and confirms the action. The browser performs the download, and the Native Messaging bridge asks Gear Lever to integrate it after completion. This manual action works independently of the automatic download toggle. Only trusted provider domains and release URLs are accepted.
 
 ## Browser-based AppImage manager
 
