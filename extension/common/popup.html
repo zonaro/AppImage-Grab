@@ -32,6 +32,24 @@
       </div>
       <code id="update-command"></code>
     </section>
+    <section class="page-offer" id="page-offer" aria-labelledby="offer-title" hidden>
+      <div class="offer-header">
+        <strong id="offer-title">AppImage encontrada neste repositório</strong>
+        <small id="offer-provider"></small>
+      </div>
+      <p id="offer-description" class="muted"></p>
+      <label class="offer-asset-label" for="offer-asset">Escolha a AppImage e a arquitetura</label>
+      <select id="offer-asset"></select>
+      <div class="offer-actions">
+        <button type="button" id="install-offer" class="offer-install">Instalar no Gear Lever</button>
+        <button type="button" id="open-offer-manager" class="offer-secondary">Ver no gerenciador</button>
+      </div>
+      <p id="offer-status" class="muted" role="status" aria-live="polite"></p>
+    </section>
+    <label class="suggestions-option" for="suggestions-enabled">
+      <input type="checkbox" id="suggestions-enabled">
+      Sugerir AppImages ao visitar repositórios
+    </label>
     <section class="installed" aria-labelledby="installed-title">
       <div class="section-head"><strong id="installed-title">Meus AppImages</strong><button id="refresh" class="icon-button" title="Atualizar lista" aria-label="Atualizar lista">↻</button></div>
       <p id="apps-status" class="muted" role="status">Carregando…</p>

@@ -401,3 +401,18 @@ $('link-download').addEventListener('click', async () => {
     $('link-download').disabled = false;
   }
 });
+
+
+// Notifications open the manager with a source query parameter. Resolve and
+// display choices, but never start a download without a new user click.
+try {
+  const initialSource = new URLSearchParams(window.location.search).get('source');
+  if (initialSource && initialSource.length <= 2048 &&
+      /^https:\/\/(github\.com|www\.github\.com|gitlab\.com|codeberg\.org)\//.test(initialSource)) {
+    $('link-url').value = initialSource;
+    $('link-panel').scrollIntoView?.({behavior:'smooth',block:'start'});
+    $('link-form').requestSubmit();
+  }
+} catch {
+  // The manager also works normally without a suggestion query parameter.
+}

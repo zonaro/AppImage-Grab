@@ -8,7 +8,8 @@
     "storage",
     "nativeMessaging",
     "alarms",
-    "notifications"
+    "notifications",
+    "tabs"
   ],
   "action": {
     "default_title": "Gear Lever Grab",

@@ -82,6 +82,17 @@ When the download integration completes and Gear Lever confirms the new installa
 
 The manager's **Add AppImage by link** field accepts direct GitHub, GitLab, and Codeberg release-asset links, plus GitHub, GitLab, and Codeberg repository/release pages. For a repository, it lists matching AppImage assets and their detected architecture; the user chooses which file to download and confirms the action. The browser performs the download, and the Native Messaging bridge asks Gear Lever to integrate it after completion. This manual action works independently of the automatic download toggle. Only trusted provider domains and release URLs are accepted.
 
+## Install suggestions while browsing
+
+When you visit a **supported GitHub, GitLab, or Codeberg repository/release page**, the extension reads the tab URL (not the page contents), asks the existing Native Messaging resolver for AppImage release assets and, when a compatible asset is found, offers to install it.
+
+- A browser desktop notification suggests installation. Click it or its **View and install** action to open the manager with that source already selected; it never downloads automatically.
+- The extension popup shows an **Install in Gear Lever** button on compatible repository pages. If a release contains several AppImages, the popup lets you choose the exact filename and CPU architecture first.
+- Each install action requires explicit confirmation. The browser downloads the chosen AppImage, and the original integration pipeline verifies it and adds it to Gear Lever. Successful integration triggers the already-supported desktop notification.
+- Passive repository suggestions can be disabled independently from download automation with **Suggest AppImages when visiting repositories** in the popup. Suggestions are on by default and each repository is notified **at most once per 24 hours**, even after browser restarts.
+- The extension requests the WebExtensions `tabs` permission solely to inspect open tab URLs for supported provider/repository patterns. It does not read page content, forms, cookies, or private URLs, and it never tries to resolve arbitrary websites. Only the three known providers currently have release resolvers.
+- No recommendation is shown when the provider has no AppImage release or the local bridge cannot verify a compatible release. A browser or desktop may suppress notifications; the popup remains available.
+
 ## Browser-based AppImage manager
 
 The extension's popup includes the ON/OFF toggle, a quick view of installed AppImages and last activity. The **Manage in browser** screen opens a tab with search, installed versions, update sources, update checks, manual updates and removals. Only verified available updates are offered; confirmations are required before modifying installed apps or their sources. This is a browser frontend for the Gear Lever CLI, not a clone of the GTK implementation.

@@ -70,3 +70,11 @@ bridge.host
 - Native Messaging `integrate` must confirm a successful Gear Lever status and an installed path before a browser desktop notification is shown. `already_processed` and failed imports never trigger a success notification. Browser/OS notification permission may suppress display without undoing a completed integration.
 - A successful integration refreshes the popup and browser manager app list via changes to `lastResult`. Keep this behavior independent from the extension's own Git commit update indicator.
 - Browser extension icons are PNG 16/32/48 derived from the green gear-and-glove graphic, stored under `extension/common/icons/`; site `docs/assets/favicon.png` shares the icon. `build-extensions.sh` must recursively copy all common assets.
+
+## Browser repository-page suggestions
+
+- `extension/common/page-offers.js`: pure URL parser accepts only GitHub, GitLab (nested groups supported), and Codeberg repository/release pages; strips query/fragment before sharing with native.
+- `extension/common/page-offer-background.js`: listens for active tab loads and activation using `tabs` permission, calls Native Messaging `resolveLink`, caches responses for 15 minutes, and sends a browser notification only if AppImage assets exist. A per-repository persistent 24-hour cooldown limits suggestion frequency.
+- Notification click/action opens `manager.html?source=<canonical supported URL>`, prefilling the existing link installer and listing architecture choices. It **never starts a download**; confirmation remains mandatory.
+- Popup calls `getPageOffer` to show provider/repository/available assets and offers an **Install in Gear Lever** button, choosing architecture and confirming first. Installation goes through existing `startManagedDownload` background handler, normal browser download completion, `integrate` Native Messaging and success notification.
+- `suggestionsEnabled` (default true) controls passive discovery pushes only; `enabled` (default false) controls automatic integration of ordinary downloads. Explicit user-approved link installs work even with automatic integration disabled. No webpage contents, cookies, or arbitrary URLs are collected.

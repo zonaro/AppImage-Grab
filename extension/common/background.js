@@ -1,6 +1,7 @@
 // Background revision is loaded once when the browser starts the extension.
 if (typeof importScripts === 'function' && !globalThis.GLGUpdate) {
-  importScripts('build-revision.js', 'native-client.js', 'update-check.js');
+  importScripts('build-revision.js', 'native-client.js', 'update-check.js',
+    'page-offers.js', 'page-offer-background.js');
 }
 /* Chromium MV3 / Firefox MV3: observe completed downloads, never intercept. */
 const api = globalThis.browser || globalThis.chrome;

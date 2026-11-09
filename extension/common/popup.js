@@ -108,3 +108,82 @@ document.getElementById('recheck-updates').addEventListener('click', async event
   finally { event.currentTarget.disabled = false; }
 });
 void GLGUpdate.check();
+
+
+// The active repository suggestion is independent from automatic downloads.
+// The user must select the asset and confirm each installation.
+let currentPageOffer = null;
+const offerBox = document.getElementById('page-offer');
+const offerSelect = document.getElementById('offer-asset');
+const offerStatus = document.getElementById('offer-status');
+const installOffer = document.getElementById('install-offer');
+const suggestionsToggle = document.getElementById('suggestions-enabled');
+
+function openOfferInManager() {
+  if (!currentPageOffer) return;
+  void api.tabs.create({
+    url:api.runtime.getURL('manager.html') + '?source=' +
+      encodeURIComponent(currentPageOffer.source)
+  });
+}
+
+async function loadPageOffer() {
+  offerBox.hidden = true;
+  currentPageOffer = null;
+  try {
+    const reply = await api.runtime.sendMessage({action:'getPageOffer'});
+    if (!reply?.ok || !reply.offer?.choices?.length) return;
+    currentPageOffer = reply.offer;
+    document.getElementById('offer-provider').textContent =
+      currentPageOffer.provider + ' · ' + currentPageOffer.repository;
+    document.getElementById('offer-description').textContent =
+      currentPageOffer.choices.length === 1
+        ? 'Uma AppImage disponível nesta página.'
+        : currentPageOffer.choices.length + ' AppImages disponíveis neste repositório.';
+    offerSelect.replaceChildren();
+    currentPageOffer.choices.forEach((asset,index) => {
+      const option=document.createElement('option');
+      option.value=String(index);
+      option.textContent=asset.name + ' · ' + (asset.architecture || 'arquitetura não identificada');
+      offerSelect.append(option);
+    });
+    offerStatus.textContent='Escolha a arquitetura correta antes de instalar.';
+    offerBox.hidden=false;
+  } catch (error) {
+    // No host / unsupported page: don't replace the normal popup with an error.
+    console.warn('Gear Lever Grab page suggestion unavailable:',error);
+  }
+}
+
+installOffer.addEventListener('click',async () => {
+  const asset=currentPageOffer?.choices?.[Number(offerSelect.value)];
+  if (!asset || !currentPageOffer) return;
+  const description = asset.name + ' (' +
+    (asset.architecture || 'arquitetura não identificada') + ')';
+  if (!window.confirm('Baixar '+description+' e integrar ao Gear Lever?\n' +
+      'Confirme que você confia em '+currentPageOffer.provider+'.')) return;
+  installOffer.disabled=true;
+  offerStatus.textContent='Iniciando download…';
+  try {
+    const result=await api.runtime.sendMessage({
+      action:'startManagedDownload', link:currentPageOffer.source, assetUrl:asset.url
+    });
+    if (!result?.ok) throw Error(result?.error || 'Não foi possível iniciar o download');
+    offerStatus.textContent='Download iniciado: '+result.name+
+      '. Você receberá uma notificação após a confirmação do Gear Lever.';
+  } catch(error) {
+    offerStatus.textContent=error?.message || String(error);
+  } finally {
+    installOffer.disabled=false;
+  }
+});
+document.getElementById('open-offer-manager').addEventListener('click',openOfferInManager);
+api.storage.local.get('suggestionsEnabled').then(data => {
+  suggestionsToggle.checked=data.suggestionsEnabled!==false;
+});
+suggestionsToggle.addEventListener('change',() => {
+  void api.storage.local.set({suggestionsEnabled:suggestionsToggle.checked});
+});
+// The suggestions toggle controls passive notifications, not the explicit
+// install action shown for the current repository.
+void loadPageOffer();

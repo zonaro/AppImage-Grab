@@ -27,6 +27,9 @@ jobs:
           node scripts/test-update-check.mjs
           node scripts/test-manager-ui.mjs
           node scripts/test-integration-notifications.mjs
+          node --check extension/common/page-offers.js
+          node --check extension/common/page-offer-background.js
+          node scripts/test-page-offers.mjs
       - name: Shell syntax and build unpacked extensions
         run: |
           bash -n install.sh uninstall.sh scripts/build-extensions.sh
@@ -46,6 +49,10 @@ jobs:
           test -f dist/firefox/manager.html
           test -f dist/firefox/native-client.js
           test -f dist/firefox/build-revision.js
+          test -f dist/chromium/page-offers.js
+          test -f dist/chromium/page-offer-background.js
+          test -f dist/firefox/page-offers.js
+          test -f dist/firefox/page-offer-background.js
           test -f dist/chromium/icons/icon-16.png
           test -f dist/chromium/icons/icon-32.png
           test -f dist/chromium/icons/icon-48.png

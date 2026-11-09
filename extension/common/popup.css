@@ -44,3 +44,18 @@ footer{padding-top:14px;margin-top:13px;border-top:1px solid var(--line);font-si
 #update-command{display:block;margin-top:9px;font-size:9px;overflow-wrap:anywhere;color:var(--muted)}
 
 img.brand-mark{object-fit:contain;padding:0}
+
+.page-offer{margin-top:15px;padding:14px;background:var(--surface);border:1px solid light-dark(#b7d3bb,#43745b);border-radius:13px}
+.page-offer[hidden]{display:none}
+.offer-header{display:flex;flex-direction:column;gap:4px}
+.offer-header strong{color:light-dark(#216b40,#a7edbb)}
+.offer-header small{margin:0;overflow-wrap:anywhere}
+.page-offer p{font-size:11px;line-height:1.5;overflow-wrap:anywhere;margin:9px 0}
+.offer-asset-label{font-weight:650;font-size:11px;display:block;margin:12px 0 5px}
+#offer-asset{width:100%;min-width:0;max-width:100%;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:9px;font-size:11px}
+.offer-actions{display:flex;gap:8px;margin-top:10px}
+.offer-actions button{border:1px solid var(--line);border-radius:8px;padding:9px 7px;cursor:pointer;color:var(--text);background:var(--surface);font-size:11px;font-weight:700}
+.offer-actions .offer-install{flex:1;background:light-dark(#c1f2cd,#28573c);border-color:#458861;color:light-dark(#205030,#d7fbe0)}
+.offer-actions button:disabled{opacity:.6;cursor:wait}
+.suggestions-option{display:flex;align-items:center;gap:8px;margin-top:13px;font-size:11px;color:var(--muted);cursor:pointer}
+.suggestions-option input{accent-color:#2f9956;width:15px;height:15px}

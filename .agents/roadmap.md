@@ -64,3 +64,13 @@ Legacy CRX/XPI milestones above are superseded; there is **no package builder** 
 - [x] Prefill existing settings in the browser manager, preserve embedded and unsupported managers, and block writes when settings cannot be safely loaded.
 - [ ] Validate against real user installations/Flatpak config path, including saved Forgejo/FTP sources and update checks when offline.
 - [ ] Ask upstream Gear Lever for an official --get-update-source --json endpoint to eliminate read-only reliance on private INI layout.
+
+## Supported-site suggestions
+
+- [x] Discover AppImage release assets on active GitHub/GitLab/Codeberg repository pages.
+- [x] Show a throttled desktop push and an Install button in the popup with architecture selection.
+- [x] Notification opens a prefilled manager form; no automatic download until the user confirms.
+- [x] Keep passive-suggestions toggle separate from download integration ON/OFF.
+- [x] Add URL validation / cooldown tests to CI.
+- [ ] Manual Edge/Firefox/Fedora QA including the browser permissions prompt, notifications, install confirmation, release selectors and app installation via Native Messaging.
+- [ ] Extend provider support with explicit allowlisted resolver modules; do not treat every website as compatible.
