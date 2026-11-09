@@ -5,7 +5,7 @@ For wildcard update patterns, inspect the release asset list and refuse
 patterns that would match more than one AppImage. Never guess from file names
 alone when no release origin was observed.
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from fnmatch import fnmatchcase
 import json
 from pathlib import PurePosixPath
@@ -239,7 +239,24 @@ def verify_source(source: UpdateSource | None, *, elf_arch: str | None = None,
         return None
     candidates = [name for name in names if fnmatchcase(name, source.pattern)]
     if candidates != [source.asset_name]:
-        return None
+        # Plain '*' can match a different edition: app-*-x86_64.AppImage
+        # also matches app-lite-1.2-x86_64.AppImage. Narrow it so that the
+        # wildcard can only start at a version (digit or literal v + digit).
+        if source.pattern.count("*") != 1:
+            return None
+        prefix, suffix = source.pattern.split("*")
+        end = len(source.asset_name) - len(suffix) if suffix else len(source.asset_name)
+        token = source.asset_name[len(prefix):end]
+        if not VERSION.fullmatch(token):
+            return None
+        guard = "v[0-9]*" if token[0].lower() == "v" else "[0-9]*"
+        narrowed = prefix + guard + suffix
+        narrowed_matches = [name for name in names if fnmatchcase(name, narrowed)]
+        if narrowed_matches != [source.asset_name]:
+            return None
+        config = {**source.config, "repo_filename": narrowed}
+        source = replace(source, config=config)
+        candidates = narrowed_matches
     if file_arch:
         for name in candidates:
             if architecture(name) not in (None, file_arch):
