@@ -8,6 +8,24 @@ Site do projeto (pt-BR, English, Español): **https://zonaro.github.io/gear-leve
 
 A landing está em [`docs/`](docs/README.md), usa HTML/CSS/JavaScript puro com i18n, e destaca o [instalador em um comando](install.sh).
 
+## Gerenciador no navegador (versão 0.2)
+
+Além do toggle ON/OFF, o popup apresenta uma lista resumida dos AppImages instalados. O botão **Gerenciar no navegador** abre uma aba com um painel inspirado na organização visual do Gear Lever, mas implementado em HTML/CSS/JS (não é uma incorporação da interface GTK).
+
+O painel permite **buscar aplicativos, consultar versões e fontes, verificar atualizações, atualizar, mover para a lixeira e configurar/remover fontes personalizadas**. O backend é sempre a CLI do Gear Lever via Native Messaging. Todas as ações que modificam instalações ou fontes pedem confirmação explícita; arquivos arbitrários fora da lista instalada não são aceitos. Fontes embutidas não podem ser substituídas pelo painel.
+
+### Versões e arquiteturas dos releases
+
+O Grab usa o nome do **asset do release** (não nomes possivelmente alterados pelo navegador, como `(1)`) como `repo_filename` do Gear Lever. Exemplos:
+
+- `MyApp-v2.6.1-x86_64.AppImage` → `MyApp-*-x86_64.AppImage`
+- `MyApp-2.6.1-aarch64.AppImage` → `MyApp-*-aarch64.AppImage`
+- `MyApp-2.6.1-i686.AppImage` → `MyApp-*-i686.AppImage`
+
+Distingue `x86_64/amd64`, `x86/i686`, `arm64/aarch64`, `armv7` e `riscv64`. O padrão troca **somente a versão**, preservando edição e arquitetura. Para padrões contendo `*`, consulta o release oficial (GitHub/GitLab/Codeberg) e só registra automaticamente a fonte quando **um único asset** corresponde. Se a consulta falhar ou o wildcard coincidir com outros assets, integra sem fonte personalizada: nunca seleciona outra arquitetura por aproximação. Se houver informação de arquitetura no executável ELF, ela é confrontada com a indicada no asset.
+
+**Importante:** para receber a nova interface e o novo host após atualizar o código, execute novamente o instalador, depois **recarregue a extensão** na página de extensões do navegador. Extensões carregadas manualmente não recebem atualizações automáticas da loja.
+
 ## Funcionamento
 
 Quando a extensão está **ON**, ela observa downloads de arquivos `.AppImage` (sem alterar o download normal). Após o navegador concluir um download HTTPS:
@@ -64,7 +82,7 @@ Para um teste real, baixe uma AppImage de um release GitHub válido após habili
 
 - Só arquivos terminados em `.AppImage`, downloads HTTPS concluídos, arquivo regular pertencente ao usuário e assinatura AppImage são processados.
 - URLs finais CDN e redirecionamentos podem ocultar a origem. Sem evidência confiável de release, não registramos uma fonte inventada.
-- Assets versionados recebem wildcard limitado ao número encontrado na tag de release; padrões especiais podem exigir ajuste manual no Gear Lever.
+- Assets versionados recebem wildcard na versão completa do nome; somente padrões com correspondência única no release são registrados automaticamente. A API pode bloquear a validação (por exemplo, limite de requisições), deixando o AppImage integrado sem uma fonte personalizada.
 - Navegadores Flatpak/sandboxed podem não conseguir localizar o host, exigindo integração adicional.
 - Não testa assinatura criptográfica do publisher; **assinatura ELF/AppImage não prova autenticidade**.
 - Se o Gear Lever mantiver o original após integrar, o Grab não o exclui por conta própria.

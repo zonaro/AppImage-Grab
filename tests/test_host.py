@@ -54,12 +54,37 @@ class HostTests(unittest.TestCase):
             self.assertEqual(repeated["status"], "already_processed")
             self.assertEqual(len(FakeGearLever.calls), 1)
 
+    def test_wildcard_source_is_verified(self):
+        with tempfile.TemporaryDirectory() as dirname:
+            target = Path(dirname) / "myapp-1.2-x86_64.AppImage"
+            header = bytearray(60)
+            header[0:4] = b"\x7fELF"
+            header[5] = 1
+            header[8:11] = b"AI\x02"
+            header[18:20] = (62).to_bytes(2, "little")
+            target.write_bytes(header)
+            self.assertEqual(host.elf_architecture(target), "x86_64")
+            request = {"action": "integrate", "filename": str(target),
+                       "url": "https://github.com/a/b/releases/download/v1.2/myapp-1.2-arm64.AppImage"}
+            FakeGearLever.calls = []
+            with patch.object(host, "STATE_DIR", Path(dirname) / "state"):
+                result = host.handle(request, FakeGearLever)
+            self.assertEqual(result["status"], "integrated_without_source")
+            self.assertIsNone(FakeGearLever.calls[0][1])
+
     def test_http_rejected(self):
         with tempfile.TemporaryDirectory() as dirname:
             target = Path(dirname) / "example.AppImage"
             target.write_bytes(b"\x7fELF" + b"\0" * 4 + b"AI\x02" + b"\0" * 32)
             with self.assertRaises(ValueError):
                 host.handle({"action": "integrate", "filename": str(target), "url": "http://example.com/a.AppImage"})
+
+    def test_mutation_requires_confirmation(self):
+        with self.assertRaises(ValueError):
+            host.handle({"action": "removeApp", "path": "/tmp/app.AppImage"})
+        with self.assertRaises(ValueError):
+            host.handle({"action": "setSource", "path": "/tmp/app.AppImage",
+                         "manager": "GithubUpdater", "options": {}})
 
 
 if __name__ == "__main__":

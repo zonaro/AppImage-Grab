@@ -26,3 +26,12 @@ bridge.host
 - A extensão não altera o download do navegador; instala o arquivo baixado apenas quando ON e finalizado.
 - Sem adivinhar repositório com base apenas no nome do arquivo ou na URL genérica da página.
 - O host é invocado com autorização da extensão específica (allowed_origins / allowed_extensions), não é uma API HTTP aberta.
+
+## v0.2 — arquitetura e UI
+
+- `bridge.sources` extrai o **nome do asset do release** da URL original; troca semver por `*` mantendo arquitetura e edição.
+- `bridge.sources.verify_source` compara arquitetura do asset com ELF `e_machine`; para wildcards consulta API do release conhecido, exige asset original presente e **único match** para o glob. Sem verificação ou glob ambíguo: não configura fonte.
+- A biblioteca `bridge.manager.AppManager` oferece leitura de instalados/updates e ações validadas na CLI Gear Lever (atualizar, remover para lixeira, editar/desfazer fonte).
+- O host Native Messaging aceita `listInstalled`, `listUpdates`, `updateApp`, `removeApp`, `setSource`, `unsetSource`, além de `integrate` e `ping`. Operações mutáveis exigem `confirmed: true` e caminho exatamente presente na lista do Gear Lever.
+- Popup oferece acesso rápido e toggle; `manager.html` abre em aba própria para tela completa, com busca, status e ações, sem executar programas arbitrários.
+- O frontend imita conceitos do fluxo Gear Lever, mas não embute a janela GTK nem copia interface binária.

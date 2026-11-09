@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Gear Lever Grab",
   "description": "Importa downloads AppImage para o Gear Lever e associa fontes de atualização.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "permissions": ["downloads", "storage", "nativeMessaging"],
   "action": {"default_title": "Gear Lever Grab", "default_popup": "popup.html"},
   "background": {"scripts": ["background.js"]},

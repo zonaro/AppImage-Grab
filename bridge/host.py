@@ -1,4 +1,4 @@
-"""One-shot Native Messaging host: 4-byte native-endian length + JSON."""
+"""One-shot Native Messaging bridge: length-prefixed JSON on stdin/stdout."""
 import fcntl
 import hashlib
 import json
@@ -10,10 +10,12 @@ import struct
 import sys
 
 from .gearlever import GearLever, GearLeverError
-from .sources import detect_source
+from .manager import AppManager
+from .sources import architecture, detect_source, verify_source
 
 MAX_BYTES = 1024 * 1024
 STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local/state"))) / "gear-lever-grab"
+ELF_ARCH = {3: "x86", 40: "arm", 62: "x86_64", 183: "arm64", 243: "riscv64"}
 
 
 def _read_exact(stream, length):
@@ -59,26 +61,32 @@ def validate_file(value):
     metadata = file.lstat()
     if not stat.S_ISREG(metadata.st_mode) or metadata.st_uid != os.getuid():
         raise ValueError("AppImage deve ser arquivo regular pertencente ao usuário (sem symlinks)")
-    if metadata.st_size < 11:
+    if metadata.st_size < 20:
         raise ValueError("Arquivo incompleto")
     with file.open("rb") as stream:
-        header = stream.read(11)
+        header = stream.read(20)
     if header[:4] != b"\x7fELF" or header[8:11] not in (b"AI\x01", b"AI\x02"):
         raise ValueError("Arquivo não possui assinatura de AppImage Tipo 1 ou 2")
     return file
 
 
-def handle(request, adapter_factory=GearLever):
-    if request.get("action") == "ping":
-        return {"ok": True, "status": "ready"}
-    if request.get("action") != "integrate":
-        raise ValueError("Ação inválida")
+def elf_architecture(file: Path):
+    with file.open("rb") as stream:
+        header = stream.read(20)
+    byteorder = {1: "little", 2: "big"}.get(header[5]) if len(header) >= 20 else None
+    if not byteorder:
+        return None
+    return ELF_ARCH.get(int.from_bytes(header[18:20], byteorder))
+
+
+def _integrate(request, adapter_factory):
     file = validate_file(request.get("filename"))
     fields = {k: request.get(k, "") for k in ("url", "finalUrl", "referrer")}
     if any(not isinstance(v, str) or len(v) > 8192 for v in fields.values()):
         raise ValueError("URL inválida")
     if not fields["url"].startswith("https://"):
         raise ValueError("Somente downloads HTTPS são processados automaticamente")
+
     STATE_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
     identity = json.dumps([str(file), file.stat().st_size, file.stat().st_mtime_ns, fields["url"]])
     key = hashlib.sha256(identity.encode()).hexdigest()
@@ -96,9 +104,16 @@ def handle(request, adapter_factory=GearLever):
 
         source = detect_source(fields["url"], final_url=fields["finalUrl"],
                                referrer=fields["referrer"])
+        elf_arch = elf_architecture(file)
+        source = verify_source(source, elf_arch=elf_arch)
         result = adapter_factory().integrate(file, source)
-        saved = {"installedPath": result.installed_path,
-                 "updateManager": result.manager, "sourceOrigin": result.origin}
+        saved = {
+            "installedPath": result.installed_path,
+            "updateManager": result.manager,
+            "sourceOrigin": result.origin,
+            "sourcePattern": source.pattern if result.status == "integrated_with_source" and source else None,
+            "architecture": elf_arch or (architecture(source.asset_name) if source else None),
+        }
         previous[key] = saved
         temp = receipts.with_suffix(".tmp")
         with temp.open("w") as stream:
@@ -108,10 +123,36 @@ def handle(request, adapter_factory=GearLever):
         return {"ok": True, "status": result.status, **saved}
 
 
+def handle(request, adapter_factory=GearLever):
+    action = request.get("action")
+    if action == "ping":
+        return {"ok": True, "status": "ready", "version": 2}
+    if action == "integrate":
+        return _integrate(request, adapter_factory)
+    if action not in ("listInstalled", "listUpdates", "updateApp", "removeApp",
+                      "setSource", "unsetSource"):
+        raise ValueError("Ação inválida")
+    if action in ("updateApp", "removeApp", "setSource", "unsetSource") and request.get("confirmed") is not True:
+        raise ValueError("Confirmação explícita obrigatória")
+    manager = AppManager(adapter_factory())
+    if action == "listInstalled":
+        return {"ok": True, "apps": manager.list_installed()}
+    if action == "listUpdates":
+        return {"ok": True, "apps": manager.updates()}
+    if action == "updateApp":
+        return {"ok": True, **manager.update(request.get("path"))}
+    if action == "removeApp":
+        return {"ok": True, **manager.remove(request.get("path"))}
+    if action == "setSource":
+        return {"ok": True, **manager.set_source(request.get("path"), request.get("manager"),
+                                                request.get("options"))}
+    return {"ok": True, **manager.unset_source(request.get("path"))}
+
+
 def main():
     STATE_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
-    logging.basicConfig(filename=STATE_DIR / "host.log",
-                        level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    logging.basicConfig(filename=STATE_DIR / "host.log", level=logging.INFO,
+                        format="%(asctime)s %(levelname)s %(message)s")
     try:
         request = read_message(sys.stdin.buffer)
         if request is None:

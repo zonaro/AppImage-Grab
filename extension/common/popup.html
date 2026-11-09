@@ -5,22 +5,29 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Gear Lever Grab</title>
   <link rel="stylesheet" href="popup.css">
+  <script defer src="native-client.js"></script>
   <script defer src="popup.js"></script>
 </head>
 <body>
   <main>
-    <header><span class="mark" aria-hidden="true">↓</span><div>
-      <h1>Gear Lever Grab</h1><p>AppImage → Gear Lever</p>
-    </div></header>
-    <section class="toggle">
+    <header><div class="brand-mark" aria-hidden="true">↓</div><div class="header-title">
+      <h1>Gear Lever Grab</h1><p>AppImages no navegador</p>
+    </div><span class="version-label">v0.2</span></header>
+    <section class="toggle-card">
       <div><strong>Integração automática</strong><small id="description">Desativada</small></div>
       <label class="switch">
         <input id="enabled" type="checkbox" role="switch" aria-label="Ativar integração automática">
         <span class="track"></span>
       </label>
     </section>
+    <section class="installed" aria-labelledby="installed-title">
+      <div class="section-head"><strong id="installed-title">Meus AppImages</strong><button id="refresh" class="icon-button" title="Atualizar lista" aria-label="Atualizar lista">↻</button></div>
+      <p id="apps-status" class="muted" role="status">Carregando…</p>
+      <ul id="apps-list" class="apps-list" aria-label="AppImages instalados"></ul>
+      <button type="button" id="manage" class="manage-button">Gerenciar no navegador <span aria-hidden="true">↗</span></button>
+    </section>
     <section class="history"><strong>Última atividade</strong><p id="activity" role="status">Nenhuma atividade ainda.</p></section>
-    <footer>Com ON, AppImages baixadas via HTTPS são integradas ao Gear Lever. O app baixado não é iniciado automaticamente.</footer>
+    <footer>O Gear Lever continua responsável pelas instalações e atualizações. A integração só roda com ON.</footer>
   </main>
 </body>
 </html>

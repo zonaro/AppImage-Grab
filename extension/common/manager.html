@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f5f6f8">
+<title>Meus AppImages — Gear Lever Grab</title>
+<link rel="stylesheet" href="manager.css">
+<script defer src="native-client.js"></script>
+<script defer src="manager.js"></script>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-icon" aria-hidden="true">↓</span><div><strong>Gear Lever Grab</strong><small>Gerenciador de AppImages</small></div></div>
+    <nav aria-label="Navegação do gerenciador">
+      <button type="button" class="nav-item active" id="nav-installed"><span aria-hidden="true">▣</span> Instalados</button>
+      <button type="button" class="nav-item" id="nav-updates"><span aria-hidden="true">↻</span> Atualizações</button>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="side-info"><span class="status-led" aria-hidden="true"></span> Conectado ao Gear Lever local</div>
+      <a href="https://github.com/zonaro/gear-lever-grab" target="_blank" rel="noopener noreferrer">Documentação e código ↗</a>
+      <small>Interface web local. Os comandos são executados pelo Gear Lever através do serviço Native Messaging.</small>
+    </div>
+  </aside>
+  <main class="content">
+    <header class="topbar">
+      <div><span class="breadcrumb">Gerenciador / <strong id="breadcrumb">Instalados</strong></span></div>
+      <div class="top-actions"><label class="automation" title="Integração automática"><span>Download automático</span><input type="checkbox" id="enabled" role="switch" aria-label="Ativar integração automática"></label><button type="button" id="refresh" class="button secondary"><span aria-hidden="true">↻</span> Atualizar lista</button></div>
+    </header>
+    <div class="body-content">
+      <section class="headline"><div><p class="eyebrow">GERENCIADO PELO GEAR LEVER</p><h1>Meus AppImages</h1><p class="subtitle">Todos os seus aplicativos em um só lugar. Consulte versões, verifique atualizações e gerencie fontes sem sair do navegador.</p></div><span class="beta-tag">BETA</span></section>
+      <section class="stats" aria-label="Resumo">
+        <article class="stat"><span class="stat-symbol green" aria-hidden="true">▣</span><div><span>Instalados</span><strong id="total-count">—</strong></div></article>
+        <article class="stat"><span class="stat-symbol purple" aria-hidden="true">⌁</span><div><span>Com fonte de atualização</span><strong id="sources-count">—</strong></div></article>
+        <article class="stat"><span class="stat-symbol blue" aria-hidden="true">↻</span><div><span>Atualizações encontradas</span><strong id="updates-count">—</strong></div></article>
+      </section>
+      <section class="catalog" aria-labelledby="catalog-title">
+        <div class="catalog-header">
+          <div><h2 id="catalog-title">Aplicativos instalados</h2><p id="list-subtitle">Carregando aplicativos do Gear Lever…</p></div>
+          <button type="button" id="check-updates" class="button primary">Verificar atualizações</button>
+        </div>
+        <div class="filters"><label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Buscar aplicativo ou arquivo…" aria-label="Buscar AppImages"></label><div class="segments" role="group" aria-label="Filtro"><button type="button" class="active" id="filter-all">Todos</button><button type="button" id="filter-updates">Com atualização</button></div></div>
+        <div id="notice" class="notice" role="status" aria-live="polite"></div>
+        <div id="apps" class="apps" aria-live="polite"></div>
+      </section>
+      <section class="disclaimer"><strong>O Gear Lever permanece no controle.</strong> Esta interface usa as operações oficiais da CLI do Gear Lever. Atualizações, alterações nas fontes e remoções só são realizadas mediante sua confirmação. A remoção usa a lixeira padrão do Gear Lever.</section>
+    </div>
+  </main>
+</div>
+<dialog id="source-dialog" aria-labelledby="source-title">
+  <form method="dialog" id="source-form">
+    <div class="dialog-header"><div><p class="eyebrow">FONTE DE ATUALIZAÇÃO</p><h2 id="source-title">Configurar fonte</h2><p id="source-app"></p></div><button type="button" id="close-source" class="close" aria-label="Fechar">×</button></div>
+    <p class="source-help">Informe a origem exata do aplicativo. O padrão de arquivo pode usar um <code>*</code> na posição da versão, preservando a arquitetura, por exemplo: <code>MeuApp-*-x86_64.AppImage</code>.</p>
+    <label>Tipo de fonte<select id="source-manager">
+      <option value="GithubUpdater">GitHub Releases</option>
+      <option value="GitlabUpdater">GitLab Releases</option>
+      <option value="CodebergUpdater">Codeberg Releases</option>
+      <option value="StaticFileUpdater">URL estática HTTPS</option>
+    </select></label>
+    <div id="repo-fields">
+      <label id="repo-label">Repositório / projeto<input id="source-repo" autocomplete="off" placeholder="usuario/repositorio"></label>
+      <label>Nome do asset no release<input id="source-pattern" autocomplete="off" spellcheck="false" placeholder="MeuApp-*-x86_64.AppImage"></label>
+      <label class="checkline" id="pre-release-label"><input type="checkbox" id="source-prerelease"> Incluir pré-lançamentos</label>
+    </div>
+    <label id="static-fields" hidden>URL de download HTTPS<input id="source-url" type="url" placeholder="https://exemplo.org/app.AppImage" autocomplete="off"></label>
+    <p id="dialog-error" class="dialog-error" role="alert" hidden></p>
+    <div class="dialog-actions"><button type="button" id="unset-source" class="button danger-outline" hidden>Remover fonte personalizada</button><div class="spacer"></div><button type="button" id="cancel-source" class="button secondary">Cancelar</button><button type="submit" id="save-source" class="button primary">Salvar fonte</button></div>
+  </form>
+</dialog>
+</body>
+</html>

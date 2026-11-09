@@ -20,6 +20,9 @@ jobs:
       - name: Validate extension JavaScript
         run: |
           node --check extension/common/background.js
+          node --check extension/common/native-client.js
+          node --check extension/common/manager.js
+          node --check extension/common/popup.js
           node --check extension/common/popup.js
       - name: Shell syntax and build
         run: |
@@ -29,3 +32,7 @@ jobs:
         run: |
           python3 -m json.tool dist/chromium/manifest.json >/dev/null
           python3 -m json.tool dist/firefox/manifest.json >/dev/null
+          test -f dist/chromium/manager.html
+          test -f dist/chromium/native-client.js
+          test -f dist/firefox/manager.html
+          test -f dist/firefox/native-client.js
