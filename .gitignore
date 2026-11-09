@@ -11,3 +11,6 @@ keys/
 *.pem
 *.crx
 *.xpi
+
+# Generated from git HEAD at install time
+/version.json

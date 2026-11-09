@@ -1,12 +1,17 @@
+// Background revision is loaded once when the browser starts the extension.
+if (typeof importScripts === 'function' && !globalThis.GLGUpdate) {
+  importScripts('build-revision.js', 'native-client.js', 'update-check.js');
+}
 /* Chromium MV3 / Firefox MV3: observe completed downloads, never intercept. */
 const api = globalThis.browser || globalThis.chrome;
 const HOST = 'br.com.redclaw.gear_lever_grab';
 const working = new Set();
 
 async function badge() {
-  const { enabled = false } = await api.storage.local.get('enabled');
-  await api.action.setBadgeText({ text: enabled ? 'ON' : 'OFF' });
-  await api.action.setBadgeBackgroundColor({ color: enabled ? '#28876c' : '#777782' });
+  const { enabled = false, updateStatus } = await api.storage.local.get(['enabled', 'updateStatus']);
+  const newer = Boolean(updateStatus?.updateAvailable || updateStatus?.needsReload);
+  await api.action.setBadgeText({ text: newer ? 'NEW' : enabled ? 'ON' : 'OFF' });
+  await api.action.setBadgeBackgroundColor({ color: newer ? '#a96b22' : enabled ? '#28876c' : '#777782' });
 }
 
 async function result(status, detail) {
@@ -105,8 +110,27 @@ async function finished(delta) {
 api.downloads.onCreated.addListener(item => { void created(item); });
 api.downloads.onChanged.addListener(delta => { void finished(delta); });
 api.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && changes.enabled) void badge();
+  if (area === 'local' && (changes.enabled || changes.updateStatus)) void badge();
 });
-api.runtime.onInstalled.addListener(() => { void badge(); });
-api.runtime.onStartup?.addListener(() => { void badge(); });
-void badge();
+
+async function checkGrabUpdates() {
+  if (globalThis.GLGUpdate) {
+    try { await globalThis.GLGUpdate.check(); } catch { /* Offline or host unavailable. */ }
+  }
+  await badge();
+}
+
+api.alarms.onAlarm.addListener(alarm => {
+  if (alarm.name === 'grab-commit-check') void checkGrabUpdates();
+});
+api.runtime.onInstalled.addListener(() => {
+  void api.alarms.create('grab-commit-check', { periodInMinutes: 720, delayInMinutes: 1 });
+  void checkGrabUpdates();
+});
+api.runtime.onStartup?.addListener(() => {
+  void api.alarms.create('grab-commit-check', { periodInMinutes: 720, delayInMinutes: 1 });
+  void checkGrabUpdates();
+});
+// In MV3 the worker may start for a download rather than onStartup.
+void api.alarms.create('grab-commit-check', { periodInMinutes: 720, delayInMinutes: 1 });
+void checkGrabUpdates();

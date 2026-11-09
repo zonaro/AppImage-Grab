@@ -1,22 +1,21 @@
 #!/usr/bin/env bash
-# User-scoped setup. Browser security requires manual approval for unpacked extensions.
+# Re-running this script installs or repairs the newest Git main commit.
 set -euo pipefail
-# Quando executado por curl | bash, baixa temporariamente o repositório.
-# Quando executado de um clone local, utiliza diretamente os arquivos locais.
-# Prefer local files only when actually invoked from a script file.
-# A curl | bash execution must not silently reuse files from the current directory.
-ROOT=""
-if [[ -n "${BASH_SOURCE[0]:-}" && -f "${BASH_SOURCE[0]}" ]]; then
-  ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-fi
-if [[ -z "$ROOT" || ! -f "$ROOT/bridge/host.py" || ! -f "$ROOT/scripts/build-extensions.sh" ]]; then
-  command -v git >/dev/null || { echo 'git é obrigatório para instalação remota' >&2; exit 1; }
+REPOSITORY="https://github.com/zonaro/gear-lever-grab.git"
+if [[ "$(printenv GLG_FROM_MAIN || :)" != "1" ]]; then
+  command -v git >/dev/null || { echo "Git is required to install/update." >&2; exit 1; }
   TEMP_DIR="$(mktemp -d)"
   trap 'rm -rf -- "$TEMP_DIR"' EXIT
-  git clone --quiet --depth 1 https://github.com/zonaro/gear-lever-grab.git "$TEMP_DIR/repository"
-  bash "$TEMP_DIR/repository/install.sh"
+  echo "Fetching the latest Gear Lever Grab revision from main…"
+  git clone --quiet --depth 1 --branch main "$REPOSITORY" "$TEMP_DIR/repository"
+  GLG_FROM_MAIN=1 bash "$TEMP_DIR/repository/install.sh"
   exit $?
 fi
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+[[ -d "$ROOT/.git" ]] || { echo "The installer must run from the freshly cloned main branch." >&2; exit 1; }
+command -v python3 >/dev/null || { echo "Python 3 is required." >&2; exit 1; }
+REVISION="$(git -C "$ROOT" rev-parse --verify HEAD)"
+[[ "$REVISION" =~ ^[[:xdigit:]]{40}$ ]] || { echo "Invalid Git commit SHA." >&2; exit 1; }
 DEST="$HOME/.local/share/gear-lever-grab"
 if [ -n "$(printenv XDG_DATA_HOME || :)" ]; then DEST="$(printenv XDG_DATA_HOME)/gear-lever-grab"; fi
 BIN="$HOME/.local/bin/gear-lever-grab-host"
@@ -27,7 +26,7 @@ command -v python3 >/dev/null || { echo 'python3 is required' >&2; exit 1; }
 if ! command -v gearlever >/dev/null && ! { command -v flatpak >/dev/null && flatpak info it.mijorus.gearlever >/dev/null 2>&1; }; then
   echo 'Warning: Gear Lever was not detected. Install it before activating the extension.' >&2
 fi
-bash "$ROOT/scripts/build-extensions.sh"
+GLG_BUILD_SHA="$REVISION" bash "$ROOT/scripts/build-extensions.sh"
 mkdir -p "$DEST" "$(dirname "$BIN")" "$KEY_DIR"
 chmod 700 "$KEY_DIR"
 cp -a "$ROOT/bridge" "$ROOT/scripts" "$ROOT/extension" "$ROOT/dist" "$DEST/"
@@ -52,7 +51,14 @@ if [ -s "$PACKAGE_DIR/chromium-id.txt" ] && [ -f "$PACKAGE_DIR/gear-lever-grab.c
   PACKED_ID="$(tr -d '\n' < "$PACKAGE_DIR/chromium-id.txt")"
   HOST_ARGS+=(--packed-extension-id "$PACKED_ID")
 fi
-python3 "$DEST/scripts/register_hosts.py" ${HOST_ARGS[@]}
+python3 "$DEST/scripts/register_hosts.py" "${HOST_ARGS[@]}"
+
+# The installed version is written last, after a successful bridge update.
+# The rename is atomic so the host never reads truncated JSON.
+cp "$ROOT/version.json" "$DEST/version.json.pending"
+mv -f "$DEST/version.json.pending" "$DEST/version.json"
+printf '\nInstalled Git main commit: %s\n' "$REVISION"
+
 
 cat <<EOF
 
@@ -87,7 +93,7 @@ FIREFOX / FLOORP / WATERFOX
 Finally open the extension popup and switch automation ON if you want it.
 It starts OFF. The OFF position never interferes with normal downloads.
 
-Re-run the one-line installer to update files; reload a previously
+Re-run the same one-line installer for future updates; reload a previously
 unpacked extension in your browser's extensions page.
 To uninstall the bridge: bash "$DEST/uninstall.sh"
 EOF

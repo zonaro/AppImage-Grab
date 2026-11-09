@@ -13,6 +13,19 @@ from .gearlever import GearLever, GearLeverError
 from .manager import AppManager
 from .sources import architecture, detect_source, verify_source
 
+def installed_commit() -> str | None:
+    """Read the commit recorded by the installer, never from an untrusted request."""
+    marker = Path(__file__).resolve().parent.parent / "version.json"
+    try:
+        value = json.loads(marker.read_text(encoding="utf-8")).get("commit")
+        if (isinstance(value, str) and len(value) == 40 and
+                all(c in "0123456789abcdef" for c in value.lower())):
+            return value.lower()
+    except (OSError, ValueError, TypeError):
+        pass
+    return None
+
+
 MAX_BYTES = 1024 * 1024
 STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local/state"))) / "gear-lever-grab"
 ELF_ARCH = {3: "x86", 40: "arm", 62: "x86_64", 183: "arm64", 243: "riscv64"}
@@ -127,6 +140,8 @@ def handle(request, adapter_factory=GearLever):
     action = request.get("action")
     if action == "ping":
         return {"ok": True, "status": "ready", "version": 2}
+    if action == "getVersion":
+        return {"ok": True, "commit": installed_commit(), "branch": "main"}
     if action == "integrate":
         return _integrate(request, adapter_factory)
     if action not in ("listInstalled", "listUpdates", "updateApp", "removeApp",

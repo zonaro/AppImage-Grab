@@ -33,3 +33,12 @@ input:focus-visible+.track{outline:2px solid #85adf4;outline-offset:3px}
 .manage-button{width:100%;margin-top:12px;padding:11px;background:light-dark(#dfefe4,#274635);color:light-dark(#235638,#c4f3d2);border:1px solid light-dark(#c6e0ce,#416f52);border-radius:10px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:750;cursor:pointer}
 .history p{color:var(--muted);font-size:11px;line-height:1.5;margin-top:7px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:65px;overflow:auto}
 footer{padding-top:14px;margin-top:13px;border-top:1px solid var(--line);font-size:10px;line-height:1.5;color:var(--muted)}
+
+.update-notice{margin-top:15px;padding:13px;border:1px solid light-dark(#d5b78b,#765b35);background:light-dark(#fff7e9,#393022);border-radius:12px}
+.update-notice[hidden]{display:none}
+.update-notice>strong{font-size:12px;color:light-dark(#865318,#f1cf98)}
+.update-notice p{font-size:11px;color:var(--muted);line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+.update-actions{display:flex;gap:8px}
+.update-actions button{padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text);font-size:11px;font-weight:650;cursor:pointer}
+.update-actions button:first-child{background:light-dark(#fae8c7,#624824)}
+#update-command{display:block;margin-top:9px;font-size:9px;overflow-wrap:anywhere;color:var(--muted)}

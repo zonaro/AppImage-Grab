@@ -19,3 +19,8 @@
 - Do not modify browser profiles or use enterprise forced-install policies. Signed CRX may be manually installed where supported; fallback is developer-mode unpacked. Unsigned Firefox XPI is for temporary install only.
 - Preserve old unpacked extension ID for existing users; pass both unpacked and packaged IDs to Native Messaging when a packed ID is available.
 - README.md must be fully in English. Update i18n in `docs/assets/i18n.js` together for pt-BR/en/es when describing installation.
+
+- The Git SHA of main is the only application build identifier, embedded by scripts/build-extensions.sh into version.json and build-revision.js for both extension flavors. The installer must fetch the newest main even if invoked from an old local checkout.
+- bridge/host.py getVersion exposes installed version.json without initializing Gear Lever. Write installed revision LAST after successful installation.
+- The extension periodically compares GitHub commits/main against its embedded commit and host commit; badge NEW and UI alerts do not run shell scripts and must not toggle ON/OFF.
+- Keep README.md English and do not claim locally packaged CRX/XPI can be silently updated inside a browser.

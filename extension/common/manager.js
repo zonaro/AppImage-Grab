@@ -259,3 +259,31 @@ api.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.enabled) toggle.checked = Boolean(changes.enabled.newValue);
 });
 void refreshApps();
+
+
+// Separate app updates from Gear Lever Grab's own Git commit updates.
+function renderGrabUpdate(update) {
+  const banner = $('grab-update-banner');
+  banner.hidden = !(update?.updateAvailable || update?.needsReload);
+  if (banner.hidden) return;
+  $('grab-update-title').textContent = update.updateAvailable
+    ? 'A new Gear Lever Grab commit is available' : 'Reload the browser extension';
+  $('grab-update-description').textContent =
+    'Latest main: ' + (update.latestCommit?.slice(0, 12) || 'unknown') +
+    ' • Extension: ' + (update.bundleCommit?.slice(0, 12) || 'unknown') +
+    ' • Python bridge: ' + (update.hostCommit?.slice(0, 12) || 'unknown') +
+    '. Re-run the installer, then reload the extension if it was loaded unpacked.';
+}
+$('grab-update-copy').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(GLGUpdate.COMMAND);
+    $('grab-update-copy').textContent = 'Copied!';
+  } catch {
+    window.prompt('Copy and run in your terminal:', GLGUpdate.COMMAND);
+  }
+});
+api.storage.local.get('updateStatus').then(data => renderGrabUpdate(data.updateStatus));
+api.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.updateStatus) renderGrabUpdate(changes.updateStatus.newValue);
+});
+void GLGUpdate.check();

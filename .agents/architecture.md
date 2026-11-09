@@ -44,3 +44,11 @@ bridge.host
 - The CRX ID can differ from `extension/chromium/id.txt` (legacy unpacked manifest key), so the host manifest allowlist includes both IDs.
 - Silent installation is intentionally unsupported: no browser profile manipulation, enterprise policy injection, or forced extension loading. Print manual `Load unpacked` fallback for Chromium and temporary debug install for unsigned Firefox XPI.
 - `scripts/open_browser_extensions.py` opens only the preferred detected browser's management page in an interactive graphical terminal. Suppress with `GLG_OPEN_BROWSER=0`.
+
+## Git main commit-based updates
+
+- install.sh always clones the latest public main; GLG_FROM_MAIN=1 is only set when re-entering the fetched script. Both local and curl-piped invocations use this flow.
+- scripts/build-extensions.sh reads GLG_BUILD_SHA (or git HEAD), stamps dist/{chromium,firefox}/version.json and build-revision.js. The root version.json is copied to the installed bridge after all preceding steps complete.
+- Python Native Messaging handles getVersion without touching Gear Lever. Browser extension GLGUpdate checks https://api.github.com/repos/zonaro/gear-lever-grab/commits/main at most once per 12h, using storage.local cached result and an MV3 alarm.
+- Background action badge says NEW if main revision differs from extension revision or bridge revision, otherwise ON/OFF as before. Popup and manager show the three SHAs and a copyable install one-liner. No automatic remote script execution.
+- Browser reload or manual CRX/XPI reinstallation is still required after the installer refreshes package files; the bridge updates immediately.

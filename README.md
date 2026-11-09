@@ -93,9 +93,29 @@ The extension popup shows its ON/OFF toggle, recent activity, and a compact list
 
 All management requests go through the **Gear Lever CLI**, not a separate app database. Updates and removals require explicit confirmation. Removal uses Gear Lever's default Trash behavior rather than permanent deletion. The browser UI is inspired by Gear Lever's workflow, not a pixel-perfect clone of its GTK interface.
 
+## Updating by Git commit SHA
+
+**The Git commit ID of the latest `main` commit is the release identifier.** No extra version registry, tags, or separate update server is needed.
+
+The installer is also the updater. Run exactly the same command at any time:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/zonaro/gear-lever-grab/main/install.sh | bash
+```
+
+Every invocation fetches a fresh shallow clone of **`main`**, even when the script is executed from an older local checkout. It builds both extension variants using that commit SHA, updates the local Python Native Messaging bridge, regenerates the CRX/XPI packages, and writes `version.json` to the installed application only when the preceding steps succeed. The same SHA is embedded into both extension bundles as `version.json` and `build-revision.js`.
+
+**Update awareness:** while installed, the extension checks GitHub's public `commits/main` API roughly every 12 hours (and on browser startup). It compares the latest main commit with its packaged commit and the Python host's installed commit, which is exposed by a read-only `getVersion` Native Messaging action. When any component is behind, the extension displays a **NEW** badge, a notice in the popup and a notice in the full browser manager; its copy button provides the installer command. The user can request an immediate check.
+
+The updater only **notifies**; the extension never downloads or executes remote scripts automatically. The ON/OFF switch continues to control **AppImage download automation only**. Commit notifications work even with automation OFF.
+
+**Browser approval is still required after updating extension packages.** The installer refreshes files on disk and the Native Messaging host, but browsers do not automatically adopt a newly built CRX or unsigned XPI. Reload the existing unpacked extension via `chrome://extensions` or `edge://extensions` after installing; for packed packages, install the new CRX/XPI with the browser's approval. If the bridge has the newest commit but your loaded extension does not, the interface shows a reload reminder.
+
+A cache and 12-hour interval limit GitHub API requests. A network error preserves any existing update warning rather than claiming you are current.
+
 ## Updating
 
-Re-run the installation one-liner to refresh the Python bridge and local extension files. Then reload an unpacked extension from your browser's extension page. Locally packaged CRX/XPI files do **not** provide automatic store-style extension updates; reinstall them with user approval when needed.
+Re-run the one-line installer above to update the Python bridge and extension bundles from the newest main commit. Reload an unpacked extension or manually reinstall a locally packaged CRX/XPI; browser extension auto-update is not supported for these local packages.
 
 ## Local development and tests
 

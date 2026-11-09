@@ -5,7 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Gear Lever Grab</title>
   <link rel="stylesheet" href="popup.css">
+  <script defer src="build-revision.js"></script>
   <script defer src="native-client.js"></script>
+  <script defer src="update-check.js"></script>
   <script defer src="popup.js"></script>
 </head>
 <body>
@@ -19,6 +21,16 @@
         <input id="enabled" type="checkbox" role="switch" aria-label="Ativar integração automática">
         <span class="track"></span>
       </label>
+    </section>
+
+    <section id="update-notice" class="update-notice" hidden aria-live="polite">
+      <strong id="update-title">Gear Lever Grab update available</strong>
+      <p id="update-details"></p>
+      <div class="update-actions">
+        <button type="button" id="copy-updater">Copy update command</button>
+        <button type="button" id="recheck-updates">Check again</button>
+      </div>
+      <code id="update-command"></code>
     </section>
     <section class="installed" aria-labelledby="installed-title">
       <div class="section-head"><strong id="installed-title">Meus AppImages</strong><button id="refresh" class="icon-button" title="Atualizar lista" aria-label="Atualizar lista">↻</button></div>

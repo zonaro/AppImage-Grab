@@ -68,3 +68,41 @@ document.getElementById('manage').addEventListener('click', () => {
   void api.tabs.create({ url: api.runtime.getURL('manager.html') });
 });
 void loadApps();
+
+
+// Commit-based update notices operate regardless of the AppImage automation toggle.
+function showGrabUpdate(status) {
+  const panel = document.getElementById('update-notice');
+  if (!status) return;
+  const available = Boolean(status.updateAvailable || status.needsReload);
+  panel.hidden = !available;
+  if (!available) return;
+  document.getElementById('update-title').textContent = status.updateAvailable
+    ? 'New Gear Lever Grab commit available' : 'Reload your browser extension';
+  const short = value => value ? value.slice(0, 12) : 'unknown';
+  document.getElementById('update-details').textContent =
+    'Extension: ' + short(status.bundleCommit) +
+    ' · Native bridge: ' + short(status.hostCommit) +
+    ' · Latest main: ' + short(status.latestCommit) +
+    (status.needsReload ? '\nReload the extension after running the installer.' : '');
+  document.getElementById('update-command').textContent = GLGUpdate.COMMAND;
+}
+
+api.storage.local.get('updateStatus').then(({ updateStatus }) => showGrabUpdate(updateStatus));
+api.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.updateStatus) showGrabUpdate(changes.updateStatus.newValue);
+});
+document.getElementById('copy-updater').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(GLGUpdate.COMMAND);
+    document.getElementById('copy-updater').textContent = 'Copied!';
+  } catch {
+    window.prompt('Copy this command into your Linux terminal:', GLGUpdate.COMMAND);
+  }
+});
+document.getElementById('recheck-updates').addEventListener('click', async event => {
+  event.currentTarget.disabled = true;
+  try { showGrabUpdate(await GLGUpdate.check({force: true})); }
+  finally { event.currentTarget.disabled = false; }
+});
+void GLGUpdate.check();

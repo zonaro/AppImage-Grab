@@ -6,7 +6,9 @@
 <meta name="theme-color" content="#f5f6f8">
 <title>Meus AppImages — Gear Lever Grab</title>
 <link rel="stylesheet" href="manager.css">
+<script defer src="build-revision.js"></script>
 <script defer src="native-client.js"></script>
+<script defer src="update-check.js"></script>
 <script defer src="manager.js"></script>
 </head>
 <body>
@@ -29,6 +31,11 @@
       <div class="top-actions"><label class="automation" title="Integração automática"><span>Download automático</span><input type="checkbox" id="enabled" role="switch" aria-label="Ativar integração automática"></label><button type="button" id="refresh" class="button secondary"><span aria-hidden="true">↻</span> Atualizar lista</button></div>
     </header>
     <div class="body-content">
+      <section id="grab-update-banner" class="disclaimer" hidden role="status" aria-live="polite">
+        <strong id="grab-update-title">Gear Lever Grab update available</strong>
+        <p id="grab-update-description"></p>
+        <button type="button" class="button secondary" id="grab-update-copy">Copy update command</button>
+      </section>
       <section class="headline"><div><p class="eyebrow">GERENCIADO PELO GEAR LEVER</p><h1>Meus AppImages</h1><p class="subtitle">Todos os seus aplicativos em um só lugar. Consulte versões, verifique atualizações e gerencie fontes sem sair do navegador.</p></div><span class="beta-tag">BETA</span></section>
       <section class="stats" aria-label="Resumo">
         <article class="stat"><span class="stat-symbol green" aria-hidden="true">▣</span><div><span>Instalados</span><strong id="total-count">—</strong></div></article>

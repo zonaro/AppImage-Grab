@@ -26,3 +26,14 @@ Futuro: publicar CRX/Web Store e extensão assinada Firefox/AMO, detectar origen
 - [ ] Publish a signed Firefox AMO release for persistent installation.
 - [ ] Establish a publisher signing key and published CRX on supported browser stores (one stable extension ID across machines).
 - [ ] Validate CRX3 installation and native host communication on Edge, Chrome, Brave, Vivaldi and Fedora; refine browser-specific instructions.
+
+## Commit-based updates (v0.4)
+
+- [x] Treat the latest main commit SHA as the installed version.
+- [x] Re-run install.sh as an updater by fetching the newest main even from an older local clone.
+- [x] Stamp the same SHA into the Python bridge and extension bundles/packages.
+- [x] Browser checks GitHub API periodically, caches result and shows NEW badge and update/reload notices.
+- [x] Expose host getVersion without invoking Gear Lever.
+- [x] Keep AppImage automation OFF/ON unrelated to checking extension updates.
+- [ ] Test Edge/Firefox real installation/reinstallation and badge behavior.
+- [ ] Provide future in-browser update flow only if browser-store distribution supports a compliant signed auto-update channel.

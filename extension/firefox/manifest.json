@@ -3,8 +3,31 @@
   "name": "Gear Lever Grab",
   "description": "Importa downloads AppImage para o Gear Lever e associa fontes de atualização.",
   "version": "0.2.0",
-  "permissions": ["downloads", "storage", "nativeMessaging"],
-  "action": {"default_title": "Gear Lever Grab", "default_popup": "popup.html"},
-  "background": {"scripts": ["background.js"]},
-  "browser_specific_settings": {"gecko": {"id": "gear-lever-grab@redclaw.com.br", "strict_min_version": "109.0"}}
+  "permissions": [
+    "downloads",
+    "storage",
+    "nativeMessaging",
+    "alarms"
+  ],
+  "action": {
+    "default_title": "Gear Lever Grab",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "scripts": [
+      "build-revision.js",
+      "native-client.js",
+      "update-check.js",
+      "background.js"
+    ]
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "gear-lever-grab@redclaw.com.br",
+      "strict_min_version": "109.0"
+    }
+  },
+  "host_permissions": [
+    "https://api.github.com/*"
+  ]
 }
