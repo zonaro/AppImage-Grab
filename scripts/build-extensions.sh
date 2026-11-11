@@ -15,6 +15,9 @@ if [[ ! "$COMMIT_ISO" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T ]]; then
   echo "The selected Git commit must be available to derive the extension version." >&2
   exit 1
 fi
+# Fail before packaging if any source icon is malformed (Chrome notifications
+# reject unreadable PNGs with "Unable to download all specified images").
+python3 "$ROOT/scripts/check-icons.py" "$ROOT/extension/common/icons"
 # Clean up package artifacts produced by previous versions.
 # This build ONLY creates unpacked extension folders.
 rm -rf -- "$ROOT/dist/packages"
@@ -27,6 +30,7 @@ for family in chromium firefox; do
     "$REVISION" > "$ROOT/dist/$family/version.json"
   printf 'globalThis.GLG_BUILD_COMMIT = "%s";\n' "$REVISION" > "$ROOT/dist/$family/build-revision.js"
 done
+python3 "$ROOT/scripts/check-icons.py" "$ROOT/dist/chromium/icons" "$ROOT/dist/firefox/icons"
 printf '{"commit":"%s","branch":"main","repository":"zonaro/gear-lever-grab"}\n' \
   "$REVISION" > "$ROOT/version.json"
 printf 'Build revision: %s\nExtension version: %s\nExtensions prepared in:\n  %s\n  %s\n' \

@@ -71,11 +71,32 @@ globalThis.GLGNotifications = (() => {
       title: tr(entry.title), message: tr(entry.message)};
     if (buttons?.length) options.buttons = buttons.map(button => ({title: tr(safe(button.title, 64))}));
     try {
-      try { await api.notifications.create(notificationId, options); }
-      catch (error) {
-        if (!options.buttons) throw error;
-        delete options.buttons; // Firefox/desktop backends may not support buttons.
-        await api.notifications.create(notificationId, options);
+      // Chromium may reject an otherwise valid alert when an image cannot be
+      // decoded. Retry with the independently packaged 32px icon. Firefox and
+      // some Linux backends may also reject optional action buttons.
+      let candidate = options;
+      let alternateIcon = false;
+      let withoutButtons = false;
+      for (;;) {
+        try {
+          await api.notifications.create(notificationId, candidate);
+          break;
+        } catch (error) {
+          const message = String(error?.message || error);
+          const imageFailure = /unable to download all specified images|failed to load.*image|could not load.*image/i.test(message);
+          if (imageFailure && !alternateIcon) {
+            candidate = {...candidate, iconUrl: api.runtime.getURL('icons/icon-32.png')};
+            alternateIcon = true;
+            continue;
+          }
+          if (candidate.buttons && !withoutButtons) {
+            candidate = {...candidate};
+            delete candidate.buttons;
+            withoutButtons = true;
+            continue;
+          }
+          throw error;
+        }
       }
       // 'requested' deliberately does not claim the OS displayed the toast.
       return {status: 'requested', id: notificationId};

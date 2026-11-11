@@ -34,10 +34,13 @@ jobs:
           node scripts/test-store.mjs
           node scripts/test-integration-notifications.mjs
           node scripts/test-notifications.mjs
+          node scripts/test-notification-icons.mjs
           node scripts/test-notification-ui.mjs
           node --check extension/common/page-offers.js
           node --check extension/common/page-offer-background.js
           node scripts/test-page-offers.mjs
+      - name: Check PNG icon integrity
+        run: python3 scripts/check-icons.py extension/common/icons
       - name: Shell syntax and build unpacked extensions
         run: |
           bash -n install.sh uninstall.sh scripts/build-extensions.sh
