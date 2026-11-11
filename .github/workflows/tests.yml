@@ -22,10 +22,13 @@ jobs:
           node --check extension/common/background.js
           node --check extension/common/native-client.js
           node --check extension/common/manager.js
+          node --check extension/common/store-catalog.js
+          node --check extension/common/store.js
           node --check extension/common/update-check.js
           node --check extension/common/popup.js
           node scripts/test-update-check.mjs
           node scripts/test-manager-ui.mjs
+          node scripts/test-store.mjs
           node scripts/test-integration-notifications.mjs
           node --check extension/common/page-offers.js
           node --check extension/common/page-offer-background.js
@@ -42,11 +45,15 @@ jobs:
           python3 -m json.tool dist/chromium/manifest.json >/dev/null
           python3 -m json.tool dist/firefox/manifest.json >/dev/null
           test -f dist/chromium/manager.html
+          test -f dist/chromium/store-catalog.js
+          test -f dist/chromium/store.js
           test -f dist/chromium/native-client.js
           test -f dist/chromium/update-check.js
           test -f dist/chromium/build-revision.js
           test -f dist/chromium/version.json
           test -f dist/firefox/manager.html
+          test -f dist/firefox/store-catalog.js
+          test -f dist/firefox/store.js
           test -f dist/firefox/native-client.js
           test -f dist/firefox/build-revision.js
           test -f dist/chromium/page-offers.js
