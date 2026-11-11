@@ -10,18 +10,24 @@ if [[ ! "$REVISION" =~ ^[[:xdigit:]]{40}$ ]]; then
   echo "A full Git commit SHA is required (set GLG_BUILD_SHA or run from a Git clone)." >&2
   exit 1
 fi
+COMMIT_ISO="$(git -C "$ROOT" show -s --format=%cI "$REVISION" 2>/dev/null || true)"
+if [[ ! "$COMMIT_ISO" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T ]]; then
+  echo "The selected Git commit must be available to derive the extension version." >&2
+  exit 1
+fi
 # Clean up package artifacts produced by previous versions.
 # This build ONLY creates unpacked extension folders.
 rm -rf -- "$ROOT/dist/packages"
 for family in chromium firefox; do
   mkdir -p "$ROOT/dist/$family"
   cp -a "$ROOT/extension/common/." "$ROOT/dist/$family/"
-  cp "$ROOT/extension/$family/manifest.json" "$ROOT/dist/$family/manifest.json"
+  VERSION_INFO="$(python3 "$ROOT/scripts/manifest_version.py" \
+    "$ROOT/extension/$family/manifest.json" "$ROOT/dist/$family/manifest.json" "$COMMIT_ISO")"
   printf '{"commit":"%s","branch":"main","repository":"zonaro/gear-lever-grab"}\n' \
     "$REVISION" > "$ROOT/dist/$family/version.json"
   printf 'globalThis.GLG_BUILD_COMMIT = "%s";\n' "$REVISION" > "$ROOT/dist/$family/build-revision.js"
 done
 printf '{"commit":"%s","branch":"main","repository":"zonaro/gear-lever-grab"}\n' \
   "$REVISION" > "$ROOT/version.json"
-printf 'Build revision: %s\nExtensions prepared in:\n  %s\n  %s\n' \
-  "$REVISION" "$ROOT/dist/chromium" "$ROOT/dist/firefox"
+printf 'Build revision: %s\nExtension version: %s\nExtensions prepared in:\n  %s\n  %s\n' \
+  "$REVISION" "$VERSION_INFO" "$ROOT/dist/chromium" "$ROOT/dist/firefox"

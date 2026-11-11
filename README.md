@@ -62,6 +62,8 @@ Run the same one-liner. The bridge and unpacked extension folders are refreshed 
 
 The extension itself checks GitHub's latest main SHA periodically, and shows a **NEW** badge and an update command when your installed extension/bridge is behind. This check does **not** execute any remote code automatically.
 
+The unpacked extension's version is generated from the **Git commit timestamp**, not the installation time. Both browsers receive the same `YY.DDD.HHmm` timestamp-based release label (two-digit year, day of year, 24-hour time and minute), preserving the timezone recorded in the commit. For example, a commit at 03:52 on November 11, 2026 gives `26.315.0352`. Browser manifests cannot include leading zeros in nonzero numeric components, so the mandatory `version` is `26.315.352`; `version_name` preserves `26.315.0352` for browsers that display it. Leap years may use day 366. Two commits in the same minute share the same manifest version, but the SHA still changes and powers the Grab update checker. The manifests in `extension/` are build templates; **load the generated `dist/` extension**, not the templates. After running the installer, **reload the unpacked extension** in the browser to activate the latest scripts and version.
+
 To avoid automatically opening the HTML guide, set `GLG_OPEN_BROWSER=0` in the environment used to run the installer.
 
 ## How AppImage integration works

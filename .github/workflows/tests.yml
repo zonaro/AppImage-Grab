@@ -65,9 +65,18 @@ jobs:
           test -f dist/chromium/icons/icon-48.png
           test -f dist/firefox/icons/icon-48.png
           python3 - <<'PY'
-          import json, subprocess
+          import json, re, subprocess
           from pathlib import Path
+          from scripts.manifest_version import versions_for
           head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          commit_iso = subprocess.check_output(['git', 'show', '-s', '--format=%cI', 'HEAD'], text=True).strip()
+          expected_version, expected_display = versions_for(commit_iso)
+          for family in ('chromium', 'firefox'):
+              source = json.loads(Path('extension', family, 'manifest.json').read_text())
+              built = json.loads(Path('dist', family, 'manifest.json').read_text())
+              assert re.fullmatch(r'\d+\.\d+\.\d+', source['version']), source['version']
+              assert built['version'] == expected_version, (family, built['version'])
+              assert built['version_name'] == expected_display, (family, built['version_name'])
           for path in ('version.json', 'dist/chromium/version.json', 'dist/firefox/version.json'):
               assert json.loads(Path(path).read_text())['commit'] == head
           for family in ('chromium','firefox'):

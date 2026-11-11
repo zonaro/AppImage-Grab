@@ -23,6 +23,7 @@
 - Keep extension ON/OFF OFF by default; install script does not modify browser extension state.
 
 - The Git SHA of main is the only application build identifier, embedded by scripts/build-extensions.sh into version.json and build-revision.js for both extension flavors. The installer must fetch the newest main even if invoked from an old local checkout.
+- Browser manifests under `extension/` are templates. During `scripts/build-extensions.sh`, `scripts/manifest_version.py` stamps the same version for Chromium and Firefox from the commit's committer timestamp, preserving its timezone: numeric `YY.DDD.HHmm` without forbidden leading zeros in `version`, and zero-padded display value in `version_name`. The Git SHA remains the authoritative build identifier. Do not manually bump release versions or stamp wall-clock build time.
 - bridge/host.py getVersion exposes installed version.json without initializing Gear Lever. Write installed revision LAST after successful installation.
 - The extension periodically compares GitHub commits/main against its embedded commit and host commit; badge NEW and UI alerts do not run shell scripts and must not toggle ON/OFF.
 - Keep README.md English and do not claim locally packaged CRX/XPI can be silently updated inside a browser.
