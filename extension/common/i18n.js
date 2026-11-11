@@ -30,6 +30,7 @@ globalThis.GLGI18n = (() => {
     ['Ver no gerenciador', 'View in manager', 'Ver en el administrador'],
     ['Sugerir AppImages ao visitar repositórios', 'Suggest AppImages when visiting repositories', 'Sugerir AppImages al visitar repositorios'],
     ['Meus AppImages', 'My AppImages', 'Mis AppImages'],
+    ['Meus AppImages — Gear Lever Grab', 'My AppImages — Gear Lever Grab', 'Mis AppImages — Gear Lever Grab'],
     ['Atualizar lista', 'Refresh list', 'Actualizar lista'],
     ['Carregando…', 'Loading…', 'Cargando…'],
     ['Gerenciar no navegador', 'Manage in browser', 'Administrar en el navegador'],

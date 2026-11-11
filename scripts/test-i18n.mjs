@@ -16,6 +16,7 @@ function createContext(uiLanguage, navigatorLanguage = 'en-US', document = undef
 const english = createContext('fr-FR', 'pt-BR');
 assert.equal(english.language, 'en', 'unsupported browser UI locale falls back to English');
 assert.equal(english.translate('Loja de AppImages'), 'AppImage Store');
+assert.equal(english.translate('Meus AppImages — Gear Lever Grab'), 'My AppImages — Gear Lever Grab');
 assert.equal(english.translate('Notificações e diagnóstico'), 'Notifications and diagnostics');
 assert.equal(english.translate('AppImage atualizada'), 'AppImage updated');
 assert.equal(english.translate('7 aplicativo(s) integrados ao Gear Lever'), '7 apps integrated with Gear Lever');
@@ -31,6 +32,7 @@ assert.equal(portuguese.translate('O Gear Lever permanece no controle.'), 'O Gea
 const spanish = createContext('es-MX', 'en-US');
 assert.equal(spanish.language, 'es');
 assert.equal(spanish.translate('Loja de AppImages'), 'Tienda de AppImages');
+assert.equal(spanish.translate('Meus AppImages — Gear Lever Grab'), 'Mis AppImages — Gear Lever Grab');
 assert.equal(spanish.translate('Nova versão'), 'Nueva versión');
 assert.equal(spanish.translate('Integração parcial da AppImage'), 'Integración parcial de AppImage');
 assert.equal(spanish.translate('Teste de notificação Gear Lever Grab'), 'Prueba de notificación de Gear Lever Grab');
@@ -89,6 +91,21 @@ for (const target of ['chromium', 'firefox']) {
 for (const page of ['popup', 'manager']) {
   const htmlText = readFileSync('extension/common/' + page + '.html', 'utf8');
   assert.match(htmlText, /<script defer src="i18n\.js"><\/script>/);
+  // Guard against untranslated static strings being introduced in the screens.
+  // Product names, release URLs and command placeholders are intentionally literal.
+  const invariant = new Set(['Gear Lever Grab', 'Gear Lever Grab update available',
+    'Copy update command', 'Check again', 'BETA', 'AppImagePool', 'AppImageHub',
+    'GitHub Releases', 'GitLab Releases', 'Codeberg Releases',
+    'MeuApp-*-x86_64.AppImage', 'https://github.com/autor/projeto/releases/latest']);
+  const candidates = [
+    ...[...htmlText.matchAll(/>([^<>]+)</g)].map(match => match[1].trim()),
+    ...[...htmlText.matchAll(/(?:placeholder|title|aria-label|alt)="([^"]+)"/g)]
+      .map(match => match[1].trim())
+  ].filter(value => /[A-Za-zÁ-ú]{3}/.test(value));
+  for (const value of candidates) {
+    assert.ok(invariant.has(value) || english.translate(value) !== value,
+      `Untranslated ${page}.html UI string: ${value}`);
+  }
 }
 for (const target of ['chromium', 'firefox']) {
   assert.ok(existsSync('dist/' + target + '/i18n.js'));
