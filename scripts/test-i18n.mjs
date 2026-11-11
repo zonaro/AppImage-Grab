@@ -111,4 +111,20 @@ for (const target of ['chromium', 'firefox']) {
   assert.ok(existsSync('dist/' + target + '/i18n.js'));
 }
 
+// The popup must identify the running package, not a hardcoded release label.
+const popupHeaderCode = readFileSync('extension/common/popup.js', 'utf8').split('const toggle =')[0];
+for (const commit of ['a'.repeat(40), '']) {
+  const versionLabel = {};
+  const context = {
+    browser: {runtime: {getManifest: () => ({version: '26.315.457', version_name: '26.315.0457'})}},
+    document: {querySelector: () => versionLabel},
+    GLG_BUILD_COMMIT: commit
+  };
+  context.globalThis = context;
+  vm.runInNewContext(popupHeaderCode, context);
+  assert.equal(versionLabel.textContent,
+    'v26.315.0457' + (commit ? ' · ' + commit.slice(0, 12) : ''));
+  assert.equal(versionLabel.title, commit ? 'Build commit: ' + commit : 'Build commit unavailable');
+}
+
 console.log('Extension i18n and locale packaging tests passed.');

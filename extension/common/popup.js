@@ -1,7 +1,12 @@
 const api = globalThis.browser || globalThis.chrome;
 const tr = globalThis.GLGI18n?.translate || (message => message);
 const manifest = api.runtime.getManifest();
-document.querySelector('.version-label').textContent = 'v' + (manifest.version_name || manifest.version);
+const versionLabel = document.querySelector('.version-label');
+const buildCommit = typeof globalThis.GLG_BUILD_COMMIT === 'string' &&
+  /^[0-9a-f]{40}$/i.test(globalThis.GLG_BUILD_COMMIT) ? globalThis.GLG_BUILD_COMMIT : '';
+versionLabel.textContent = 'v' + (manifest.version_name || manifest.version) +
+  (buildCommit ? ' · ' + buildCommit.slice(0, 12) : '');
+versionLabel.title = buildCommit ? 'Build commit: ' + buildCommit : 'Build commit unavailable';
 const toggle = document.getElementById('enabled');
 const description = document.getElementById('description');
 const activity = document.getElementById('activity');
