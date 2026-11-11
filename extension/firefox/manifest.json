@@ -37,7 +37,9 @@
     }
   },
   "host_permissions": [
-    "https://api.github.com/*"
+    "https://api.github.com/*",
+    "https://appimage.github.io/*",
+    "https://api.opendesktop.org/*"
   ],
   "icons": {
     "16": "icons/icon-16.png",

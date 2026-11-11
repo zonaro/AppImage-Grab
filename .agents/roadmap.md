@@ -74,3 +74,12 @@ Legacy CRX/XPI milestones above are superseded; there is **no package builder** 
 - [x] Add URL validation / cooldown tests to CI.
 - [ ] Manual Edge/Firefox/Fedora QA including the browser permissions prompt, notifications, install confirmation, release selectors and app installation via Native Messaging.
 - [ ] Extend provider support with explicit allowlisted resolver modules; do not treat every website as compatible.
+
+## AppImage store in the browser manager (2026-11-11)
+
+- [x] New Store tab in `manager.html`, independent from installed apps and updates.
+- [x] AppImage Catalog feed (the same source as AppImagePool) and AppImageHub/OpenDesktop OCS catalog, with source/category filters, search, sorting, details, images and load-more.
+- [x] Architecture selection and explicit consent before a browser download. Preserve Native Messaging + Gear Lever as the only integration route.
+- [x] On-demand revalidation of known Pling-hosted files against the AppImageHub item API. Unsupported third-party hosts are open-in-browser only.
+- [x] Offline unit and UI regression tests, manifest origin permissions and English README instructions.
+- [ ] Verify actual downloads/installations with Firefox and Chromium on Fedora, especially short-lived Pling links, download prompts and Gear Lever source detection.

@@ -28,6 +28,20 @@ async function notifyIntegrated(download, reply) {
   }
 }
 
+async function enqueueManualDownload(asset, filename = '') {
+  const options = {url: asset.url, saveAs: false, conflictAction: 'uniquify'};
+  if (filename) options.filename = filename;
+  const id = await api.downloads.download(options);
+  if (!Number.isInteger(id)) throw new Error('O navegador não iniciou o download');
+  const {pending = {}} = await api.storage.local.get('pending');
+  pending[id] = {manual: true, url: asset.url, sourceName: asset.name};
+  await api.storage.local.set({pending});
+  // The download can finish before storage.local.set returns.
+  const downloads = await api.downloads.search({id});
+  if (downloads[0]?.state === 'complete') void finished({id, state:{current:'complete'}});
+  return {downloadId: id, name: asset.name};
+}
+
 async function startManagedDownload(request) {
   const link = String(request.link || '');
   const selected = String(request.assetUrl || '');
@@ -37,20 +51,66 @@ async function startManagedDownload(request) {
   if (!asset || !asset.name || !/\.appimage$/i.test(asset.name)) {
     throw new Error('Arquivo não pertence à fonte selecionada');
   }
-  const id = await api.downloads.download({url: asset.url, saveAs: false, conflictAction: 'uniquify'});
-  if (!Number.isInteger(id)) throw new Error('O navegador não iniciou o download');
-  const {pending = {}} = await api.storage.local.get('pending');
-  pending[id] = {manual: true, url: asset.url, sourceName: asset.name};
-  await api.storage.local.set({pending});
-  // Handle the rare case where the download finishes before the entry is stored.
-  const downloads = await api.downloads.search({id});
-  if (downloads[0]?.state === 'complete') void finished({id, state:{current:'complete'}});
-  return {downloadId: id, name: asset.name};
+  return enqueueManualDownload(asset);
+}
+
+// Pling URLs are short-lived, so never accept one from the UI. Look up the
+// exact AppImage filename again in the official OCS API immediately on click.
+async function startCatalogDownload(request) {
+  if (request.confirmed !== true) throw new Error('Confirmação de download obrigatória');
+  const contentId = Number(request.contentId);
+  const name = request.fileName;
+  if (!Number.isSafeInteger(contentId) || contentId < 1 || contentId > 9999999999 ||
+      typeof name !== 'string' || name.length > 200 ||
+      !/^[\w .()+\-]+\.appimage$/i.test(name)) {
+    throw new Error('Arquivo do catálogo inválido');
+  }
+  const url = 'https://api.opendesktop.org/ocs/v1/content/data/' + contentId + '?format=json';
+  const response = await fetch(url, {redirect: 'error', cache: 'no-store', credentials: 'omit'});
+  if (!response.ok) throw new Error('Não foi possível conferir o registro no AppImageHub');
+  const body = await response.text();
+  if (body.length > 500000) throw new Error('Resposta do catálogo muito grande');
+  const detail = JSON.parse(body);
+  if (detail.status !== 'ok' || !Array.isArray(detail.data)) throw new Error('Dados do AppImageHub inválidos');
+  const entry = detail.data.find(item => Number(item.id) === contentId);
+  if (!entry) throw new Error('Registro não encontrado no catálogo');
+  let downloadUrl = '';
+  let downloadWay;
+  for (let i = 1; i <= 10; i++) {
+    if (entry['downloadname' + i] === name && typeof entry['downloadlink' + i] === 'string') {
+      downloadUrl = entry['downloadlink' + i];
+      downloadWay = entry['downloadway' + i];
+      break;
+    }
+  }
+  if (!downloadUrl) throw new Error('AppImage não está mais disponível no catálogo');
+  let parsed;
+  try { parsed = new URL(downloadUrl); } catch { throw new Error('URL de download inválida'); }
+  if (parsed.protocol !== 'https:' || parsed.username || parsed.password || parsed.port ||
+      parsed.search || parsed.hash) throw new Error('Origem do AppImageHub não é segura');
+  let basename = '';
+  try { basename = decodeURIComponent(parsed.pathname.split('/').pop()); } catch { /* Refuse malformed encoding. */ }
+  if (basename !== name) throw new Error('O nome do arquivo não corresponde ao download');
+  const pling = /^files\d+\.pling\.com$/.test(parsed.hostname) &&
+    /^\/api\/files\/download\/j\/[^/]+\/[^/]+\.appimage$/i.test(parsed.pathname) &&
+    String(downloadWay) !== '0';
+  if (!pling) {
+    // Other hosts are accepted only if the existing native provider resolver
+    // independently recognizes the exact asset and its trusted release.
+    if (!['github.com', 'gitlab.com', 'codeberg.org'].includes(parsed.hostname)) {
+      throw new Error('Arquivo em origem externa não validada. Abra a página do AppImageHub.');
+    }
+    const resolved = await GLGNative.request({action:'resolveLink', url:downloadUrl});
+    if (!(resolved.choices || []).some(item => item.url === downloadUrl && item.name === name)) {
+      throw new Error('O release do provedor não confirmou este arquivo');
+    }
+  }
+  return enqueueManualDownload({url: downloadUrl, name}, name);
 }
 
 api.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message?.action !== 'startManagedDownload') return false;
-  void startManagedDownload(message)
+  if (!['startManagedDownload', 'startCatalogDownload'].includes(message?.action)) return false;
+  void (message.action === 'startCatalogDownload' ? startCatalogDownload(message) : startManagedDownload(message))
     .then(data => sendResponse({ok:true, ...data}))
     .catch(error => sendResponse({ok:false, error:String(error?.message || error)}));
   return true;

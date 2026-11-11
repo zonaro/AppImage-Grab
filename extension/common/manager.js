@@ -1,6 +1,6 @@
 /* Gear Lever-like management flow in an extension tab. No shell or arbitrary paths. */
 const api = globalThis.browser || globalThis.chrome;
-const state = { apps: [], updatePaths: new Set(), checked: false, filter: 'all',
+const state = { apps: [], updatePaths: new Set(), checked: false, filter: 'all', view: 'installed',
                 query: '', busy: false, editor: null };
 const $ = id => document.getElementById(id);
 
@@ -26,9 +26,13 @@ function summary() {
 function filters() {
   $('filter-all').classList.toggle('active', state.filter === 'all');
   $('filter-updates').classList.toggle('active', state.filter === 'updates');
-  $('nav-installed').classList.toggle('active', state.filter === 'all');
-  $('nav-updates').classList.toggle('active', state.filter === 'updates');
-  $('breadcrumb').textContent = state.filter === 'updates' ? 'Atualizações' : 'Instalados';
+  $('nav-installed').classList.toggle('active', state.view === 'installed' && state.filter === 'all');
+  $('nav-updates').classList.toggle('active', state.view === 'installed' && state.filter === 'updates');
+  $('nav-store').classList.toggle('active', state.view === 'store');
+  $('installed-view').hidden = state.view === 'store';
+  $('store-view').hidden = state.view !== 'store';
+  $('refresh-label').textContent = state.view === 'store' ? 'Atualizar loja' : 'Atualizar lista';
+  $('breadcrumb').textContent = state.view === 'store' ? 'Loja' : state.filter === 'updates' ? 'Atualizações' : 'Instalados';
   $('catalog-title').textContent = state.filter === 'updates' ? 'Atualizações disponíveis' : 'Aplicativos instalados';
 }
 
@@ -286,14 +290,16 @@ async function unsetSource() {
 }
 
 function showUpdates() {
+  state.view = 'installed';
   state.filter = 'updates';
   render();
   if (!state.checked) void checkUpdates();
 }
 
-$('refresh').addEventListener('click', refreshApps);
+$('refresh').addEventListener('click', () => state.view === 'store' ? GLGStore.refresh() : refreshApps());
 $('check-updates').addEventListener('click', checkUpdates);
-$('nav-installed').addEventListener('click', () => { state.filter = 'all'; render(); });
+$('nav-installed').addEventListener('click', () => { state.view = 'installed'; state.filter = 'all'; render(); });
+$('nav-store').addEventListener('click', () => { state.view = 'store'; render(); GLGStore.activate(); });
 $('filter-all').addEventListener('click', () => { state.filter = 'all'; render(); });
 $('nav-updates').addEventListener('click', showUpdates);
 $('filter-updates').addEventListener('click', showUpdates);

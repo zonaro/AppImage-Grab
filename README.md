@@ -97,6 +97,17 @@ When you visit a **supported GitHub, GitLab, or Codeberg repository/release page
 
 The extension's popup includes the ON/OFF toggle, a quick view of installed AppImages and last activity. The **Manage in browser** screen opens a tab with search, installed versions, update sources, update checks, manual updates and removals. Only verified available updates are offered; confirmations are required before modifying installed apps or their sources. This is a browser frontend for the Gear Lever CLI, not a clone of the GTK implementation.
 
+### AppImage store
+
+The manager also has a **Store** tab, with search, catalog/source and category filters, sorting, app cards, descriptions, screenshots, download choices and pagination. It combines two independent public sources:
+
+- **AppImage Catalog / AppImagePool**: `https://appimage.github.io/feed.json`, the community feed also used by [AppImagePool](https://github.com/prateekmedia/appimagepool). Release links are passed to the existing Native Messaging provider resolver, which verifies the actual GitHub/GitLab/Codeberg release asset before the user can download it.
+- **AppImageHub / OpenDesktop**: the OCS API at `https://api.opendesktop.org/ocs/v1/`. Only entries with an explicit `.AppImage` download filename are shown. When the file is hosted by the known Pling download service, the background script fetches the OCS item again and checks the exact filename and allowlisted URL before asking the browser to download it. Recognized GitHub/GitLab/Codeberg assets use the existing trusted resolver. Unsupported external hosting is linked to its catalog page instead of downloaded directly.
+
+Catalog metadata is not a verification of authenticity. Every download requires an explicit choice and confirmation; the browser saves the file and the Native Messaging bridge integrates it through **Gear Lever**, never by executing it. Short-lived Pling URLs are only fetched when downloading, not stored for later use. A Pling-hosted file generally has **no verifiable automatic update source**, so Gear Lever may integrate it without update configuration. The Store still works with the automatic ON/OFF toggle set to **OFF**. Both sources load independently; if one API is unavailable, the other remains usable. Store requests are cached in memory for approximately 15 minutes while the manager tab remains open.
+
+Both browser manifests request the narrowly scoped `https://appimage.github.io/*` and `https://api.opendesktop.org/*` origins to read the catalogs, in addition to the existing GitHub API access. App icons/screenshots are displayed from the catalog's public image hosts; no page contents or browser history are transmitted to the stores. Store API search terms are sent to OpenDesktop when using its catalog.
+
 ## Update status and existing Gear Lever source settings
 
 **An update source does not mean a new version is available.** The browser manager now shows an **Update** action only after running Gear Lever's public `--list-updates --json` command and finding the exact installed AppImage path in its results. No update is assumed solely from a configured GitHub/GitLab/Codeberg/FTP manager. The Python bridge **rechecks** the current list immediately before executing an update; if Gear Lever no longer confirms availability, no update is started. An offline/error result does not display stale updates.
@@ -120,6 +131,8 @@ cd gear-lever-grab
 bash scripts/build-extensions.sh
 python3 -m unittest discover -s tests -v
 node scripts/test-update-check.mjs
+node scripts/test-store.mjs
+node scripts/test-manager-ui.mjs
 node scripts/check-docs.mjs
 bash -n install.sh uninstall.sh scripts/build-extensions.sh
 ```

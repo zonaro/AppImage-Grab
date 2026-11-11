@@ -32,3 +32,39 @@ dialog{padding:0;border:1px solid var(--line);background:var(--panel);color:var(
 .link-result select{flex:1;min-width:180px;border:1px solid var(--line);border-radius:9px;background:var(--bg);padding:10px;color:var(--text)}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
 @media(max-width:610px){.link-input-row{flex-wrap:wrap}.link-input-row input,.link-input-row button{width:100%}}
+
+/* AppImage Catalog / AppImageHub store */
+.store-heading{margin-bottom:30px}
+.store-panel{padding:clamp(18px,3vw,30px)}
+.store-controls{display:grid;grid-template-columns:minmax(220px,2fr) repeat(3,minmax(140px,1fr));gap:12px;margin:24px 0 16px}
+.store-controls label{display:flex;flex-direction:column;gap:8px;color:var(--muted);font-weight:700;font-size:11px}
+.store-controls input,.store-controls select{width:100%;min-width:0;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:11px 12px;color:var(--text);font-size:13px}
+.store-source-status{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 20px}
+.store-source-status span{padding:6px 10px;background:var(--green-bg);color:var(--green);border-radius:7px;font-size:11px;overflow-wrap:anywhere}
+.store-result-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;color:var(--muted);font-size:11px;border-top:1px solid var(--line);padding:16px 0}
+.store-result-bar p{margin:0;font-weight:800;color:var(--text)}
+.store-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+.store-card{min-width:0;border:1px solid var(--line);border-radius:15px;background:var(--bg);padding:20px;display:flex;flex-direction:column;gap:15px;transition:border-color .15s,transform .15s}
+.store-card:hover{border-color:var(--green);transform:translateY(-2px)}
+.store-card-icon{width:64px;height:64px;border:1px solid var(--line);border-radius:15px;background:var(--panel);color:var(--green);display:grid;place-items:center;overflow:hidden;font-size:27px;font-weight:800}
+.store-card-icon img{width:100%;height:100%;object-fit:contain;padding:6px}
+.store-card-body{display:flex;flex:1;align-items:flex-start;flex-direction:column;min-width:0}
+.store-badge{display:inline-flex;font-size:10px;font-weight:800;color:var(--green);background:var(--green-bg);border-radius:7px;padding:5px 7px}
+.store-card h3{font-size:17px;line-height:1.3;margin:11px 0 5px;overflow-wrap:anywhere;letter-spacing:-.025em}
+.store-meta{margin:0;color:var(--green);font-size:11px;min-height:14px;overflow-wrap:anywhere}
+.store-description{font-size:12px;color:var(--muted);line-height:1.65;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;line-clamp:3;overflow:hidden;margin:12px 0 18px;min-height:58px}
+.store-card .button{margin-top:auto;width:100%}
+.store-bottom{display:flex;justify-content:center;padding:23px 0 0}
+.store-empty{padding:40px 18px;text-align:center;border:1px dashed var(--line);border-radius:12px;color:var(--muted);grid-column:1/-1}
+.store-dialog{width:min(720px,calc(100% - 28px));padding:26px}
+.store-detail-description{font-size:13px;line-height:1.7;color:var(--muted)}
+.store-facts{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0}
+.store-facts span{font-size:11px;padding:7px 9px;background:var(--bg);border-radius:8px;border:1px solid var(--line)}
+.store-gallery{display:flex;overflow-x:auto;gap:10px;scroll-snap-type:x mandatory;margin:17px 0}
+.store-gallery img{max-width:min(350px,90%);height:180px;object-fit:contain;border:1px solid var(--line);background:var(--bg);border-radius:10px;scroll-snap-align:start}
+.store-download-options{border-top:1px solid var(--line);padding-top:17px;margin-top:15px}
+.store-download-options label{font-size:12px;font-weight:800;margin-bottom:8px}
+.store-download-options select{width:100%;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--text);padding:11px;margin-bottom:9px}
+@media(max-width:1150px){.store-controls{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.store-controls{grid-template-columns:1fr}.store-grid{grid-template-columns:1fr}.store-card{flex-direction:row;align-items:flex-start}.store-card-icon{width:50px;height:50px;flex:none}.store-panel .catalog-header>.button{width:100%}.store-dialog .dialog-actions .button{flex:1}.store-gallery img{height:145px}.store-heading{flex-direction:column}}
+@media(max-width:520px){#refresh-label{display:none}}
