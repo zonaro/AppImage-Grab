@@ -1,5 +1,6 @@
 /* Gear Lever-like management flow in an extension tab. No shell or arbitrary paths. */
 const api = globalThis.browser || globalThis.chrome;
+const tr = globalThis.GLGI18n?.translate || (message => message);
 const state = { apps: [], updatePaths: new Set(), checked: false, filter: 'all', view: 'installed',
                 query: '', busy: false, editor: null };
 const $ = id => document.getElementById(id);
@@ -50,11 +51,11 @@ function render() {
   summary();
   const content = $('apps');
   content.replaceChildren();
-  const search = state.query.toLocaleLowerCase('pt-BR');
+  const search = state.query.toLocaleLowerCase(globalThis.GLGI18n?.locale || 'en');
   const apps = state.apps
     .filter(app => state.filter !== 'updates' || state.updatePaths.has(app.path))
-    .filter(app => ((app.name || '') + ' ' + (app.path || '') + ' ' + (app.manager || '')).toLocaleLowerCase('pt-BR').includes(search))
-    .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR'));
+    .filter(app => ((app.name || '') + ' ' + (app.path || '') + ' ' + (app.manager || '')).toLocaleLowerCase(globalThis.GLGI18n?.locale || 'en').includes(search))
+    .sort((a, b) => (a.name || '').localeCompare(b.name || '', globalThis.GLGI18n?.locale || 'en'));
 
   if (!apps.length) {
     const message = state.filter === 'updates' && !state.checked
@@ -160,7 +161,7 @@ function checkUpdates() {
 
 async function updateApp(app) {
   if (!state.checked || !state.updatePaths.has(app.path)) return;
-  if (!window.confirm('Atualizar "' + app.name + '" pelo Gear Lever? Uma nova verificação será feita antes de atualizar.')) return;
+  if (!window.confirm(tr('Atualizar "' + app.name + '" pelo Gear Lever? Uma nova verificação será feita antes de atualizar.'))) return;
   return withBusy(async () => {
     await GLGNative.request({ action: 'updateApp', path: app.path, confirmed: true });
     state.checked = false;
@@ -171,7 +172,7 @@ async function updateApp(app) {
 }
 
 async function removeApp(app) {
-  if (!window.confirm('Mover "' + app.name + '" para a lixeira usando o Gear Lever?')) return;
+  if (!window.confirm(tr('Mover "' + app.name + '" para a lixeira usando o Gear Lever?'))) return;
   return withBusy(async () => {
     await GLGNative.request({ action: 'removeApp', path: app.path, confirmed: true });
     state.updatePaths.delete(app.path);
@@ -254,7 +255,7 @@ async function saveSource(event) {
   const app = state.editor;
   if (!app || state.busy || $('save-source').hidden) return;
   const { manager, options } = editorOptions();
-  if (app.manager && !window.confirm('Substituir a fonte de atualização de "' + app.name + '"?')) return;
+  if (app.manager && !window.confirm(tr('Substituir a fonte de atualização de "' + app.name + '"?'))) return;
   $('save-source').disabled = true;
   $('dialog-error').hidden = true;
   try {
@@ -273,7 +274,7 @@ async function saveSource(event) {
 
 async function unsetSource() {
   const app = state.editor;
-  if (!app || $('unset-source').hidden || !window.confirm('Remover a fonte personalizada de "' + app.name + '"?')) return;
+  if (!app || $('unset-source').hidden || !window.confirm(tr('Remover a fonte personalizada de "' + app.name + '"?'))) return;
   $('unset-source').disabled = true;
   try {
     await GLGNative.request({ action: 'unsetSource', path: app.path, confirmed: true });
@@ -319,9 +320,9 @@ api.storage.onChanged.addListener((changes, area) => {
   // Reflect a completed browser download in the manager without manual refresh.
   const result = changes.lastResult?.newValue;
   if (result?.status === 'success' && !state.busy) {
-    void refreshApps().then(() => notice(result.detail || 'AppImage adicionada ao Gear Lever.', 'success'));
+    void refreshApps().then(() => notice(tr(result.detail || 'AppImage adicionada ao Gear Lever.'), 'success'));
   } else if (result?.status === 'error' && !state.busy) {
-    notice(result.detail || 'Ocorreu um erro na integração.', 'error');
+    notice(tr(result.detail || 'Ocorreu um erro na integração.'), 'error');
   }
 });
 void refreshApps();
@@ -345,7 +346,7 @@ $('grab-update-copy').addEventListener('click', async () => {
     await navigator.clipboard.writeText(GLGUpdate.COMMAND);
     $('grab-update-copy').textContent = 'Copied!';
   } catch {
-    window.prompt('Copy and run in your terminal:', GLGUpdate.COMMAND);
+    window.prompt(tr('Copy and run in your terminal:'), GLGUpdate.COMMAND);
   }
 });
 api.storage.local.get('updateStatus').then(data => renderGrabUpdate(data.updateStatus));
@@ -390,8 +391,8 @@ $('link-form').addEventListener('submit', async event => {
 $('link-download').addEventListener('click', async () => {
   const choice = resolvedAssets[Number($('link-asset').value)];
   if (!choice || !resolvedLink) return;
-  if (!window.confirm('Baixar "' + choice.name + '" de ' + choice.source +
-      ' e adicionar ao Gear Lever? Confirme que você confia nesta origem.')) return;
+  if (!window.confirm(tr('Baixar "' + choice.name + '" de ' + choice.source +
+      ' e adicionar ao Gear Lever? Confirme que você confia nesta origem.'))) return;
   $('link-download').disabled = true;
   $('link-feedback').textContent = 'Iniciando download no navegador…';
   try {

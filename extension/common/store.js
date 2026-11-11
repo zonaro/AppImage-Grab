@@ -1,6 +1,7 @@
 /* AppImage store: metadata is untrusted; downloads require a second validation. */
 globalThis.GLGStore = (() => {
   const api = globalThis.browser || globalThis.chrome;
+  const tr = globalThis.GLGI18n?.translate || (message => message);
   const C = GLGCatalog;
   const $ = id => document.getElementById(id);
   const PAGE_SIZE = 24;
@@ -44,14 +45,14 @@ globalThis.GLGStore = (() => {
     if (s.source !== 'all' && s.source !== app.source) return false;
     if (s.category !== 'all' && !app.categories.includes(s.category)) return false;
     if (!s.query) return true;
-    const searchable = [app.name, app.description, app.author, ...app.categories].join(' ').toLocaleLowerCase('pt-BR');
-    return searchable.includes(s.query.toLocaleLowerCase('pt-BR'));
+    const searchable = [app.name, app.description, app.author, ...app.categories].join(' ').toLocaleLowerCase(globalThis.GLGI18n?.locale || 'en');
+    return searchable.includes(s.query.toLocaleLowerCase(globalThis.GLGI18n?.locale || 'en'));
   }
 
   function sorted(items) {
-    if (s.sort === 'score') return items.sort((a, b) => (b.score ?? -1) - (a.score ?? -1) || a.name.localeCompare(b.name, 'pt-BR'));
-    if (s.sort === 'recent') return items.sort((a, b) => (b.changed || '').localeCompare(a.changed || '') || a.name.localeCompare(b.name, 'pt-BR'));
-    return items.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+    if (s.sort === 'score') return items.sort((a, b) => (b.score ?? -1) - (a.score ?? -1) || a.name.localeCompare(b.name, globalThis.GLGI18n?.locale || 'en'));
+    if (s.sort === 'recent') return items.sort((a, b) => (b.changed || '').localeCompare(a.changed || '') || a.name.localeCompare(b.name, globalThis.GLGI18n?.locale || 'en'));
+    return items.sort((a, b) => a.name.localeCompare(b.name, globalThis.GLGI18n?.locale || 'en'));
   }
 
   function renderCategories() {
@@ -60,7 +61,7 @@ globalThis.GLGStore = (() => {
     if (s.category !== 'all' && !available.has(s.category)) s.category = 'all';
     category.replaceChildren();
     const all = elem('option', '', 'Todas as categorias'); all.value = 'all'; category.append(all);
-    [...available].filter(Boolean).sort((a, b) => a.localeCompare(b, 'pt-BR')).forEach(name => {
+    [...available].filter(Boolean).sort((a, b) => a.localeCompare(b, globalThis.GLGI18n?.locale || 'en')).forEach(name => {
       const option = elem('option', '', name); option.value = name; category.append(option);
     });
     category.value = s.category;
@@ -256,8 +257,8 @@ globalThis.GLGStore = (() => {
     const app = s.selected;
     const choice = s.choices[Number($('store-file').value)];
     if (!app || !choice) return;
-    if (!window.confirm('Baixar "' + choice.name + '" de ' + (app.source === 'hub' ? 'AppImageHub' : app.releaseUrl) +
-      ' e integrar ao Gear Lever? Confirme que você confia no desenvolvedor e na arquitetura.')) return;
+    if (!window.confirm(tr('Baixar "' + choice.name + '" de ' + (app.source === 'hub' ? 'AppImageHub' : app.releaseUrl) +
+      ' e integrar ao Gear Lever? Confirme que você confia no desenvolvedor e na arquitetura.'))) return;
     const button = $('store-detail-download');
     button.disabled = true;
     text('store-detail-status', 'Iniciando download no navegador…');

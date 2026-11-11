@@ -4,6 +4,7 @@
  */
 (() => {
   const api = globalThis.browser || globalThis.chrome;
+  const tr = globalThis.GLGI18n?.translate || (message => message);
   if (!api?.tabs || !api?.notifications || !globalThis.GLGPageOffers) return;
 
   const CACHE_MS = 15 * 60 * 1000;
@@ -63,11 +64,11 @@
       const options = {
         type:'basic',
         iconUrl:api.runtime.getURL('icons/icon-48.png'),
-        title:'AppImage disponível neste repositório',
+        title:tr('AppImage disponível neste repositório'),
         message:count === 1
-          ? offer.choices[0].name + ' pode ser adicionada ao Gear Lever.'
-          : count + ' AppImages encontradas em ' + page.repository + '. Escolha a arquitetura correta.',
-        buttons:[{title: count === 1 ? 'Ver e instalar' : 'Escolher AppImage'}]
+          ? tr(offer.choices[0].name + ' pode ser adicionada ao Gear Lever.')
+          : tr(count + ' AppImages encontradas em ' + page.repository + '. Escolha a arquitetura correta.'),
+        buttons:[{title: tr(count === 1 ? 'Ver e instalar' : 'Escolher AppImage')}]
       };
       try { await api.notifications.create(id, options); }
       catch {

@@ -21,6 +21,7 @@ jobs:
         run: |
           node --check extension/common/background.js
           node --check extension/common/native-client.js
+          node --check extension/common/i18n.js
           node --check extension/common/manager.js
           node --check extension/common/store-catalog.js
           node --check extension/common/store.js
@@ -37,6 +38,7 @@ jobs:
         run: |
           bash -n install.sh uninstall.sh scripts/build-extensions.sh
           bash scripts/build-extensions.sh
+          node scripts/test-i18n.mjs
           test -d dist/chromium
           test -d dist/firefox
           test ! -e dist/packages

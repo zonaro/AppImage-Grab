@@ -1,4 +1,7 @@
 const api = globalThis.browser || globalThis.chrome;
+const tr = globalThis.GLGI18n?.translate || (message => message);
+const manifest = api.runtime.getManifest();
+document.querySelector('.version-label').textContent = 'v' + (manifest.version_name || manifest.version);
 const toggle = document.getElementById('enabled');
 const description = document.getElementById('description');
 const activity = document.getElementById('activity');
@@ -13,8 +16,8 @@ function render(data) {
   if (!event) activity.textContent = 'Nenhuma atividade ainda.';
   else {
     const status = { working: 'Processando', success: 'Concluído', error: 'Erro' }[event.status] || event.status;
-    const date = event.at ? new Date(event.at).toLocaleString('pt-BR') : '';
-    activity.textContent = status + ' · ' + date + '\n' + (event.detail || '');
+    const date = event.at ? new Date(event.at).toLocaleString(globalThis.GLGI18n?.locale || 'en') : '';
+    activity.textContent = tr(status) + ' · ' + date + '\n' + tr(event.detail || '');
   }
 }
 
@@ -99,7 +102,7 @@ document.getElementById('copy-updater').addEventListener('click', async () => {
     await navigator.clipboard.writeText(GLGUpdate.COMMAND);
     document.getElementById('copy-updater').textContent = 'Copied!';
   } catch {
-    window.prompt('Copy this command into your Linux terminal:', GLGUpdate.COMMAND);
+    window.prompt(tr('Copy this command into your Linux terminal:'), GLGUpdate.COMMAND);
   }
 });
 document.getElementById('recheck-updates').addEventListener('click', async event => {
@@ -160,8 +163,8 @@ installOffer.addEventListener('click',async () => {
   if (!asset || !currentPageOffer) return;
   const description = asset.name + ' (' +
     (asset.architecture || 'arquitetura não identificada') + ')';
-  if (!window.confirm('Baixar '+description+' e integrar ao Gear Lever?\n' +
-      'Confirme que você confia em '+currentPageOffer.provider+'.')) return;
+  if (!window.confirm(tr('Baixar '+description+' e integrar ao Gear Lever?\n' +
+      'Confirme que você confia em '+currentPageOffer.provider+'.'))) return;
   installOffer.disabled=true;
   offerStatus.textContent='Iniciando download…';
   try {

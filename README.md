@@ -99,6 +99,12 @@ When you visit a **supported GitHub, GitLab, or Codeberg repository/release page
 
 The extension's popup includes the ON/OFF toggle, a quick view of installed AppImages and last activity. The **Manage in browser** screen opens a tab with search, installed versions, update sources, update checks, manual updates and removals. Only verified available updates are offered; confirmations are required before modifying installed apps or their sources. This is a browser frontend for the Gear Lever CLI, not a clone of the GTK implementation.
 
+### Extension languages
+
+The **entire browser extension** (popup, manager, store, installation confirmations, notifications, activity messages, and update prompts) supports **English, Brazilian Portuguese, and Spanish**. It detects the browser UI language automatically (for example `pt-BR`, `es-ES`, `es-MX`) and falls back to **English** for unsupported locales and missing translations. The extension does not add a separate language setting. Browser metadata uses standard WebExtension `_locales` bundles; the interface shares a dependency-free `extension/common/i18n.js` translator that also handles dynamically rendered messages. App names and remote catalog descriptions are shown as published by their authors.
+
+To check localization and package coverage after building, run `node scripts/test-i18n.mjs`. The displayed popup version comes directly from the built manifest (including its commit timestamp), not a hard-coded version string.
+
 ### AppImage store
 
 The manager also has a **Store** tab, with search, catalog/source and category filters, sorting, app cards, descriptions, screenshots, download choices and pagination. It combines two independent public sources:

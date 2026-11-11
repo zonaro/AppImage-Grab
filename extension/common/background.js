@@ -1,10 +1,11 @@
 // Background revision is loaded once when the browser starts the extension.
 if (typeof importScripts === 'function' && !globalThis.GLGUpdate) {
-  importScripts('build-revision.js', 'native-client.js', 'update-check.js',
+  importScripts('build-revision.js', 'i18n.js', 'native-client.js', 'update-check.js',
     'page-offers.js', 'page-offer-background.js');
 }
 /* Chromium MV3 / Firefox MV3: observe completed downloads, never intercept. */
 const api = globalThis.browser || globalThis.chrome;
+const tr = globalThis.GLGI18n?.translate || (message => message);
 const HOST = 'br.com.redclaw.gear_lever_grab';
 const working = new Set();
 const SUCCESSFUL_INTEGRATIONS = new Set([
@@ -19,8 +20,8 @@ async function notifyIntegrated(download, reply) {
     await api.notifications.create('glg-integrated-' + download.id, {
       type: 'basic',
       iconUrl: api.runtime.getURL('icons/icon-48.png'),
-      title: 'AppImage adicionada ao Gear Lever',
-      message: name + ' foi integrada com sucesso.'
+      title: tr('AppImage adicionada ao Gear Lever'),
+      message: tr(name + ' foi integrada com sucesso.')
     });
   } catch (error) {
     // Notifications can be blocked by browser/OS; integration already succeeded.
@@ -112,7 +113,7 @@ api.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (!['startManagedDownload', 'startCatalogDownload'].includes(message?.action)) return false;
   void (message.action === 'startCatalogDownload' ? startCatalogDownload(message) : startManagedDownload(message))
     .then(data => sendResponse({ok:true, ...data}))
-    .catch(error => sendResponse({ok:false, error:String(error?.message || error)}));
+    .catch(error => sendResponse({ok:false, error:tr(String(error?.message || error))}));
   return true;
 });
 
@@ -125,6 +126,7 @@ async function badge() {
 
 async function result(status, detail) {
   await api.storage.local.set({
+    // Store the source text, not a locale snapshot: the UI may reopen in another language.
     lastResult: { status, detail, at: new Date().toISOString() }
   });
 }
