@@ -28,6 +28,7 @@
       "i18n.js",
       "native-client.js",
       "update-check.js",
+      "notifications.js",
       "page-offers.js",
       "page-offer-background.js",
       "background.js"

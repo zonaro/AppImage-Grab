@@ -13,6 +13,7 @@
 <script defer src="store-catalog.js"></script>
 <script defer src="store.js"></script>
 <script defer src="manager.js"></script>
+<script defer src="notification-settings.js"></script>
 </head>
 <body>
 <div class="app-layout">
@@ -22,6 +23,7 @@
       <button type="button" class="nav-item active" id="nav-installed"><span aria-hidden="true">▣</span> Instalados</button>
       <button type="button" class="nav-item" id="nav-updates"><span aria-hidden="true">↻</span> Atualizações</button>
       <button type="button" class="nav-item" id="nav-store"><span aria-hidden="true">◈</span> Loja</button>
+      <button type="button" class="nav-item" id="nav-notifications"><span aria-hidden="true">♧</span> Notificações</button>
     </nav>
     <div class="sidebar-bottom">
       <div class="side-info"><span class="status-led" aria-hidden="true"></span> Conectado ao Gear Lever local</div>
@@ -93,6 +95,35 @@
           <div class="store-bottom"><button type="button" id="store-more" class="button secondary" hidden>Carregar mais aplicativos</button></div>
         </section>
         <section class="disclaimer"><strong>Downloads sob seu controle.</strong> A loja não executa AppImages e não inicia downloads automaticamente. Alguns registros têm apenas um link externo; a integração só é confirmada pelo Gear Lever.</section>
+      </div>
+      <div id="notifications-view" hidden>
+        <section class="headline"><div><p class="eyebrow">AVISOS DO NAVEGADOR</p><h1>Notificações</h1>
+          <p class="subtitle">Controle cada tipo de aviso. A entrega depende das permissões do navegador e do sistema operacional.</p></div></section>
+        <section class="catalog" aria-labelledby="notification-settings-title">
+          <div class="catalog-header"><div><h2 id="notification-settings-title">Preferências</h2>
+            <p>Essas opções são independentes do download automático.</p></div></div>
+          <div class="notification-options">
+            <label><input type="checkbox" data-notification="suggestions"> Sugestões em repositórios</label>
+            <label><input type="checkbox" data-notification="integrationSuccess"> AppImage integrada</label>
+            <label><input type="checkbox" data-notification="integrationError"> Erros de integração</label>
+            <label><input type="checkbox" data-notification="updatesAvailable"> Atualizações disponíveis</label>
+            <label><input type="checkbox" data-notification="updatesCompleted"> Atualização concluída</label>
+            <label><input type="checkbox" data-notification="updatesError"> Erros de atualização</label>
+          </div>
+          <div class="notification-actions">
+            <button type="button" id="notification-test" class="button primary">Enviar notificação de teste</button>
+            <button type="button" id="notification-check-updates" class="button secondary">Verificar atualizações agora</button>
+            <button type="button" id="notification-clear-history" class="button secondary">Limpar histórico</button>
+          </div>
+          <p id="notification-feedback" class="notice" role="status" aria-live="polite"></p>
+          <p id="notification-diagnostics" class="source-help" role="status"></p>
+          <p class="source-help">Uma chamada aceita pela API não garante que a notificação apareceu. Confira também o modo Não Perturbe e as permissões do navegador no GNOME.</p>
+        </section>
+        <section class="catalog" aria-labelledby="notification-history-title">
+          <div class="catalog-header"><div><h2 id="notification-history-title">Histórico de notificações</h2>
+            <p>Os últimos 50 avisos, sem caminhos completos ou URLs privadas.</p></div></div>
+          <ul id="notification-history" class="notification-history"></ul>
+        </section>
       </div>
     </div>
   </main>

@@ -1,6 +1,7 @@
 // Background revision is loaded once when the browser starts the extension.
 if (typeof importScripts === 'function' && !globalThis.GLGUpdate) {
   importScripts('build-revision.js', 'i18n.js', 'native-client.js', 'update-check.js',
+    'notifications.js',
     'page-offers.js', 'page-offer-background.js');
 }
 /* Chromium MV3 / Firefox MV3: observe completed downloads, never intercept. */
@@ -17,14 +18,10 @@ async function notifyIntegrated(download, reply) {
   if (!SUCCESSFUL_INTEGRATIONS.has(reply.status) || !reply.installedPath) return;
   const name = (reply.installedPath.split('/').pop() || 'AppImage').slice(0, 100);
   try {
-    await api.notifications.create('glg-integrated-' + download.id, {
-      type: 'basic',
-      iconUrl: api.runtime.getURL('icons/icon-48.png'),
-      title: tr('AppImage adicionada ao Gear Lever'),
-      message: tr(name + ' foi integrada com sucesso.')
-    });
+    await GLGNotifications.emit({kind: 'integrationSuccess', id: 'glg-integrated-' + download.id,
+      title: 'AppImage adicionada ao Gear Lever', message: name + ' foi integrada com sucesso.'});
   } catch (error) {
-    // Notifications can be blocked by browser/OS; integration already succeeded.
+    // Notification/storage failures must not turn a real integration into an error.
     console.warn('Gear Lever Grab notification unavailable:', error);
   }
 }
@@ -229,6 +226,14 @@ async function finished(delta) {
     await notifyIntegrated(item, reply);
   } catch (error) {
     await result('error', item.filename + ': ' + (error?.message || String(error)));
+    const name = (item.filename.split('/').pop() || 'AppImage').slice(0, 100);
+    const partial = String(error?.message || '').includes('Integrado em ');
+    void GLGNotifications.emit({kind: 'integrationError',
+      id: 'glg-integration-error-' + delta.id,
+      title: partial ? 'Integração parcial da AppImage' : 'Erro ao integrar AppImage',
+      message: partial
+        ? name + ': confira a fonte de atualização no gerenciador.'
+        : name + ': abra o gerenciador para conferir o erro.'}).catch(() => {});
   } finally {
     working.delete(delta.id);
   }
@@ -247,17 +252,121 @@ async function checkGrabUpdates() {
   await badge();
 }
 
+let appUpdateScan = null;
+function checkAppUpdates(force = false) {
+  if (appUpdateScan) return appUpdateScan;
+  appUpdateScan = (async () => {
+    if (!(await GLGNotifications.preferences()).updatesAvailable) return {status: 'disabled'};
+    try {
+      const [updates, installed] = await Promise.all([
+        GLGNative.request({action: 'listUpdates'}),
+        GLGNative.request({action: 'listInstalled'})
+      ]);
+      if (!Array.isArray(updates.apps) || !Array.isArray(installed.apps)) {
+        throw new Error('Invalid Gear Lever update result');
+      }
+      const known = new Map(installed.apps.filter(app => typeof app.path === 'string')
+        .map(app => [app.path, app]));
+      const available = new Map();
+      for (const app of updates.apps) {
+        if (typeof app?.path !== 'string' || !known.has(app.path)) continue;
+        const version = String(app.available_version || '').slice(0, 80);
+        available.set(app.path, {name: known.get(app.path).name || 'AppImage',
+          fingerprint: version || 'available', version});
+      }
+      const {appUpdateAlerts = {}} = await api.storage.local.get('appUpdateAlerts');
+      const next = {};
+      for (const [path, app] of available) {
+        next[path] = app.fingerprint;
+        if (appUpdateAlerts[path] === app.fingerprint) continue;
+        const id = 'glg-app-update-' + await digestPath(path, app.fingerprint);
+        await GLGNotifications.emit({kind: 'updatesAvailable', id,
+          title: 'Atualização de AppImage disponível',
+          message: String(app.name).slice(0, 100) +
+            (app.version ? ': versão ' + app.version : ': nova versão confirmada pelo Gear Lever.')})
+          .catch(error => console.warn('Update notification unavailable:', error));
+      }
+      await api.storage.local.set({appUpdateAlerts: Object.fromEntries(
+        Object.entries(next).slice(-250)),
+        lastAppUpdateCheck: {at: new Date().toISOString(), count: available.size, status: 'success'}});
+      return {status: 'success', count: available.size};
+    } catch (error) {
+      await api.storage.local.set({lastAppUpdateCheck: {
+        at: new Date().toISOString(), status: 'error', error: 'Gear Lever unavailable'}});
+      return {status: 'error'};
+    }
+  })().finally(() => { appUpdateScan = null; });
+  return appUpdateScan;
+}
+
+async function digestPath(path, version) {
+  const bytes = new TextEncoder().encode(path + '\0' + version);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest).slice(0, 12),
+    value => value.toString(16).padStart(2, '0')).join('');
+}
+
+api.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (!['notificationDiagnostics', 'testNotification', 'checkAppUpdates',
+    'startAppUpdate'].includes(message?.action)) return false;
+  if (sender?.id !== api.runtime.id) return false;
+  const operation = message.action === 'notificationDiagnostics'
+    ? GLGNotifications.diagnostics()
+    : message.action === 'testNotification'
+      ? GLGNotifications.test()
+      : message.action === 'checkAppUpdates'
+        ? checkAppUpdates(true)
+        : (async () => {
+            if (typeof sender.url !== 'string' ||
+                !sender.url.startsWith(api.runtime.getURL('manager.html'))) {
+              throw new Error('Only the manager can update AppImages');
+            }
+            if (message.confirmed !== true || typeof message.path !== 'string') {
+              throw new Error('Explicit confirmation and app path required');
+            }
+            const name = String(message.name || 'AppImage').slice(0, 100)
+              .replace(/[\r\n]/g, ' ');
+            const operationId = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+            try {
+              const reply = await GLGNative.request({action: 'updateApp',
+                path: message.path, confirmed: true});
+              if (reply.status !== 'updated' || reply.path !== message.path) {
+                throw new Error('Gear Lever did not confirm the requested update');
+              }
+              await GLGNotifications.emit({kind: 'updatesCompleted',
+                id: 'glg-update-completed-' + operationId,
+                title: 'AppImage atualizada', message: name + ' foi atualizada com sucesso.'})
+                .catch(error => console.warn('Update notification unavailable:', error));
+              return {status: 'updated'};
+            } catch (error) {
+              await GLGNotifications.emit({kind: 'updatesError',
+                id: 'glg-update-error-' + operationId,
+                title: 'Falha ao atualizar AppImage',
+                message: name + ': confira os detalhes no gerenciador.'})
+                .catch(() => {});
+              throw error;
+            }
+          })();
+  void operation.then(data => sendResponse({ok: true, ...data}))
+    .catch(error => sendResponse({ok: false, error: String(error?.message || error)}));
+  return true;
+});
+
 api.alarms.onAlarm.addListener(alarm => {
   if (alarm.name === 'grab-commit-check') void checkGrabUpdates();
+  if (alarm.name === 'grab-app-update-check') void checkAppUpdates();
 });
 api.runtime.onInstalled.addListener(() => {
   void api.alarms.create('grab-commit-check', { periodInMinutes: 720, delayInMinutes: 1 });
+  void api.alarms.create('grab-app-update-check', { periodInMinutes: 720, delayInMinutes: 3 });
   void checkGrabUpdates();
 });
 api.runtime.onStartup?.addListener(() => {
   void api.alarms.create('grab-commit-check', { periodInMinutes: 720, delayInMinutes: 1 });
+  void api.alarms.create('grab-app-update-check', { periodInMinutes: 720, delayInMinutes: 3 });
   void checkGrabUpdates();
 });
 // In MV3 the worker may start for a download rather than onStartup.
 void api.alarms.create('grab-commit-check', { periodInMinutes: 720, delayInMinutes: 1 });
+void api.alarms.create('grab-app-update-check', { periodInMinutes: 720, delayInMinutes: 3 });
 void checkGrabUpdates();

@@ -30,10 +30,15 @@ function filters() {
   $('nav-installed').classList.toggle('active', state.view === 'installed' && state.filter === 'all');
   $('nav-updates').classList.toggle('active', state.view === 'installed' && state.filter === 'updates');
   $('nav-store').classList.toggle('active', state.view === 'store');
-  $('installed-view').hidden = state.view === 'store';
+  $('nav-notifications').classList.toggle('active', state.view === 'notifications');
+  $('installed-view').hidden = state.view !== 'installed';
   $('store-view').hidden = state.view !== 'store';
-  $('refresh-label').textContent = state.view === 'store' ? 'Atualizar loja' : 'Atualizar lista';
-  $('breadcrumb').textContent = state.view === 'store' ? 'Loja' : state.filter === 'updates' ? 'Atualizações' : 'Instalados';
+  $('notifications-view').hidden = state.view !== 'notifications';
+  $('refresh-label').textContent = state.view === 'store' ? 'Atualizar loja'
+    : state.view === 'notifications' ? 'Atualizar histórico' : 'Atualizar lista';
+  $('breadcrumb').textContent = state.view === 'store' ? 'Loja'
+    : state.view === 'notifications' ? 'Notificações'
+      : state.filter === 'updates' ? 'Atualizações' : 'Instalados';
   $('catalog-title').textContent = state.filter === 'updates' ? 'Atualizações disponíveis' : 'Aplicativos instalados';
 }
 
@@ -163,7 +168,9 @@ async function updateApp(app) {
   if (!state.checked || !state.updatePaths.has(app.path)) return;
   if (!window.confirm(tr('Atualizar "' + app.name + '" pelo Gear Lever? Uma nova verificação será feita antes de atualizar.'))) return;
   return withBusy(async () => {
-    await GLGNative.request({ action: 'updateApp', path: app.path, confirmed: true });
+    const reply = await api.runtime.sendMessage({action: 'startAppUpdate',
+      path: app.path, name: app.name, confirmed: true});
+    if (!reply?.ok || reply.status !== 'updated') throw new Error(reply?.error || 'Update failed');
     state.checked = false;
     state.updatePaths.clear();
     await fetchApps({ keepNotice: true });
@@ -297,10 +304,14 @@ function showUpdates() {
   if (!state.checked) void checkUpdates();
 }
 
-$('refresh').addEventListener('click', () => state.view === 'store' ? GLGStore.refresh() : refreshApps());
+$('refresh').addEventListener('click', () => state.view === 'store' ? GLGStore.refresh()
+  : state.view === 'notifications' ? GLGNotificationUI.refresh() : refreshApps());
 $('check-updates').addEventListener('click', checkUpdates);
 $('nav-installed').addEventListener('click', () => { state.view = 'installed'; state.filter = 'all'; render(); });
 $('nav-store').addEventListener('click', () => { state.view = 'store'; render(); GLGStore.activate(); });
+$('nav-notifications').addEventListener('click', () => {
+  state.view = 'notifications'; render(); GLGNotificationUI.activate();
+});
 $('filter-all').addEventListener('click', () => { state.filter = 'all'; render(); });
 $('nav-updates').addEventListener('click', showUpdates);
 $('filter-updates').addEventListener('click', showUpdates);
@@ -413,7 +424,14 @@ $('link-download').addEventListener('click', async () => {
 // Notifications open the manager with a source query parameter. Resolve and
 // display choices, but never start a download without a new user click.
 try {
-  const initialSource = new URLSearchParams(window.location.search).get('source');
+  const params = new URLSearchParams(window.location.search);
+  const initialSource = params.get('source');
+  const initialView = params.get('view');
+  if (initialView === 'updates') {
+    window.addEventListener('DOMContentLoaded', showUpdates, {once: true});
+  } else if (initialView === 'notifications') {
+    window.addEventListener('DOMContentLoaded', () => $('nav-notifications').click(), {once: true});
+  }
   if (initialSource && initialSource.length <= 2048 &&
       /^https:\/\/(github\.com|www\.github\.com|gitlab\.com|codeberg\.org)\//.test(initialSource)) {
     $('link-url').value = initialSource;

@@ -68,3 +68,10 @@ dialog{padding:0;border:1px solid var(--line);background:var(--panel);color:var(
 @media(max-width:1150px){.store-controls{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.store-controls{grid-template-columns:1fr}.store-grid{grid-template-columns:1fr}.store-card{flex-direction:row;align-items:flex-start}.store-card-icon{width:50px;height:50px;flex:none}.store-panel .catalog-header>.button{width:100%}.store-dialog .dialog-actions .button{flex:1}.store-gallery img{height:145px}.store-heading{flex-direction:column}}
 @media(max-width:520px){#refresh-label{display:none}}
+.notification-options { display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;padding:14px 0 20px; }
+.notification-options label { display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:600; }
+.notification-options input { width:18px;height:18px;accent-color:#2d947b; }
+.notification-actions { display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px; }
+.notification-history { list-style:none;padding:0;margin:0;display:grid;gap:10px; }
+.notification-history li { border:1px solid #e4e8ed;border-radius:12px;padding:13px;display:grid;gap:4px; }
+.notification-history small { color:#66717e; }

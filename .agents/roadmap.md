@@ -7,6 +7,8 @@ QA pendente: validar Fedora real com Gear Lever Flatpak, Edge/Brave/Vivaldi, red
 Futuro: publicar CRX/Web Store e extensão assinada Firefox/AMO, detectar origens sem padrão de URL por API com validação do asset, tela de revisão opcional, integração com navegadores Flatpak, testes automatizados de ponta a ponta.
 
 - [x] Extension i18n: pt-BR, en, es with browser-language detection and English fallback across popup, manager, store, confirmations and notifications; standard manifest locales and regression checks.
+- [x] Local notification preferences, browser permission diagnostics, test notification, bounded event history, and clickable manager fallback.
+- [x] Gear Lever-confirmed AppImage update alerts (12-hour alarm and deduplication), integration-error alerts and explicit-update completion/error alerts; automated tests added.
 
 ## Versão 0.2
 

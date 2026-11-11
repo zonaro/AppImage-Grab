@@ -82,6 +82,12 @@ The extension **does not run downloaded AppImages directly**, but Gear Lever may
 
 When the download integration completes and Gear Lever confirms the new installation, the extension issues an OS/browser **notification** using its icon. A failed download or failed integration never produces a success notification. Notification delivery depends on browser and desktop notification permissions.
 
+The manager also provides a **Notifications** section, accessible from the popup. Its independent categories cover repository suggestions, successful integrations, integration errors, available AppImage updates, completed manual updates, and update errors. Preferences persist across browser restarts, preserve the previous repository-suggestion toggle, and do not change download automation. A small local history records notification attempts (up to 50) without full file paths or private links. A notification accepted by the browser API is **not proof** that GNOME or another desktop actually displayed it.
+
+Use **Send test notification** to check desktop delivery without downloading anything. The diagnostics panel reports browser permission (where available), Native Messaging connectivity and recent update checks. If no alert appears, verify that the newest built `dist/chromium` or `dist/firefox` extension is loaded and reloaded, that browser notifications are permitted, and that the GNOME **Do Not Disturb** setting and browser application notifications are enabled. Errors may be recorded locally when the OS suppresses a toast.
+
+AppImage update availability is checked on a conservative 12-hour browser alarm, independently of the Grab extension's own Git commit checks. Only exact paths confirmed by Gear Lever's `--list-updates --json` and `--list-installed --json` can trigger alerts; repeated results are deduplicated across restarts and offline errors never clear the last valid state. The notifications open the manager but **never install, download, or update an AppImage on click**. Manual updates continue to require confirmation and are run through the Gear Lever CLI.
+
 The manager's **Add AppImage by link** field accepts direct GitHub, GitLab, and Codeberg release-asset links, plus GitHub, GitLab, and Codeberg repository/release pages. For a repository, it lists matching AppImage assets and their detected architecture; the user chooses which file to download and confirms the action. The browser performs the download, and the Native Messaging bridge asks Gear Lever to integrate it after completion. This manual action works independently of the automatic download toggle. Only trusted provider domains and release URLs are accepted.
 
 ## Install suggestions while browsing
@@ -139,6 +145,11 @@ cd gear-lever-grab
 bash scripts/build-extensions.sh
 python3 -m unittest discover -s tests -v
 node scripts/test-update-check.mjs
+node scripts/test-notifications.mjs
+node scripts/test-notification-ui.mjs
+node scripts/test-integration-notifications.mjs
+node scripts/test-page-offers.mjs
+node scripts/test-i18n.mjs
 node scripts/test-store.mjs
 node scripts/test-manager-ui.mjs
 node scripts/check-docs.mjs

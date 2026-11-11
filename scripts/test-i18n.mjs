@@ -16,6 +16,8 @@ function createContext(uiLanguage, navigatorLanguage = 'en-US', document = undef
 const english = createContext('fr-FR', 'pt-BR');
 assert.equal(english.language, 'en', 'unsupported browser UI locale falls back to English');
 assert.equal(english.translate('Loja de AppImages'), 'AppImage Store');
+assert.equal(english.translate('Notificações e diagnóstico'), 'Notifications and diagnostics');
+assert.equal(english.translate('AppImage atualizada'), 'AppImage updated');
 assert.equal(english.translate('7 aplicativo(s) integrados ao Gear Lever'), '7 apps integrated with Gear Lever');
 assert.equal(english.translate('Versão: 1.2.3 • Fonte: GitHub'), 'Version: 1.2.3 • Source: GitHub');
 assert.equal(english.translate('Download iniciado: Tool.AppImage. Uma notificação confirmará quando o Gear Lever concluir a integração.'),
@@ -30,6 +32,8 @@ const spanish = createContext('es-MX', 'en-US');
 assert.equal(spanish.language, 'es');
 assert.equal(spanish.translate('Loja de AppImages'), 'Tienda de AppImages');
 assert.equal(spanish.translate('Nova versão'), 'Nueva versión');
+assert.equal(spanish.translate('Integração parcial da AppImage'), 'Integración parcial de AppImage');
+assert.equal(spanish.translate('Teste de notificação Gear Lever Grab'), 'Prueba de notificación de Gear Lever Grab');
 assert.equal(spanish.translate('3 AppImages disponíveis neste repositório.'), '3 AppImages disponibles en este repositorio.');
 assert.equal(spanish.translate('Baixar "App.AppImage" de GitHub e adicionar ao Gear Lever? Confirme que você confia nesta origem.'),
   '¿Descargar «App.AppImage» de GitHub y añadirla a Gear Lever? Confirma que confías en esta fuente.');

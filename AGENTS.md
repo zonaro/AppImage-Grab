@@ -44,3 +44,8 @@
 - Popup install requires architecture selection and window.confirm; notification buttons only open the manager with a prefilled link. Neither navigation nor notification clicks may automatically start a download. `startManagedDownload` must still revalidate user-picked asset via native resolver.
 - Any new permissions must be narrow, disclosed in README and covered by tests; `tabs` is only used to access supported URL metadata.
 - Include `page-offers.js`, `page-offer-background.js` in both Chromium (importScripts) and Firefox (background.scripts) as well as unpacked builds. Test with `node scripts/test-page-offers.mjs`.
+
+- Notification delivery is local WebExtensions API only: no remote push service. `notifications.js` is shared by the Chromium service worker and Firefox background scripts; keep it loaded before page offers/background. Never equate accepted `notifications.create` with an OS-displayed toast.
+- Notification preferences are separate from automatic download ON/OFF. Preserve the legacy `suggestionsEnabled` setting, bound repository cooldown to 24h, and keep local history small and free of full paths, credentials, and private URLs.
+- AppImage update alerts require exact paths confirmed by both Gear Lever `listUpdates` and `listInstalled` (not inferred from a manager name); do not reset deduplication on offline failures. Notification clicks only open the manager, never trigger installation/update.
+- Test notifications with `node scripts/test-notifications.mjs`, `node scripts/test-integration-notifications.mjs`, and `node scripts/test-page-offers.mjs`. Keep notification category text localized via the shared i18n registry.

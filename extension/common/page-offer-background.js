@@ -5,7 +5,8 @@
 (() => {
   const api = globalThis.browser || globalThis.chrome;
   const tr = globalThis.GLGI18n?.translate || (message => message);
-  if (!api?.tabs || !api?.notifications || !globalThis.GLGPageOffers) return;
+  if (!api?.tabs || !api?.notifications || !globalThis.GLGPageOffers ||
+      !globalThis.GLGNotifications) return;
 
   const CACHE_MS = 15 * 60 * 1000;
   const NOTIFY_MS = 24 * 60 * 60 * 1000;
@@ -14,6 +15,12 @@
   const cache = new Map();
   const notifying = new Set();
   const PREFIX = 'glg-repo-offer:';
+
+  function suggestionStatus(status) {
+    return api.storage.local.set({lastSuggestionStatus: {
+      status, at: new Date().toISOString()
+    }});
+  }
 
   async function resolveOffer(url) {
     const page = GLGPageOffers.parse(url);
@@ -51,14 +58,20 @@
     notifying.add(page.key);
     try {
       const settings = await api.storage.local.get(['suggestionsEnabled','suggestedRepositories']);
-      if (settings.suggestionsEnabled === false) return;
+      if (settings.suggestionsEnabled === false) {
+        await suggestionStatus('disabled'); return;
+      }
       const previous = settings.suggestedRepositories || {};
-      if (Date.now() - Number(previous[page.key] || 0) < NOTIFY_MS) return;
+      if (Date.now() - Number(previous[page.key] || 0) < NOTIFY_MS) {
+        await suggestionStatus('cooldown'); return;
+      }
       const offer = await resolveOffer(tab.url);
-      if (!offer?.choices?.length) return;
+      if (!offer?.choices?.length) {await suggestionStatus('no-assets'); return;}
       // Avoid a notification after the user has navigated away.
       const current = await api.tabs.get(tab.id);
-      if (!current?.active || GLGPageOffers.parse(current.url)?.key !== page.key) return;
+      if (!current?.active || GLGPageOffers.parse(current.url)?.key !== page.key) {
+        await suggestionStatus('inactive'); return;
+      }
       const count = offer.choices.length;
       const id = PREFIX + page.key;
       const options = {
@@ -70,12 +83,10 @@
           : tr(count + ' AppImages encontradas em ' + page.repository + '. Escolha a arquitetura correta.'),
         buttons:[{title: tr(count === 1 ? 'Ver e instalar' : 'Escolher AppImage')}]
       };
-      try { await api.notifications.create(id, options); }
-      catch {
-        // Some browsers do not support action buttons on notifications.
-        const {buttons, ...basic} = options;
-        await api.notifications.create(id, basic);
-      }
+      const emitted = await GLGNotifications.emit({kind: 'suggestions', id,
+        title: options.title, message: options.message, buttons: options.buttons});
+      await suggestionStatus(emitted.status);
+      if (!['requested', 'blocked'].includes(emitted.status)) return;
       const {suggestedRepositories = {}, offerNotifications = {}} =
         await api.storage.local.get(['suggestedRepositories','offerNotifications']);
       suggestedRepositories[page.key] = Date.now();
@@ -89,6 +100,7 @@
       });
     } catch (error) {
       // Browser notifications are best-effort; never treat a page as installed.
+      await suggestionStatus('error').catch(() => {});
       console.warn('Gear Lever Grab repository suggestion unavailable:', error);
     } finally {
       notifying.delete(page.key);

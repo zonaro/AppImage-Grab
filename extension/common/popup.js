@@ -72,6 +72,9 @@ refreshButton.addEventListener('click', loadApps);
 document.getElementById('manage').addEventListener('click', () => {
   void api.tabs.create({ url: api.runtime.getURL('manager.html') });
 });
+document.getElementById('manage-notifications').addEventListener('click', () => {
+  void api.tabs.create({url: api.runtime.getURL('manager.html') + '?view=notifications'});
+});
 void loadApps();
 
 
@@ -185,7 +188,11 @@ api.storage.local.get('suggestionsEnabled').then(data => {
   suggestionsToggle.checked=data.suggestionsEnabled!==false;
 });
 suggestionsToggle.addEventListener('change',() => {
-  void api.storage.local.set({suggestionsEnabled:suggestionsToggle.checked});
+  void (async () => {
+    const {notificationPreferences = {}} = await api.storage.local.get('notificationPreferences');
+    await api.storage.local.set({suggestionsEnabled: suggestionsToggle.checked,
+      notificationPreferences: {...notificationPreferences, suggestions: suggestionsToggle.checked}});
+  })();
 });
 // The suggestions toggle controls passive notifications, not the explicit
 // install action shown for the current repository.

@@ -5,6 +5,7 @@ import vm from 'node:vm';
 
 const helper = fs.readFileSync('extension/common/page-offers.js','utf8');
 const controller = fs.readFileSync('extension/common/page-offer-background.js','utf8');
+const notificationHelper = fs.readFileSync('extension/common/notifications.js','utf8');
 const parsed = vm.createContext({URL,console});
 parsed.globalThis = parsed;
 vm.runInContext(helper,parsed);
@@ -97,6 +98,7 @@ async function scenario({suggestionsEnabled=true}={}) {
   });
   context.globalThis=context;
   vm.runInContext(helper,context);
+  vm.runInContext(notificationHelper,context);
   vm.runInContext(controller,context);
   assert.equal(typeof listeners.tabUpdated,'function');
   assert.equal(typeof listeners.message,'function');
