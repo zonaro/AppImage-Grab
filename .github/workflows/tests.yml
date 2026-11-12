@@ -35,6 +35,7 @@ jobs:
           node scripts/test-update-check.mjs
           node scripts/test-manager-ui.mjs
           node scripts/test-install-click.mjs
+          node scripts/test-popup-errors.mjs
           node scripts/test-store.mjs
           node scripts/test-integration-notifications.mjs
           node scripts/test-notifications.mjs

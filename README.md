@@ -114,7 +114,7 @@ When you visit a **supported GitHub, GitLab, or Codeberg repository/release page
 
 ## Browser-based AppImage manager
 
-The extension's popup includes the ON/OFF toggle, a quick view of installed AppImages and last activity. The **Manage in browser** screen opens a tab with search, installed versions, update sources, update checks, manual updates and removals. Only verified available updates are offered; confirmations are required before modifying installed apps or their sources. This is a browser frontend for the Gear Lever CLI, not a clone of the GTK implementation.
+The extension's popup includes the ON/OFF toggle, a quick view of installed AppImages and last activity. Recoverable popup errors (Native Messaging unavailable, failed settings writes, update checks or browser navigation) now appear in an inline error message instead of generating unhandled promise rejections. Failed toggle changes are rolled back in the interface; a disconnected host does not prevent the popup from rendering. The **Manage in browser** screen opens a tab with search, installed versions, update sources, update checks, manual updates and removals. Only verified available updates are offered; confirmations are required before modifying installed apps or their sources. This is a browser frontend for the Gear Lever CLI, not a clone of the GTK implementation.
 
 ### Extension languages
 

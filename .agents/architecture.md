@@ -87,6 +87,7 @@ bridge.host
 
 ## Histórico de operações
 
-- Background records each completed/failed download and native integration via `GLGActivity.record` in `storage.local.activityHistory`, keyed by browser download ID. Limit: 200 recent operations, no URLs, full paths or credentials. A manual request rejected before download has its own operation ID; updates use an operation ID.
+- Background records each completed/failed download and native integration via `GLGActivity.record` in `storage.local.activityHistory`, keyed by browser download ID. Limit: 200 recent operations, no URLs, full paths or credentials.
+- Popup async operations must catch Native Messaging/storage/update/navigation failures without killing the UI. The `#popup-error` alert surfaces recoverable errors (tests: `scripts/test-popup-errors.mjs`); failed toggle writes restore their previous visual state. Extension context invalidation after a developer reload is ignored only in the obsolete popup, never as a success signal. A manual request rejected before download has its own operation ID; updates use an operation ID.
 - Manager includes a History tab with search/status filter and explicit copy/clear actions. New entries are announced via `storage.onChanged`; errors retain bridge/CLI error messages for troubleshooting. Notification failure clicks go to `?view=history`.
 - Bridge offers allowlisted `getHostLog` for read-only, bounded, redacted WARN/ERROR entries from the pre-existing `$XDG_STATE_HOME/gear-lever-grab/host.log`. This is NOT Gear Lever's private log; never read arbitrary caller-supplied paths or reveal credentials. Clearing browser history must not delete it.

@@ -13,8 +13,23 @@ const activity = document.getElementById('activity');
 const appsList = document.getElementById('apps-list');
 const appsStatus = document.getElementById('apps-status');
 const refreshButton = document.getElementById('refresh');
+const popupError = document.getElementById('popup-error');
 
-function render(data) {
+function reportPopupError(label, error) {
+  const message = String(error?.message || error);
+  // Unpacked extensions can be reloaded while their old popup is still open.
+  // That popup is obsolete; warning in the old context only creates noise.
+  if (/Extension context invalidated|context has been invalidated/i.test(message)) return;
+  popupError.textContent = label + ': ' + message.slice(0, 400);
+  popupError.hidden = false;
+}
+
+function clearPopupError() {
+  popupError.hidden = true;
+  popupError.textContent = '';
+}
+
+function render(data = {}) {
   toggle.checked = Boolean(data.enabled);
   description.textContent = toggle.checked ? 'ON · aguardando downloads' : 'OFF · downloads normais';
   const event = data.lastResult;
@@ -62,23 +77,39 @@ async function loadApps() {
   }
 }
 
-api.storage.local.get(['enabled', 'lastResult']).then(render);
+void api.storage.local.get(['enabled', 'lastResult']).then(render)
+  .catch(error => reportPopupError('Não foi possível carregar as preferências', error));
 toggle.addEventListener('change', async () => {
-  await api.storage.local.set({ enabled: toggle.checked });
-  render(await api.storage.local.get(['enabled', 'lastResult']));
+  const requested = toggle.checked;
+  try {
+    await api.storage.local.set({enabled: requested});
+    render(await api.storage.local.get(['enabled', 'lastResult']));
+    clearPopupError();
+  } catch (error) {
+    toggle.checked = !requested;
+    reportPopupError('Não foi possível alterar a integração automática', error);
+  }
 });
 api.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && (changes.enabled || changes.lastResult)) {
-    void api.storage.local.get(['enabled', 'lastResult']).then(render);
+    void api.storage.local.get(['enabled', 'lastResult']).then(render)
+      .catch(error => reportPopupError('Falha ao atualizar o estado', error));
     if (changes.lastResult?.newValue?.status === 'success') void loadApps();
   }
 });
 refreshButton.addEventListener('click', loadApps);
+async function openManager(path = '') {
+  try {
+    await api.tabs.create({url: api.runtime.getURL('manager.html') + path});
+  } catch (error) {
+    reportPopupError('Não foi possível abrir o gerenciador', error);
+  }
+}
 document.getElementById('manage').addEventListener('click', () => {
-  void api.tabs.create({ url: api.runtime.getURL('manager.html') });
+  void openManager();
 });
 document.getElementById('manage-notifications').addEventListener('click', () => {
-  void api.tabs.create({url: api.runtime.getURL('manager.html') + '?view=notifications'});
+  void openManager('?view=notifications');
 });
 void loadApps();
 
@@ -101,7 +132,9 @@ function showGrabUpdate(status) {
   document.getElementById('update-command').textContent = GLGUpdate.COMMAND;
 }
 
-api.storage.local.get('updateStatus').then(({ updateStatus }) => showGrabUpdate(updateStatus));
+void api.storage.local.get('updateStatus')
+  .then(data => showGrabUpdate(data?.updateStatus))
+  .catch(error => reportPopupError('Não foi possível ler as atualizações', error));
 api.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.updateStatus) showGrabUpdate(changes.updateStatus.newValue);
 });
@@ -115,10 +148,16 @@ document.getElementById('copy-updater').addEventListener('click', async () => {
 });
 document.getElementById('recheck-updates').addEventListener('click', async event => {
   event.currentTarget.disabled = true;
-  try { showGrabUpdate(await GLGUpdate.check({force: true})); }
-  finally { event.currentTarget.disabled = false; }
+  try {
+    showGrabUpdate(await GLGUpdate.check({force: true}));
+    clearPopupError();
+  } catch (error) {
+    reportPopupError('Não foi possível verificar atualizações', error);
+  } finally {
+    event.currentTarget.disabled = false;
+  }
 });
-void GLGUpdate.check();
+void GLGUpdate.check().catch(error => reportPopupError('Falha na verificação de atualizações', error));
 
 
 // The active repository suggestion is independent from automatic downloads.
@@ -132,10 +171,7 @@ const suggestionsToggle = document.getElementById('suggestions-enabled');
 
 function openOfferInManager() {
   if (!currentPageOffer) return;
-  void api.tabs.create({
-    url:api.runtime.getURL('manager.html') + '?source=' +
-      encodeURIComponent(currentPageOffer.source)
-  });
+  void openManager('?source=' + encodeURIComponent(currentPageOffer.source));
 }
 
 async function loadPageOffer() {
@@ -161,8 +197,10 @@ async function loadPageOffer() {
     offerStatus.textContent='Escolha a arquitetura correta antes de instalar.';
     offerBox.hidden=false;
   } catch (error) {
-    // No host / unsupported page: don't replace the normal popup with an error.
-    console.warn('Gear Lever Grab page suggestion unavailable:',error);
+    // Unavailable background/native host is a recoverable popup condition.
+    // Keep the regular controls usable and explain the failure without an
+    // uncaught rejection or a noisy console warning on every popup open.
+    reportPopupError('Não foi possível consultar sugestões de AppImage', error);
   }
 }
 
@@ -185,15 +223,20 @@ installOffer.addEventListener('click',async () => {
   }
 });
 document.getElementById('open-offer-manager').addEventListener('click',openOfferInManager);
-api.storage.local.get('suggestionsEnabled').then(data => {
-  suggestionsToggle.checked=data.suggestionsEnabled!==false;
-});
-suggestionsToggle.addEventListener('change',() => {
+void api.storage.local.get('suggestionsEnabled').then(data => {
+  suggestionsToggle.checked=data?.suggestionsEnabled!==false;
+}).catch(error => reportPopupError('Não foi possível ler as sugestões', error));
+suggestionsToggle.addEventListener('change', () => {
+  const requested = suggestionsToggle.checked;
   void (async () => {
     const {notificationPreferences = {}} = await api.storage.local.get('notificationPreferences');
-    await api.storage.local.set({suggestionsEnabled: suggestionsToggle.checked,
-      notificationPreferences: {...notificationPreferences, suggestions: suggestionsToggle.checked}});
-  })();
+    await api.storage.local.set({suggestionsEnabled: requested,
+      notificationPreferences: {...notificationPreferences, suggestions: requested}});
+    clearPopupError();
+  })().catch(error => {
+    suggestionsToggle.checked = !requested;
+    reportPopupError('Não foi possível salvar as sugestões', error);
+  });
 });
 // The suggestions toggle controls passive notifications, not the explicit
 // install action shown for the current repository.

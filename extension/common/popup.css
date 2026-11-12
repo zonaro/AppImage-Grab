@@ -59,3 +59,7 @@ img.brand-mark{object-fit:contain;padding:0}
 .offer-actions button:disabled{opacity:.6;cursor:wait}
 .suggestions-option{display:flex;align-items:center;gap:8px;margin-top:13px;font-size:11px;color:var(--muted);cursor:pointer}
 .suggestions-option input{accent-color:#2f9956;width:15px;height:15px}
+
+/* Recoverable failures in popup actions are visible without breaking the UI. */
+.popup-error{margin:0 0 13px;padding:11px 12px;border:1px solid light-dark(#e1a9ae,#864752);border-radius:10px;background:light-dark(#fff0f1,#422a31);color:light-dark(#9a2634,#ffc8ce);font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+.popup-error[hidden]{display:none}
