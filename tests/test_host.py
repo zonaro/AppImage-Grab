@@ -85,9 +85,9 @@ class HostTests(unittest.TestCase):
             state.joinpath("host.log").write_text(
                 "2026-11-12 12:30:01,001 WARNING Request failed: "
                 "Gear Lever retornou 1: /home/secret/Downloads/app.AppImage "
-                "https://example.com/?token=hidden password=abcdef\\n"
-                "2026-11-12 12:31:01,002 INFO Unrelated information\\n"
-                "2026-11-12 12:32:02,003 ERROR Unhandled host error\\n",
+                "https://example.com/?token=hidden password=abcdef\n"
+                "2026-11-12 12:31:01,002 INFO Unrelated information\n"
+                "2026-11-12 12:32:02,003 ERROR Unhandled host error\n",
                 encoding="utf-8")
             with patch.object(host, "STATE_DIR", state):
                 reply = host.handle({"action": "getHostLog"})
