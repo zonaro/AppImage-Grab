@@ -5,6 +5,7 @@ import vm from 'node:vm';
 
 const script = readFileSync('extension/common/background.js','utf8');
 const noticesScript = readFileSync('extension/common/notifications.js', 'utf8');
+const activityScript = readFileSync('extension/common/activity-log.js', 'utf8');
 async function runCase({enabled, manual, integrationStatus, expectedNotifications, notificationFails = false}) {
   let changed = null, handler = null;
   const notices = [];
@@ -63,6 +64,7 @@ async function runCase({enabled, manual, integrationStatus, expectedNotification
   context.GLGUpdate={async check(){}};
   context.globalThis=context;
   vm.runInContext(noticesScript,context);
+  vm.runInContext(activityScript,context);
   vm.runInContext(script,context);
   assert.equal(typeof changed,'function');
   changed({id:42,state:{current:'complete'}});
@@ -76,6 +78,11 @@ async function runCase({enabled, manual, integrationStatus, expectedNotification
   }
   assert.equal(state.lastResult.status,
     ['integrated_with_source','integrated_without_source','integrated_unlisted'].includes(integrationStatus)?'success':'error');
+  assert.equal(state.activityHistory.length,1,'one persistent event per download');
+  assert.equal(state.activityHistory[0].name,'app.AppImage');
+  assert.equal(state.activityHistory[0].status,
+    ['integrated_with_source','integrated_without_source'].includes(integrationStatus)
+      ? 'success' : integrationStatus === 'integrated_unlisted' ? 'warning' : 'error');
   assert.ok(handler,'Manager download handler registered');
 }
 await runCase({enabled:true,manual:false,integrationStatus:'integrated_with_source',expectedNotifications:1});

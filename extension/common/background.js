@@ -1,7 +1,7 @@
 // Background revision is loaded once when the browser starts the extension.
 if (typeof importScripts === 'function' && !globalThis.GLGUpdate) {
   importScripts('build-revision.js', 'i18n.js', 'native-client.js', 'update-check.js',
-    'notifications.js',
+    'notifications.js', 'activity-log.js',
     'page-offers.js', 'page-offer-background.js');
 }
 /* Chromium MV3 / Firefox MV3: observe completed downloads, never intercept. */
@@ -14,6 +14,11 @@ const SUCCESSFUL_INTEGRATIONS = new Set([
   'embedded_source_preserved', 'existing_source_preserved',
   'integrated_unlisted' // Gear Lever confirmed the copied file but CLI list is stale.
 ]);
+
+async function logActivity(data) {
+  try { await globalThis.GLGActivity?.record(data); }
+  catch (error) { console.warn('Activity history unavailable:', error); }
+}
 
 async function notifyIntegrated(download, reply) {
   if (!SUCCESSFUL_INTEGRATIONS.has(reply.status) || !reply.installedPath) return;
@@ -39,6 +44,8 @@ async function enqueueManualDownload(asset, filename = '') {
   const {pending = {}} = await api.storage.local.get('pending');
   pending[id] = {manual: true, url: asset.url, sourceName: asset.name};
   await api.storage.local.set({pending});
+  await logActivity({id: 'download-' + id, phase: 'download', status: 'downloading',
+    filename: asset.name, detail: 'Download iniciado pelo usuário.', source: 'manual'});
   // The download can finish before storage.local.set returns.
   const downloads = await api.downloads.search({id});
   if (downloads[0]?.state === 'complete') void finished({id, state:{current:'complete'}});
@@ -115,7 +122,14 @@ api.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (!['startManagedDownload', 'startCatalogDownload'].includes(message?.action)) return false;
   void (message.action === 'startCatalogDownload' ? startCatalogDownload(message) : startManagedDownload(message))
     .then(data => sendResponse({ok:true, ...data}))
-    .catch(error => sendResponse({ok:false, error:tr(String(error?.message || error))}));
+    .catch(async error => {
+      await logActivity({id: 'operation-' + Date.now() + '-' + Math.random().toString(36).slice(2),
+        phase: 'download', status: 'error',
+        filename: message?.fileName || 'AppImage',
+        detail: 'Falha ao iniciar download: ' + String(error?.message || error),
+        source: 'manual'});
+      sendResponse({ok:false, error:tr(String(error?.message || error))});
+    });
   return true;
 });
 
@@ -179,15 +193,22 @@ async function created(item) {
   const keys = Object.keys(pending);
   for (const id of keys.slice(0, Math.max(0, keys.length - 120))) delete pending[id];
   await api.storage.local.set({ pending });
+  await logActivity({id: 'download-' + item.id, phase: 'download', status: 'downloading',
+    filename: item.filename, detail: 'Download detectado; aguardando conclusão.',
+    source: 'automatic'});
 }
 
 async function finished(delta) {
   if (delta.state?.current === 'interrupted') {
     const {pending = {}} = await api.storage.local.get('pending');
-    if (pending[delta.id]?.manual) {
+    if (pending[delta.id]) {
+      const manual = Boolean(pending[delta.id].manual);
+      await logActivity({id: 'download-' + delta.id, phase: 'download',
+        status: 'cancelled', filename: pending[delta.id].sourceName || 'AppImage',
+        detail: 'Download interrompido ou cancelado.', source: manual ? 'manual' : 'automatic'});
       delete pending[delta.id];
       await api.storage.local.set({pending});
-      await result('error', 'Download da AppImage interrompido ou cancelado');
+      if (manual) await result('error', 'Download da AppImage interrompido ou cancelado');
     }
     return;
   }
@@ -202,6 +223,10 @@ async function finished(delta) {
   working.add(delta.id);
   try {
     await result('working', item.filename);
+    await logActivity({id: 'download-' + delta.id, phase: 'integration',
+      status: 'integrating', filename: item.filename,
+      detail: 'Download concluído; aguardando resultado do Gear Lever.',
+      source: manual ? 'manual' : 'automatic'});
     const original = (settings.pending || {})[delta.id] || {};
     const payload = {
       ...item,
@@ -230,9 +255,18 @@ async function finished(delta) {
           ? 'Arquivo já processado'
           : 'Integrado sem fonte automática (origem não identificada)';
     await result('success', details);
+    await logActivity({id: 'download-' + delta.id, phase: 'integration',
+      status: reply.status === 'integrated_unlisted' ? 'warning'
+        : reply.status === 'already_processed' ? 'skipped' : 'success',
+      filename: item.filename, detail: details,
+      source: manual ? 'manual' : 'automatic'});
     await notifyIntegrated(item, reply);
   } catch (error) {
     await result('error', item.filename + ': ' + (error?.message || String(error)));
+    await logActivity({id: 'download-' + delta.id, phase: 'integration',
+      status: 'error', filename: item.filename,
+      detail: String(error?.message || error),
+      source: manual ? 'manual' : 'automatic'});
     const name = (item.filename.split('/').pop() || 'AppImage').slice(0, 100);
     const partial = String(error?.message || '').includes('Integrado em ');
     void GLGNotifications.emit({kind: 'integrationError',
@@ -334,18 +368,28 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
             const name = String(message.name || 'AppImage').slice(0, 100)
               .replace(/[\r\n]/g, ' ');
             const operationId = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+            const activityId = 'operation-' + operationId;
+            await logActivity({id: activityId, phase: 'update',
+              status: 'integrating', filename: name,
+              detail: 'Atualização manual iniciada.', source: 'update'});
             try {
               const reply = await GLGNative.request({action: 'updateApp',
                 path: message.path, confirmed: true});
               if (reply.status !== 'updated' || reply.path !== message.path) {
                 throw new Error('Gear Lever did not confirm the requested update');
               }
+              await logActivity({id: activityId, phase: 'update',
+                status: 'success', filename: name,
+                detail: 'Atualização concluída pelo Gear Lever.', source: 'update'});
               await GLGNotifications.emit({kind: 'updatesCompleted',
                 id: 'glg-update-completed-' + operationId,
                 title: 'AppImage atualizada', message: name + ' foi atualizada com sucesso.'})
                 .catch(error => console.warn('Update notification unavailable:', error));
               return {status: 'updated'};
             } catch (error) {
+              await logActivity({id: activityId, phase: 'update',
+                status: 'error', filename: name,
+                detail: String(error?.message || error), source: 'update'});
               await GLGNotifications.emit({kind: 'updatesError',
                 id: 'glg-update-error-' + operationId,
                 title: 'Falha ao atualizar AppImage',

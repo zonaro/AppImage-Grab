@@ -5,6 +5,7 @@ import json
 import logging
 import os
 from pathlib import Path
+import re
 import stat
 import struct
 import sys
@@ -137,12 +138,44 @@ def _integrate(request, adapter_factory):
         return {"ok": True, "status": result.status, **saved}
 
 
+def read_host_log():
+    """Read only this bridge's existing log, never arbitrary files or Gear Lever internals."""
+    logfile = STATE_DIR / "host.log"
+    try:
+        metadata = logfile.lstat()
+        if not stat.S_ISREG(metadata.st_mode) or metadata.st_uid != os.getuid():
+            return []
+        # Read the tail only; no unbounded file reads or private traceback dumps.
+        with logfile.open("rb") as stream:
+            stream.seek(max(0, metadata.st_size - 65536))
+            tail = stream.read(65536).decode("utf-8", errors="replace")
+    except OSError:
+        return []
+
+    entries = []
+    for line in tail.splitlines()[-250:]:
+        match = re.match(r"^(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d,\d+) (WARNING|ERROR) (.*)$", line)
+        if not match:
+            continue
+        timestamp, level, detail = match.groups()
+        detail = re.sub(r"https?://\S+", "[URL omitida]", detail, flags=re.I)
+        detail = re.sub(r"/(?:home|tmp|run|var|mnt)/[^\s\"'<>]+",
+                        lambda item: "…/" + item.group(0).rstrip(".,;:").split("/")[-1],
+                        detail)
+        detail = re.sub(r"(?i)\b(token|password|authorization|secret|api[_-]?key)\s*[:=]\s*\S+",
+                        "[credencial omitida]", detail)
+        entries.append({"at": timestamp, "level": level, "detail": detail[:800]})
+    return entries[-80:]
+
+
 def handle(request, adapter_factory=GearLever):
     action = request.get("action")
     if action == "ping":
         return {"ok": True, "status": "ready", "version": 2}
     if action == "getVersion":
         return {"ok": True, "commit": installed_commit(), "branch": "main"}
+    if action == "getHostLog":
+        return {"ok": True, "entries": read_host_log()}
     if action == "resolveLink":
         return {"ok": True, "choices": resolve_link(request.get("url"))}
     if action == "integrate":

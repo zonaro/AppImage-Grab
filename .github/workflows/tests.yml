@@ -21,6 +21,9 @@ jobs:
         run: |
           node --check extension/common/background.js
           node --check extension/common/notifications.js
+          node --check extension/common/activity-log.js
+          node --check extension/common/activity-history.js
+          node scripts/test-activity-history.mjs
           node --check extension/common/notification-settings.js
           node --check extension/common/native-client.js
           node --check extension/common/i18n.js
@@ -59,6 +62,8 @@ jobs:
           test -f dist/chromium/store.js
           test -f dist/chromium/native-client.js
           test -f dist/chromium/notifications.js
+          test -f dist/chromium/activity-log.js
+          test -f dist/chromium/activity-history.js
           test -f dist/chromium/notification-settings.js
           test -f dist/chromium/update-check.js
           test -f dist/chromium/build-revision.js
@@ -68,6 +73,8 @@ jobs:
           test -f dist/firefox/store.js
           test -f dist/firefox/native-client.js
           test -f dist/firefox/notifications.js
+          test -f dist/firefox/activity-log.js
+          test -f dist/firefox/activity-history.js
           test -f dist/firefox/notification-settings.js
           test -f dist/firefox/build-revision.js
           test -f dist/chromium/page-offers.js

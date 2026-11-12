@@ -88,3 +88,9 @@ bridge.host
 - Explicit manager updates now request `startAppUpdate` in the background, which requires an internal manager-page sender, explicit confirmation and the native Gear Lever path recheck. The background emits success only after `status: updated` and the exact returned path, or a distinct error alert on failure. Notification clicks only open the manager, never execute an update or install.
 - A tab still needs a recognized provider and verified AppImage assets to be eligible for repository suggestions. `lastSuggestionStatus` records a small categorical diagnostic (disabled, cooldown, no assets, inactive, requested, blocked or error), never a browsed URL.
 - Testing: `scripts/test-notifications.mjs`, `scripts/test-notification-ui.mjs`, existing integration/page-offer tests; real Fedora GNOME/Edge/Firefox visual notification delivery remains a manual QA gate.
+
+## Histórico de operações
+
+- Background records each completed/failed download and native integration via `GLGActivity.record` in `storage.local.activityHistory`, keyed by browser download ID. Limit: 200 recent operations, no URLs, full paths or credentials. A manual request rejected before download has its own operation ID; updates use an operation ID.
+- Manager includes a History tab with search/status filter and explicit copy/clear actions. New entries are announced via `storage.onChanged`; errors retain bridge/CLI error messages for troubleshooting. Notification failure clicks go to `?view=history`.
+- Bridge offers allowlisted `getHostLog` for read-only, bounded, redacted WARN/ERROR entries from the pre-existing `$XDG_STATE_HOME/gear-lever-grab/host.log`. This is NOT Gear Lever's private log; never read arbitrary caller-supplied paths or reveal credentials. Clearing browser history must not delete it.

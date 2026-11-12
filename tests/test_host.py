@@ -79,6 +79,32 @@ class HostTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 host.handle({"action": "integrate", "filename": str(target), "url": "http://example.com/a.AppImage"})
 
+    def test_local_host_log_is_read_only_and_redacted(self):
+        with tempfile.TemporaryDirectory() as dirname:
+            state = Path(dirname)
+            state.joinpath("host.log").write_text(
+                "2026-11-12 12:30:01,001 WARNING Request failed: "
+                "Gear Lever retornou 1: /home/secret/Downloads/app.AppImage "
+                "https://example.com/?token=hidden password=abcdef\\n"
+                "2026-11-12 12:31:01,002 INFO Unrelated information\\n"
+                "2026-11-12 12:32:02,003 ERROR Unhandled host error\\n",
+                encoding="utf-8")
+            with patch.object(host, "STATE_DIR", state):
+                reply = host.handle({"action": "getHostLog"})
+            self.assertTrue(reply["ok"])
+            self.assertEqual(len(reply["entries"]), 2)
+            details = str(reply["entries"])
+            self.assertIn("app.AppImage", details)
+            self.assertNotIn("/home/secret", details)
+            self.assertNotIn("example.com", details)
+            self.assertNotIn("abcdef", details)
+            self.assertEqual(reply["entries"][0]["level"], "WARNING")
+
+    def test_missing_host_log_is_empty_without_gearlever(self):
+        with tempfile.TemporaryDirectory() as dirname:
+            with patch.object(host, "STATE_DIR", Path(dirname)):
+                self.assertEqual(host.handle({"action":"getHostLog"}), {"ok":True,"entries":[]})
+
     def test_mutation_requires_confirmation(self):
         with self.assertRaises(ValueError):
             host.handle({"action": "removeApp", "path": "/tmp/app.AppImage"})

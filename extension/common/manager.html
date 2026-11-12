@@ -14,6 +14,7 @@
 <script defer src="store.js"></script>
 <script defer src="manager.js"></script>
 <script defer src="notification-settings.js"></script>
+<script defer src="activity-history.js"></script>
 </head>
 <body>
 <div class="app-layout">
@@ -24,6 +25,7 @@
       <button type="button" class="nav-item" id="nav-updates"><span aria-hidden="true">↻</span> Atualizações</button>
       <button type="button" class="nav-item" id="nav-store"><span aria-hidden="true">◈</span> Loja</button>
       <button type="button" class="nav-item" id="nav-notifications"><span aria-hidden="true">♧</span> Notificações</button>
+      <button type="button" class="nav-item" id="nav-history"><span aria-hidden="true">☷</span> Histórico</button>
     </nav>
     <div class="sidebar-bottom">
       <div class="side-info"><span class="status-led" aria-hidden="true"></span> Conectado ao Gear Lever local</div>
@@ -95,6 +97,42 @@
           <div class="store-bottom"><button type="button" id="store-more" class="button secondary" hidden>Carregar mais aplicativos</button></div>
         </section>
         <section class="disclaimer"><strong>Downloads sob seu controle.</strong> A loja não executa AppImages e não inicia downloads automaticamente. Alguns registros têm apenas um link externo; a integração só é confirmada pelo Gear Lever.</section>
+      </div>
+      <div id="history-view" hidden>
+        <section class="headline"><div><p class="eyebrow">INSTALAÇÕES E DIAGNÓSTICO</p>
+          <h1>Histórico de atividades</h1>
+          <p class="subtitle">Acompanhe downloads, integrações, atualizações e falhas. Os detalhes são salvos somente neste navegador, sem URLs privadas ou caminhos completos.</p>
+        </div></section>
+        <section class="catalog activity-panel" aria-labelledby="activity-history-title">
+          <div class="catalog-header">
+            <div><h2 id="activity-history-title">Instalações e erros</h2>
+              <p>Até 200 operações recentes. Clique em uma entrada para ver o motivo do erro.</p></div>
+            <div class="activity-actions">
+              <button type="button" class="button secondary" id="history-refresh">Atualizar</button>
+              <button type="button" class="button secondary" id="history-copy">Copiar relatório</button>
+              <button type="button" class="button danger-outline" id="history-clear">Limpar histórico</button>
+            </div>
+          </div>
+          <div class="activity-filters">
+            <label>Buscar no histórico
+              <input type="search" id="history-search" placeholder="AppImage ou mensagem de erro…" autocomplete="off"></label>
+            <label>Filtrar resultado
+              <select id="history-filter"><option value="all">Todos</option>
+                <option value="error">Erros</option><option value="warning">Pendências</option>
+                <option value="success">Sucessos</option><option value="progress">Em andamento</option>
+                <option value="cancelled">Cancelados</option></select></label>
+          </div>
+          <p class="notice" id="history-status" role="status" aria-live="polite"></p>
+          <div id="history-list" class="activity-list"></div>
+        </section>
+        <section class="catalog activity-panel" aria-labelledby="host-history-title">
+          <div class="catalog-header"><div><h2 id="host-history-title">Log do serviço local</h2>
+            <p>Erros anteriores registrados pelo Gear Lever Grab no host.log. Não é o log interno do Gear Lever.</p></div>
+            <button type="button" id="host-log-refresh" class="button secondary">Consultar log local</button>
+          </div>
+          <p class="notice" id="host-log-status" role="status" aria-live="polite"></p>
+          <div id="host-log-list" class="activity-list"></div>
+        </section>
       </div>
       <div id="notifications-view" hidden>
         <section class="headline"><div><p class="eyebrow">AVISOS DO NAVEGADOR</p><h1>Notificações</h1>

@@ -29,6 +29,7 @@
       "native-client.js",
       "update-check.js",
       "notifications.js",
+      "activity-log.js",
       "page-offers.js",
       "page-offer-background.js",
       "background.js"

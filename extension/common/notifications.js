@@ -137,7 +137,9 @@ globalThis.GLGNotifications = (() => {
 
   function openManager(id) {
     if (!/^glg-(integrated-|integration-error-|app-update-|update-completed-|update-error-)/.test(id)) return;
-    const view = id.startsWith('glg-app-update-') ? '?view=updates' : '';
+    const view = id.startsWith('glg-app-update-') ? '?view=updates'
+      : (id.startsWith('glg-integration-error-') || id.startsWith('glg-update-error-'))
+        ? '?view=history' : '';
     void api.tabs.create({url: api.runtime.getURL('manager.html') + view});
   }
   api.notifications?.onClicked?.addListener(openManager);

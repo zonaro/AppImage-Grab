@@ -31,14 +31,18 @@ function filters() {
   $('nav-updates').classList.toggle('active', state.view === 'installed' && state.filter === 'updates');
   $('nav-store').classList.toggle('active', state.view === 'store');
   $('nav-notifications').classList.toggle('active', state.view === 'notifications');
+  $('nav-history').classList.toggle('active', state.view === 'history');
   $('installed-view').hidden = state.view !== 'installed';
   $('store-view').hidden = state.view !== 'store';
   $('notifications-view').hidden = state.view !== 'notifications';
+  $('history-view').hidden = state.view !== 'history';
   $('refresh-label').textContent = state.view === 'store' ? 'Atualizar loja'
-    : state.view === 'notifications' ? 'Atualizar histórico' : 'Atualizar lista';
+    : state.view === 'notifications' ? 'Atualizar histórico'
+      : state.view === 'history' ? 'Atualizar histórico' : 'Atualizar lista';
   $('breadcrumb').textContent = state.view === 'store' ? 'Loja'
     : state.view === 'notifications' ? 'Notificações'
-      : state.filter === 'updates' ? 'Atualizações' : 'Instalados';
+      : state.view === 'history' ? 'Histórico'
+        : state.filter === 'updates' ? 'Atualizações' : 'Instalados';
   $('catalog-title').textContent = state.filter === 'updates' ? 'Atualizações disponíveis' : 'Aplicativos instalados';
 }
 
@@ -305,12 +309,16 @@ function showUpdates() {
 }
 
 $('refresh').addEventListener('click', () => state.view === 'store' ? GLGStore.refresh()
-  : state.view === 'notifications' ? GLGNotificationUI.refresh() : refreshApps());
+  : state.view === 'notifications' ? GLGNotificationUI.refresh()
+    : state.view === 'history' ? GLGActivityUI.refresh() : refreshApps());
 $('check-updates').addEventListener('click', checkUpdates);
 $('nav-installed').addEventListener('click', () => { state.view = 'installed'; state.filter = 'all'; render(); });
 $('nav-store').addEventListener('click', () => { state.view = 'store'; render(); GLGStore.activate(); });
 $('nav-notifications').addEventListener('click', () => {
   state.view = 'notifications'; render(); GLGNotificationUI.activate();
+});
+$('nav-history').addEventListener('click', () => {
+  state.view = 'history'; render(); GLGActivityUI.activate();
 });
 $('filter-all').addEventListener('click', () => { state.filter = 'all'; render(); });
 $('nav-updates').addEventListener('click', showUpdates);
@@ -429,6 +437,8 @@ try {
     window.addEventListener('DOMContentLoaded', showUpdates, {once: true});
   } else if (initialView === 'notifications') {
     window.addEventListener('DOMContentLoaded', () => $('nav-notifications').click(), {once: true});
+  } else if (initialView === 'history') {
+    window.addEventListener('DOMContentLoaded', () => $('nav-history').click(), {once: true});
   }
   if (initialSource && initialSource.length <= 2048 &&
       /^https:\/\/(github\.com|www\.github\.com|gitlab\.com|codeberg\.org)\//.test(initialSource)) {
