@@ -58,12 +58,20 @@ const sandbox = {
       called.push(req);
       if (req.action === 'listInstalled') return {ok: true, apps: [app]};
       if (req.action === 'listUpdates') return {ok: true, apps: updates};
+      if (req.action === 'resolveLink') return {ok: true, choices: [
+        {name: 'MyApp-x86_64.AppImage', source: 'GitHub',
+         url: 'https://github.com/publisher/myapp/releases/download/v1/MyApp-x86_64.AppImage',
+         architecture: 'x86_64'}]};
       if (req.action === 'updateApp') return {ok: true};
       throw Error('Unexpected native action: ' + req.action);
     }
   },
   GLGUpdate: {COMMAND: 'test command', async check() {}},
   browser: {
+    runtime: {async sendMessage(message) {
+      called.push(message);
+      return {ok: true, name: 'MyApp-x86_64.AppImage'};
+    }},
     storage: {
       local: {async get() {return {};}, async set() {}},
       onChanged: {addListener() {}}
@@ -111,5 +119,16 @@ assert.equal(elements['save-source'].hidden, true,
 assert.equal(elements['source-manager'].disabled, true);
 assert.equal(elements['source-warning'].hidden, false);
 assert.equal(elements['unset-source'].hidden, true);
+
+// A deliberate click on Download/Install must not open a second confirm dialog.
+sandbox.window.confirm = () => {throw new Error('Unexpected installation confirmation');};
+elements['link-url'].value = 'https://github.com/publisher/myapp/releases/latest';
+await elements['link-form'].handlers.submit({preventDefault() {}});
+assert.equal(elements['link-choices'].hidden, false);
+elements['link-asset'].value = '0';
+await elements['link-download'].handlers.click();
+assert.ok(called.some(request => request.action === 'startManagedDownload' &&
+  request.assetUrl.includes('/MyApp-x86_64.AppImage')));
+assert.match(elements['link-feedback'].textContent, /Download iniciado/);
 
 console.log('Browser manager regression tests passed.');

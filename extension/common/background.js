@@ -11,15 +11,20 @@ const HOST = 'br.com.redclaw.gear_lever_grab';
 const working = new Set();
 const SUCCESSFUL_INTEGRATIONS = new Set([
   'integrated_with_source', 'integrated_without_source',
-  'embedded_source_preserved', 'existing_source_preserved'
+  'embedded_source_preserved', 'existing_source_preserved',
+  'integrated_unlisted' // Gear Lever confirmed the copied file but CLI list is stale.
 ]);
 
 async function notifyIntegrated(download, reply) {
   if (!SUCCESSFUL_INTEGRATIONS.has(reply.status) || !reply.installedPath) return;
   const name = (reply.installedPath.split('/').pop() || 'AppImage').slice(0, 100);
+  const unlisted = reply.status === 'integrated_unlisted';
   try {
     await GLGNotifications.emit({kind: 'integrationSuccess', id: 'glg-integrated-' + download.id,
-      title: 'AppImage adicionada ao Gear Lever', message: name + ' foi integrada com sucesso.'});
+      title: unlisted ? 'AppImage integrada; listagem pendente' : 'AppImage adicionada ao Gear Lever',
+      message: unlisted
+        ? name + ': o Gear Lever confirmou a integração, mas ainda não listou o aplicativo.'
+        : name + ' foi integrada com sucesso.'});
   } catch (error) {
     // Notification/storage failures must not turn a real integration into an error.
     console.warn('Gear Lever Grab notification unavailable:', error);
@@ -215,7 +220,9 @@ async function finished(delta) {
     const pending = latest.pending || {};
     delete pending[delta.id];
     await api.storage.local.set({ processed, pending });
-    const details = reply.status === 'integrated_with_source'
+    const details = reply.status === 'integrated_unlisted'
+      ? 'Gear Lever confirmou a integração, mas ainda não listou o aplicativo; confira o gerenciador.'
+      : reply.status === 'integrated_with_source'
       ? 'Integrado com atualizações: ' + reply.sourceOrigin
       : reply.status === 'embedded_source_preserved' || reply.status === 'existing_source_preserved'
         ? 'Integrado; fonte existente preservada'

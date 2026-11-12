@@ -257,8 +257,6 @@ globalThis.GLGStore = (() => {
     const app = s.selected;
     const choice = s.choices[Number($('store-file').value)];
     if (!app || !choice) return;
-    if (!window.confirm(tr('Baixar "' + choice.name + '" de ' + (app.source === 'hub' ? 'AppImageHub' : app.releaseUrl) +
-      ' e integrar ao Gear Lever? Confirme que você confia no desenvolvedor e na arquitetura.'))) return;
     const button = $('store-detail-download');
     button.disabled = true;
     text('store-detail-status', 'Iniciando download no navegador…');

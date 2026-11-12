@@ -266,6 +266,13 @@ globalThis.GLGI18n = (() => {
     ['Resposta inválida do catálogo AppImageHub', 'Invalid AppImageHub catalog response', 'Respuesta no válida del catálogo de AppImageHub'],
 
     ['AppImage adicionada ao Gear Lever', 'AppImage added to Gear Lever', 'AppImage añadida a Gear Lever'],
+    ['AppImage integrada; listagem pendente', 'AppImage integrated; listing pending', 'AppImage integrada; listado pendiente'],
+    ['{{name}}: o Gear Lever confirmou a integração, mas ainda não listou o aplicativo.',
+      '{{name}}: Gear Lever confirmed integration, but has not listed the app yet.',
+      '{{name}}: Gear Lever confirmó la integración, pero todavía no muestra la aplicación.'],
+    ['Gear Lever confirmou a integração, mas ainda não listou o aplicativo; confira o gerenciador.',
+      'Gear Lever confirmed integration, but has not listed the app yet; check the manager.',
+      'Gear Lever confirmó la integración, pero todavía no muestra la aplicación; comprueba el administrador.'],
     ['{{name}} foi integrada com sucesso.', '{{name}} was successfully integrated.', '{{name}} se integró correctamente.'],
     ['Notificações', 'Notifications', 'Notificaciones'],
     ['Notificações e diagnóstico', 'Notifications and diagnostics', 'Notificaciones y diagnóstico'],

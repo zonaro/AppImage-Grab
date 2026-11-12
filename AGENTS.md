@@ -35,13 +35,14 @@
 - Preserve pre-existing sources: embedded sources are read-only; if existing config cannot be verified, block replacement/removal; unsupported managers must not be silently mapped to GithubUpdater.
 - Regression tests: tests/test_source_config.py and tests/test_manager.py. Maintain exact path matching and fail-closed behavior on offline/missing config.
 
-- When editing link imports: never download arbitrary URL schemes or hosts; trust only explicit provider release assets and fixed GitHub/GitLab/Codeberg APIs; confirm selected architecture and user intent before browser download. Browser background must revalidate the selected asset.
+- When editing link imports: never download arbitrary URL schemes or hosts; trust only explicit provider release assets and fixed GitHub/GitLab/Codeberg APIs. Asset/architecture selection followed by a direct Install click establishes user intent without a second dialog. Browser background must revalidate the selected asset.
 - Native host must confirm Gear Lever integration before sending desktop success notifications. No success toast for failed/duplicate imports. Automated ON/OFF does not block explicit user-initiated downloads.
+- Trust exact CLI success output and verify its destination path/content; do not infer successful installs from arbitrary new entries in `listInstalled`. If Gear Lever confirmed integration but `listInstalled` has not indexed the app, return `integrated_unlisted` with a clear warning, preserve any existing source configuration and never trigger an automatic reimport. Do not set an update source for unlisted apps.
 - Preserve icon assets from `extension/common/icons` in both unpacked extension builds and use matching favicon under `docs/assets/favicon.png`.
 
 - On supported GitHub/GitLab/Codeberg repository/release tabs, `page-offers.js` conservatively canonicalizes the URL. `page-offer-background.js` resolves releases through the existing Native Messaging host and offers install notifications only when assets are confirmed. Never introspect page content or visit unsupported hosts.
 - Passive browser push notifications are separate from download ON/OFF and can be disabled with `suggestionsEnabled` in popup. Persist a per-repository 24h cooldown and do not spam repeated tab activations.
-- Popup install requires architecture selection and window.confirm; notification buttons only open the manager with a prefilled link. Neither navigation nor notification clicks may automatically start a download. `startManagedDownload` must still revalidate user-picked asset via native resolver.
+- Popup/manager/store install requires asset/architecture selection and a direct user click on Install/Download; do not open a second `window.confirm` dialog for installation. Notification buttons only open a prefilled manager; navigating or clicking a notification must never auto-download. `startManagedDownload` must still revalidate the chosen asset via native resolver. Keep confirmations for updates, removals and update-source modifications.
 - Any new permissions must be narrow, disclosed in README and covered by tests; `tabs` is only used to access supported URL metadata.
 - Include `page-offers.js`, `page-offer-background.js` in both Chromium (importScripts) and Firefox (background.scripts) as well as unpacked builds. Test with `node scripts/test-page-offers.mjs`.
 

@@ -56,7 +56,7 @@ const sent = [];
 const fetchCalls = [];
 const context = vm.createContext({
   URL, AbortController, setTimeout, clearTimeout, Date, console,
-  window:{confirm:()=>true},
+  window:{confirm:()=>{throw Error('Install must not request extra confirmation');}},
   document:{getElementById(id){assert.ok(elements[id],id);return elements[id];},createElement(tag){return new Element(tag);}},
   browser:{runtime:{async sendMessage(message){sent.push(message);return {ok:true,name:'Spotube-linux-x86_64.AppImage'};}}},
   GLGNative:{async request(){return {choices:[{name:'Music-x86_64.AppImage',url:'https://github.com/org/music/releases/download/v1/Music-x86_64.AppImage',architecture:'x86_64'}]};}},

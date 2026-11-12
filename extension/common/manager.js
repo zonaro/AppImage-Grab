@@ -402,8 +402,6 @@ $('link-form').addEventListener('submit', async event => {
 $('link-download').addEventListener('click', async () => {
   const choice = resolvedAssets[Number($('link-asset').value)];
   if (!choice || !resolvedLink) return;
-  if (!window.confirm(tr('Baixar "' + choice.name + '" de ' + choice.source +
-      ' e adicionar ao Gear Lever? Confirme que você confia nesta origem.'))) return;
   $('link-download').disabled = true;
   $('link-feedback').textContent = 'Iniciando download no navegador…';
   try {

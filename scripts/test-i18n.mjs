@@ -35,6 +35,10 @@ assert.equal(spanish.translate('Loja de AppImages'), 'Tienda de AppImages');
 assert.equal(spanish.translate('Meus AppImages — Gear Lever Grab'), 'Mis AppImages — Gear Lever Grab');
 assert.equal(spanish.translate('Nova versão'), 'Nueva versión');
 assert.equal(spanish.translate('Integração parcial da AppImage'), 'Integración parcial de AppImage');
+assert.equal(spanish.translate('AppImage integrada; listagem pendente'),
+  'AppImage integrada; listado pendiente');
+assert.equal(spanish.translate('Mechvibes.AppImage: o Gear Lever confirmou a integração, mas ainda não listou o aplicativo.'),
+  'Mechvibes.AppImage: Gear Lever confirmó la integración, pero todavía no muestra la aplicación.');
 assert.equal(spanish.translate('Teste de notificação Gear Lever Grab'), 'Prueba de notificación de Gear Lever Grab');
 assert.equal(spanish.translate('3 AppImages disponíveis neste repositório.'), '3 AppImages disponibles en este repositorio.');
 assert.equal(spanish.translate('Baixar "App.AppImage" de GitHub e adicionar ao Gear Lever? Confirme que você confia nesta origem.'),

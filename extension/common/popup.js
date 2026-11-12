@@ -122,7 +122,7 @@ void GLGUpdate.check();
 
 
 // The active repository suggestion is independent from automatic downloads.
-// The user must select the asset and confirm each installation.
+// The user selects an asset, then the Install click is the installation consent.
 let currentPageOffer = null;
 const offerBox = document.getElementById('page-offer');
 const offerSelect = document.getElementById('offer-asset');
@@ -169,10 +169,6 @@ async function loadPageOffer() {
 installOffer.addEventListener('click',async () => {
   const asset=currentPageOffer?.choices?.[Number(offerSelect.value)];
   if (!asset || !currentPageOffer) return;
-  const description = asset.name + ' (' +
-    (asset.architecture || 'arquitetura não identificada') + ')';
-  if (!window.confirm(tr('Baixar '+description+' e integrar ao Gear Lever?\n' +
-      'Confirme que você confia em '+currentPageOffer.provider+'.'))) return;
   installOffer.disabled=true;
   offerStatus.textContent='Iniciando download…';
   try {

@@ -65,9 +65,10 @@ bridge.host
 ## Browser notifications and download by source URL
 
 - `bridge/link_resolver.py` validates direct AppImage assets from GitHub, GitLab and Codeberg, and resolves supported provider repository/release pages through their fixed public APIs. User-chosen assets are listed by filename and architecture; do not infer architecture if missing.
-- `extension/common/manager.js` presents a link-input form and asks for confirmation after choosing an asset. Background `startManagedDownload` re-resolves the origin and only starts browser downloads for assets confirmed by the native resolver; no direct Python shell/download execution.
+- `extension/common/manager.js` presents a link-input form; the direct Install click after choosing an asset is consent, without a second confirmation modal. Background `startManagedDownload` re-resolves the origin and only starts browser downloads for assets confirmed by the native resolver; no direct Python shell/download execution.
 - Manual downloads are recorded in `storage.local.pending` and processed even with automatic download toggle OFF. Downloads that are interrupted do not yield success.
 - Native Messaging `integrate` must confirm a successful Gear Lever status and an installed path before a browser desktop notification is shown. `already_processed` and failed imports never trigger a success notification. Browser/OS notification permission may suppress display without undoing a completed integration.
+- Gear Lever CLI prints the actual, potentially renamed destination path on success. Match it against the returned installed list and source contents, rather than assuming one arbitrary added row identifies the download. If the Gear Lever CLI confirms successful copying but the JSON installed list has not registered it, return `integrated_unlisted` with an explicit pending-listing warning, *without* registering an update source or retrying the integration. An already integrated same-content AppImage returns `already_processed` without replacing its update configuration.
 - A successful integration refreshes the popup and browser manager app list via changes to `lastResult`. Keep this behavior independent from the extension's own Git commit update indicator.
 - Browser extension icons are PNG 16/32/48 derived from the green gear-and-glove graphic, stored under `extension/common/icons/`; site `docs/assets/favicon.png` shares the icon. `build-extensions.sh` must recursively copy all common assets.
 
@@ -75,8 +76,8 @@ bridge.host
 
 - `extension/common/page-offers.js`: pure URL parser accepts only GitHub, GitLab (nested groups supported), and Codeberg repository/release pages; strips query/fragment before sharing with native.
 - `extension/common/page-offer-background.js`: listens for active tab loads and activation using `tabs` permission, calls Native Messaging `resolveLink`, caches responses for 15 minutes, and sends a browser notification only if AppImage assets exist. A per-repository persistent 24-hour cooldown limits suggestion frequency.
-- Notification click/action opens `manager.html?source=<canonical supported URL>`, prefilling the existing link installer and listing architecture choices. It **never starts a download**; confirmation remains mandatory.
-- Popup calls `getPageOffer` to show provider/repository/available assets and offers an **Install in Gear Lever** button, choosing architecture and confirming first. Installation goes through existing `startManagedDownload` background handler, normal browser download completion, `integrate` Native Messaging and success notification.
+- Notification click/action opens `manager.html?source=<canonical supported URL>`, prefilling the existing link installer and listing architecture choices. It **never starts a download**; an explicit Install click remains mandatory.
+- Popup calls `getPageOffer` to show provider/repository/available assets and offers an **Install in Gear Lever** button, choosing an architecture and clicking Install (no extra confirmation dialog). Installation goes through existing `startManagedDownload` background handler, normal browser download completion, `integrate` Native Messaging and success notification.
 - `suggestionsEnabled` (default true) controls passive discovery pushes only; `enabled` (default false) controls automatic integration of ordinary downloads. Explicit user-approved link installs work even with automatic integration disabled. No webpage contents, cookies, or arbitrary URLs are collected.
 
 ## Local notification diagnostics and AppImage update alerts

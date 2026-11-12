@@ -70,15 +70,17 @@ async function runCase({enabled, manual, integrationStatus, expectedNotification
   assert.equal(notices.length,expectedNotifications);
   if(expectedNotifications){
     assert.match(notices[0].info.message, integrationStatus === 'invalid'
-      ? /conferir o erro/ : /integrada com sucesso/);
+      ? /conferir o erro/ : integrationStatus === 'integrated_unlisted'
+        ? /ainda não listou/ : /integrada com sucesso/);
     assert.equal(notices[0].info.iconUrl,'chrome-extension://app/icons/icon-48.png');
   }
   assert.equal(state.lastResult.status,
-    integrationStatus==='integrated_with_source' || integrationStatus==='integrated_without_source'?'success':'error');
+    ['integrated_with_source','integrated_without_source','integrated_unlisted'].includes(integrationStatus)?'success':'error');
   assert.ok(handler,'Manager download handler registered');
 }
 await runCase({enabled:true,manual:false,integrationStatus:'integrated_with_source',expectedNotifications:1});
 await runCase({enabled:false,manual:true,integrationStatus:'integrated_without_source',expectedNotifications:1});
+await runCase({enabled:true,manual:false,integrationStatus:'integrated_unlisted',expectedNotifications:1});
 await runCase({enabled:true,manual:false,integrationStatus:'invalid',expectedNotifications:1});
 await runCase({enabled:true,manual:false,integrationStatus:'integrated_with_source',
   notificationFails:true,expectedNotifications:0});
