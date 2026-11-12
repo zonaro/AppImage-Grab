@@ -68,9 +68,24 @@ await elements['enabled'].handlers.change();
 assert.equal(elements['enabled'].checked,false,'failed preference write is rolled back');
 assert.match(elements['popup-error'].textContent,/Não foi possível alterar a integração automática: write denied/);
 
-await elements['recheck-updates'].handlers.click({currentTarget:elements['recheck-updates']});
-assert.equal(elements['recheck-updates'].disabled,false,'update button is never stuck');
+// Browser event.currentTarget becomes null immediately after the synchronous
+// event dispatch returns. Simulate this instead of keeping a fake event alive.
+const expiredEvent={currentTarget:elements['recheck-updates']};
+const failedCheck=elements['recheck-updates'].handlers.click(expiredEvent);
+assert.equal(elements['recheck-updates'].disabled,true,'disable during pending check');
+expiredEvent.currentTarget=null;
+await failedCheck;
+assert.equal(elements['recheck-updates'].disabled,false,'failed update check must reenable button');
 assert.match(elements['popup-error'].textContent,/Não foi possível verificar atualizações: update check offline/);
+
+// Also guard the success branch against the same expired event reference.
+context.GLGUpdate.check=async()=>({updateAvailable:false,needsReload:false});
+const successEvent={currentTarget:elements['recheck-updates']};
+const successfulCheck=elements['recheck-updates'].handlers.click(successEvent);
+successEvent.currentTarget=null;
+await successfulCheck;
+assert.equal(elements['recheck-updates'].disabled,false,'successful update check must reenable button');
+assert.equal(elements['popup-error'].hidden,true,'successful check clears previous transient error');
 
 elements['suggestions-enabled'].checked=true;
 elements['suggestions-enabled'].handlers.change();

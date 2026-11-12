@@ -146,15 +146,19 @@ document.getElementById('copy-updater').addEventListener('click', async () => {
     window.prompt(tr('Copy this command into your Linux terminal:'), GLGUpdate.COMMAND);
   }
 });
-document.getElementById('recheck-updates').addEventListener('click', async event => {
-  event.currentTarget.disabled = true;
+// DOM Event.currentTarget is only valid while the event is being dispatched.
+// Keep a stable button reference across await/finally, including failed checks.
+const recheckButton = document.getElementById('recheck-updates');
+recheckButton.addEventListener('click', async () => {
+  if (recheckButton.disabled) return;
+  recheckButton.disabled = true;
   try {
     showGrabUpdate(await GLGUpdate.check({force: true}));
     clearPopupError();
   } catch (error) {
     reportPopupError('Não foi possível verificar atualizações', error);
   } finally {
-    event.currentTarget.disabled = false;
+    recheckButton.disabled = false;
   }
 });
 void GLGUpdate.check().catch(error => reportPopupError('Falha na verificação de atualizações', error));
