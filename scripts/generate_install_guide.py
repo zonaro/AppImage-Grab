@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import os
 import sys
+from urllib.parse import quote
 
 try:
     from .register_hosts import BROWSERS
@@ -70,12 +71,14 @@ def default_browser_desktop_id():
     return ""
 
 
-def open_browser_extensions(browsers=None):
+def open_browser_extensions(browsers=None, *, updating=False):
     """Open a browser-internal extensions page using that browser's CLI.
 
     Never use xdg-open for internal schemes or silently activate the extension.
     Prefer the user's default browser; when unknown, choose one installed
     supported browser rather than opening multiple browser windows.
+    For an update, request a Chromium-family search for the extension. The
+    internal ?q= search parameter is best-effort: a browser can ignore it.
     Returns the browser name if the launch was requested, otherwise None.
     """
     if not graphical_launch_allowed():
@@ -117,6 +120,10 @@ def open_browser_extensions(browsers=None):
         return None
 
     address = SCHEMES.get(selected["name"], FIREFOX_SCHEME)
+    if updating and family == "chromium":
+        # The query is a convenience hint only: each browser controls its own
+        # internal extensions page and may ignore unsupported search parameters.
+        address += "?q=" + quote("Gear Lever Grab", safe="")
     option = "-new-tab" if family == "firefox" else "--new-tab"
     try:
         subprocess.Popen([executable, option, address], stdin=subprocess.DEVNULL,
@@ -194,6 +201,8 @@ def main():
     parser.add_argument("--open-only", action="store_true", help="Open an existing guide without rebuilding")
     parser.add_argument("--open-extensions", action="store_true",
                         help="Launch the extensions page directly using the detected browser executable")
+    parser.add_argument("--updating", action="store_true",
+                        help="On update, request an extensions-page search in Chromium browsers")
     args = parser.parse_args()
     if args.open_only:
         page = args.output.expanduser().absolute()
@@ -212,9 +221,10 @@ def main():
             print("Could not automatically open the guide. Open this local HTML file manually:")
             print(" ", page.as_uri())
     if args.open_extensions:
-        browser = open_browser_extensions()
+        browser = open_browser_extensions(updating=args.updating)
         if browser:
-            print(f"Requested the extensions page directly in {browser}.")
+            print(f"Requested the extensions page directly in {browser}."
+                  + (" (update search attempted where supported)." if args.updating else ""))
         else:
             print("Could not launch an extensions page automatically.")
             print("Open your browser's extensions/settings address from the guide manually.")

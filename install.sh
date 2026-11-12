@@ -93,6 +93,8 @@ Chrome/Edge/Brave/Chromium: Developer mode -> Load unpacked -> select the folder
 Firefox: about:debugging -> This Firefox -> Load Temporary Add-on -> manifest.json.
 
 After updating, reload the unpacked extension in your browser extensions page.
+When updating, the installer requests a search for Gear Lever Grab in supported
+Chromium-family extension pages. If ignored, use the page's search field.
 Your ON/OFF preference is preserved. The native host is already updated.
 
 The installer opens the installation guide and the default browser's extension
@@ -102,13 +104,17 @@ If detection fails, paste the browser-specific extensions URL manually.
 To skip both automatic browser launches: GLG_OPEN_BROWSER=0
 EOF
 
-# Show the guide, then launch the default browser's internal extensions page
-# through its actual executable. xdg-open/file:// cannot navigate to internal
-# edge://, chrome:// or about: pages. Never activate extensions automatically.
+# Show the guide on both first install and update, then launch the default
+# browser's internal extensions page. For an existing installation/refresh,
+# request an extension-name search where that browser accepts ?q=.
+# Never activate or reload extensions automatically.
+OPEN_OPTIONS=(--open-only --open-extensions)
+if [[ -n "$PREVIOUS_COMMIT" ]]; then
+  OPEN_OPTIONS+=(--updating)
+fi
 python3 "$DEST/scripts/generate_install_guide.py" \
   --output "$GUIDE" \
   --chromium "$DEST/dist/chromium" \
   --firefox-manifest "$DEST/dist/firefox/manifest.json" \
   --commit "$REVISION" \
-  --open-only \
-  --open-extensions
+  "${OPEN_OPTIONS[@]}"

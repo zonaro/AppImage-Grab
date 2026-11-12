@@ -83,6 +83,47 @@ class InstallGuideTests(unittest.TestCase):
                          ["/usr/bin/microsoft-edge", "--new-tab", "edge://extensions/"])
         self.assertEqual(popen.call_count, 1)
 
+    def test_edge_update_prepopulates_best_effort_search(self):
+        binaries = {
+            "microsoft-edge": "/usr/bin/microsoft-edge",
+            "xdg-settings": "/usr/bin/xdg-settings",
+        }
+        with patch("scripts.generate_install_guide.shutil.which", side_effect=binaries.get):
+            with patch("scripts.generate_install_guide.subprocess.run",
+                       return_value=SimpleNamespace(returncode=0, stdout="microsoft-edge.desktop")):
+                with patch("scripts.generate_install_guide.subprocess.Popen") as popen:
+                    with patch.dict("scripts.generate_install_guide.os.environ",
+                                    {"GLG_OPEN_BROWSER": "1", "DISPLAY": ":0"}):
+                        selected = open_browser_extensions(updating=True)
+        self.assertEqual(selected, "Microsoft Edge")
+        popen.assert_called_once()
+        self.assertEqual(popen.call_args.args[0],
+                         ["/usr/bin/microsoft-edge", "--new-tab",
+                          "edge://extensions/?q=Gear%20Lever%20Grab"])
+
+    def test_other_chromium_browsers_get_query_only_during_update(self):
+        cases = [
+            ("Google Chrome", "google-chrome", "chrome://extensions/"),
+            ("Chromium", "chromium", "chrome://extensions/"),
+            ("Brave", "brave-browser", "brave://extensions/"),
+            ("Vivaldi", "vivaldi", "vivaldi://extensions/"),
+            ("Opera", "opera", "opera://extensions/"),
+            ("Thorium", "thorium", "chrome://extensions/"),
+        ]
+        for name, binary, base in cases:
+            with self.subTest(browser=name):
+                with patch("scripts.generate_install_guide.shutil.which",
+                           side_effect=lambda executable: "/usr/bin/" + binary
+                           if executable == binary else None):
+                    with patch("scripts.generate_install_guide.subprocess.Popen") as popen:
+                        with patch.dict("scripts.generate_install_guide.os.environ",
+                                        {"GLG_OPEN_BROWSER": "1", "DISPLAY": ":0"}):
+                            selected = open_browser_extensions(updating=True)
+                self.assertEqual(selected, name)
+                self.assertEqual(popen.call_args.args[0],
+                                 ["/usr/bin/" + binary, "--new-tab",
+                                  base + "?q=Gear%20Lever%20Grab"])
+
     def test_opens_firefox_debugging_using_firefox_executable(self):
         binaries = {
             "firefox": "/usr/bin/firefox",
@@ -100,6 +141,19 @@ class InstallGuideTests(unittest.TestCase):
         self.assertEqual(popen.call_args.args[0],
                          ["/usr/bin/firefox", "-new-tab", "about:debugging#/runtime/this-firefox"])
         self.assertEqual(popen.call_count, 1)
+
+    def test_firefox_update_uses_existing_debugging_page_without_query(self):
+        binaries = {"firefox": "/usr/bin/firefox", "xdg-settings": "/usr/bin/xdg-settings"}
+        with patch("scripts.generate_install_guide.shutil.which", side_effect=binaries.get):
+            with patch("scripts.generate_install_guide.subprocess.run",
+                       return_value=SimpleNamespace(returncode=0, stdout="org.mozilla.firefox.desktop")):
+                with patch("scripts.generate_install_guide.subprocess.Popen") as popen:
+                    with patch.dict("scripts.generate_install_guide.os.environ",
+                                    {"GLG_OPEN_BROWSER": "1", "DISPLAY": ":0"}):
+                        self.assertEqual(open_browser_extensions(updating=True), "Firefox")
+        popen.assert_called_once()
+        self.assertEqual(popen.call_args.args[0],
+                         ["/usr/bin/firefox", "-new-tab", "about:debugging#/runtime/this-firefox"])
 
     def test_prefers_exact_default_edge_beta_channel(self):
         binaries = {
@@ -158,14 +212,40 @@ class InstallGuideTests(unittest.TestCase):
             guide.write_text("guide")
             argv = ["generate_install_guide.py", "--output", str(guide),
                     "--chromium", str(guide), "--firefox-manifest", str(guide),
-                    "--commit", "a" * 40, "--open-only", "--open-extensions"]
+                    "--commit", "a" * 40, "--open-only", "--open-extensions",
+                    "--updating"]
             with patch("scripts.generate_install_guide.sys.argv", argv):
                 with patch("scripts.generate_install_guide.open_guide", return_value=True) as html:
                     with patch("scripts.generate_install_guide.open_browser_extensions",
                                return_value="Microsoft Edge") as internal:
                         self.assertEqual(main(), 0)
             html.assert_called_once_with(guide)
-            internal.assert_called_once_with()
+            internal.assert_called_once_with(updating=True)
+
+    def test_first_install_opens_guide_and_unfiltered_extensions_page(self):
+        with tempfile.TemporaryDirectory() as folder:
+            guide = Path(folder) / "guide.html"
+            guide.write_text("guide")
+            argv = ["generate_install_guide.py", "--output", str(guide),
+                    "--chromium", str(guide), "--firefox-manifest", str(guide),
+                    "--commit", "b" * 40, "--open-only", "--open-extensions"]
+            with patch("scripts.generate_install_guide.sys.argv", argv):
+                with patch("scripts.generate_install_guide.open_guide",
+                           return_value=True) as html:
+                    with patch("scripts.generate_install_guide.open_browser_extensions",
+                               return_value="Microsoft Edge") as internal:
+                        self.assertEqual(main(), 0)
+            html.assert_called_once_with(guide)
+            internal.assert_called_once_with(updating=False)
+
+    def test_installer_uses_previous_version_to_enable_update_search(self):
+        script = Path(__file__).resolve().parents[1] / "install.sh"
+        contents = script.read_text(encoding="utf-8")
+        self.assertIn('if [[ -n "$PREVIOUS_COMMIT" ]]; then', contents)
+        self.assertIn('OPEN_OPTIONS+=(--updating)', contents)
+        self.assertIn('OPEN_OPTIONS=(--open-only --open-extensions)', contents)
+        self.assertIn('"${OPEN_OPTIONS[@]}"', contents)
+        self.assertLess(contents.index('PREVIOUS_COMMIT='), contents.index('mv -f "$DEST/version.json.pending"'))
 
     def test_opt_out_does_not_open_browser(self):
         with patch.dict("scripts.generate_install_guide.os.environ", {"GLG_OPEN_BROWSER": "0",
