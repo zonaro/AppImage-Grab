@@ -56,6 +56,7 @@ class Element {
 const html=fs.readFileSync('extension/common/manager.html','utf8');
 const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
 const elements=Object.fromEntries(ids.map(id=>[id,new Element()]));
+elements['history-filter'].value='all'; // Real select defaults to its first option.
 const copied=[];
 const context=vm.createContext({
   browser:api,
