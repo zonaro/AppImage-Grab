@@ -23,21 +23,21 @@ The script:
 - Installs the Chromium-family extension at `$XDG_DATA_HOME/gear-lever-grab/dist/chromium` (defaults to `~/.local/share/gear-lever-grab/dist/chromium`).
 - Installs the Firefox extension at `$XDG_DATA_HOME/gear-lever-grab/dist/firefox`.
 - Installs or updates the Python bridge at `$XDG_DATA_HOME/gear-lever-grab/bridge` and its launcher at `~/.local/bin/gear-lever-grab-host`.
-- Generates a **standalone local HTML installation guide** at `$XDG_DATA_HOME/gear-lever-grab/install-guide.html`, with absolute paths that match this computer, detected browsers, extension-page links, copy buttons, and PT-BR/EN/ES instructions.
-- Attempts to open the guide in the default web browser after installation. The exact path is also printed in the terminal in case it cannot be opened automatically.
+- Generates a **standalone local HTML installation guide** at `$XDG_DATA_HOME/gear-lever-grab/install-guide.html`, with absolute paths that match this computer, detected browsers, copy buttons, and PT-BR/EN/ES instructions.
+- Opens the guide in the default browser, then launches **that browser's own extensions page directly using its installed executable**, e.g. `microsoft-edge --new-tab edge://extensions/` or `firefox -new-tab 'about:debugging#/runtime/this-firefox'`. It looks up the default browser via `xdg-settings` / `xdg-mime`; when no matching default is known, it selects one detected supported browser rather than launching all of them. The terminal always prints the guide path and manual instructions.
 - Removes obsolete local package artifacts from older Grab installations; previous signing keys, if present, are deliberately preserved rather than deleted.
 
 **No CRX or XPI packages are generated, and browser extensions are never silently injected or activated.** The browser installation step is yours to complete. The extension's download automation remains **OFF until you turn it ON**, even after the installer is updated.
 
 ## Load the extension into your browser
 
-After running the installer, follow the HTML guide that opens automatically. You can reopen it at any time:
+After running the installer in a graphical session, the local HTML guide **and your default browser's extensions page** should open automatically. The extensions page is opened by the browser executable, not by following a blocked `file://` hyperlink. You can reopen the guide at any time:
 
 ```text
 ~/.local/share/gear-lever-grab/install-guide.html
 ```
 
-The guide lists your detected browsers, their extension-page addresses, and the **real absolute filesystem path** of the appropriate extension. You can copy these using the buttons in the guide. Browsers may block navigation to internal pages (such as `edge://extensions`) from a local HTML file. If the direct link doesn't work, copy its address and paste it into the browser address bar.
+The guide lists detected browsers, their extension-page addresses, and the **real absolute filesystem path** of the appropriate extension. Use its **Copy address** button if you want to open the extensions page in a different browser or the automatic launch fails: paste the internal URL directly into that browser's address bar. The local HTML guide intentionally does not contain a nonfunctional link to internal browser pages.
 
 ### Edge, Chrome, Brave, Chromium, Vivaldi, Opera, and Thorium
 
@@ -58,13 +58,13 @@ The guide lists your detected browsers, their extension-page addresses, and the 
 
 ### What happens on update?
 
-Run the same one-liner. The bridge and unpacked extension folders are refreshed from the latest main commit. The installer regenerates the local guide and opens it again (when graphical). **Reload the extension from your browser's extensions page** so the new JavaScript is activated. Previously saved ON/OFF settings remain in browser storage.
+Run the same one-liner. The bridge and unpacked extension folders are refreshed from the latest main commit. The installer regenerates the guide and opens both it and the default browser's extensions page (when graphical). **Reload the extension from your browser's extensions page** so the new JavaScript is activated. Previously saved ON/OFF settings remain in browser storage.
 
 The extension itself checks GitHub's latest main SHA periodically, and shows a **NEW** badge and an update command when your installed extension/bridge is behind. This check does **not** execute any remote code automatically.
 
 The unpacked extension's version is generated from the **Git commit timestamp**, not the installation time. Both browsers receive the same `YY.DDD.HHmm` timestamp-based release label (two-digit year, day of year, 24-hour time and minute), preserving the timezone recorded in the commit. For example, a commit at 03:52 on November 11, 2026 gives `26.315.0352`. Browser manifests cannot include leading zeros in nonzero numeric components, so the mandatory `version` is `26.315.352`; `version_name` preserves `26.315.0352` for browsers that display it. Leap years may use day 366. Two commits in the same minute share the same manifest version, but the SHA still changes and powers the Grab update checker. The manifests in `extension/` are build templates; **load the generated `dist/` extension**, not the templates. After running the installer, **reload the unpacked extension** in the browser to activate the latest scripts and version.
 
-To avoid automatically opening the HTML guide, set `GLG_OPEN_BROWSER=0` in the environment used to run the installer.
+To skip opening **both** the HTML guide and the browser's extensions page, set `GLG_OPEN_BROWSER=0` in the environment used to run the installer. In headless sessions the installer prints the guide location and the browser-specific manual URL instead.
 
 ## How AppImage integration works
 

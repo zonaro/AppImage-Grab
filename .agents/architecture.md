@@ -38,8 +38,8 @@ bridge.host
 - It removes previous `dist/packages` CRX/XPI artifacts, but retains any legacy private signing keys stored outside the application to avoid destructive loss.
 - The host allowlist registers only the stable Chromium unpacked extension ID and the existing Firefox ID.
 - `scripts/generate_install_guide.py` renders `scripts/install-guide-template.html` as the self-contained `$XDG_DATA_HOME/gear-lever-grab/install-guide.html`, using canonical local paths, safely JSON-escaped metadata, detected browsers and PT-BR/EN/ES text.
-- The guide includes extension-page links, copy-address buttons, exact extension directory/manifest paths with copy buttons, and explanatory instructions. Since browser-internal pages may reject navigation from file://, users can paste the address into the URL bar.
-- With graphical DISPLAY/WAYLAND and xdg-open, installation ends by opening the HTML guide in the default browser. `GLG_OPEN_BROWSER=0` skips launch. Without a graphical session, the guide is still written and its location printed.
+- The guide includes copy-address buttons, exact extension directory/manifest paths and explanatory instructions. A local `file://` page cannot reliably navigate to internal `edge://`, `chrome://` or `about:` URLs, so the HTML no longer advertises a broken open button.
+- With a graphical DISPLAY/WAYLAND session, `install.sh` opens the local HTML guide using `xdg-open`, **then** passes the matching internal extensions URL directly as a CLI argument to the detected browser executable (e.g. `microsoft-edge --new-tab edge://extensions/`). `scripts/generate_install_guide.py` looks up the default .desktop entry via `xdg-settings` then `xdg-mime`; opens only that matching browser or one detected fallback. Neither this nor the guide loads/activates extensions; `GLG_OPEN_BROWSER=0` disables both launches. In headless mode, print paths and manual URLs.
 - Nothing silently installs or activates the browser extension. Chrome-like browsers use Developer Mode → Load unpacked; Firefox uses temporary loading of manifest.json until official signed distribution is implemented.
 
 ## Git main commit-based updates

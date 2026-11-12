@@ -30,6 +30,102 @@ SCHEMES = {
 FIREFOX_SCHEME = "about:debugging#/runtime/this-firefox"
 TEMPLATE = Path(__file__).with_name("install-guide-template.html")
 
+# Linux's default browser is reported as a desktop-entry ID. Map that ID to
+# a supported, installed executable instead of routing an internal URL through
+# xdg-open (file:// pages cannot navigate to chrome:// or edge:// addresses).
+DESKTOP_ALIASES = {
+    "Google Chrome": ("com.google.chrome.desktop",),
+    "Chromium": ("org.chromium.chromium.desktop",),
+    "Brave": ("com.brave.browser.desktop",),
+    "Vivaldi": ("com.vivaldi.vivaldi.desktop",),
+    "Microsoft Edge": ("com.microsoft.edge.desktop",),
+    "Opera": ("com.opera.opera.desktop",),
+    "Thorium": ("org.thorium.thorium.desktop",),
+    "Firefox": ("org.mozilla.firefox.desktop",),
+    "Floorp": ("org.mozilla.floorp.desktop",),
+    "Waterfox": ("net.waterfox.waterfox.desktop",),
+}
+
+
+def graphical_launch_allowed():
+    return (os.environ.get("GLG_OPEN_BROWSER", "1") != "0" and
+            bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")))
+
+
+def default_browser_desktop_id():
+    """Look up the actual default browser; neither query launches a browser."""
+    for command in (
+        ["xdg-settings", "get", "default-web-browser"],
+        ["xdg-mime", "query", "default", "x-scheme-handler/https"],
+    ):
+        if not shutil.which(command[0]):
+            continue
+        try:
+            result = subprocess.run(command, capture_output=True, text=True,
+                                    check=False, timeout=5)
+        except (OSError, subprocess.TimeoutExpired):
+            continue
+        if result.returncode == 0 and result.stdout.strip().endswith(".desktop"):
+            return result.stdout.strip().lower()
+    return ""
+
+
+def open_browser_extensions(browsers=None):
+    """Open a browser-internal extensions page using that browser's CLI.
+
+    Never use xdg-open for internal schemes or silently activate the extension.
+    Prefer the user's default browser; when unknown, choose one installed
+    supported browser rather than opening multiple browser windows.
+    Returns the browser name if the launch was requested, otherwise None.
+    """
+    if not graphical_launch_allowed():
+        return None
+    found = detected_browsers() if browsers is None else browsers
+    if not found:
+        return None
+    default_id = default_browser_desktop_id()
+    selected = None
+    for browser in found:
+        name = browser["name"]
+        spec = next(((n, exes, family) for n, exes, _, family in BROWSERS
+                     if n == name), None)
+        if not spec:
+            continue
+        _, binaries, _ = spec
+        ids = {f"{binary}.desktop" for binary in binaries}
+        ids.update(DESKTOP_ALIASES.get(name, ()))
+        if default_id in ids:
+            selected = browser
+            break
+    if selected is None:
+        selected = found[0]
+
+    entry = next(((exes, family) for name, exes, _, family in BROWSERS
+                  if name == selected["name"]), None)
+    if not entry:
+        return None
+    binaries, family = entry
+    # Honor a default beta/dev channel if its executable is present.
+    preferred = default_id.removesuffix(".desktop")
+    candidates = list(binaries)
+    if preferred in candidates:
+        candidates.remove(preferred)
+        candidates.insert(0, preferred)
+    executable = next((shutil.which(candidate) for candidate in candidates
+                       if shutil.which(candidate)), None)
+    if not executable:
+        return None
+
+    address = SCHEMES.get(selected["name"], FIREFOX_SCHEME)
+    option = "-new-tab" if family == "firefox" else "--new-tab"
+    try:
+        subprocess.Popen([executable, option, address], stdin=subprocess.DEVNULL,
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                         start_new_session=True)
+        return selected["name"]
+    except OSError:
+        return None
+
 
 def detected_browsers():
     """Only mark browsers detected through an executable; no profile tampering."""
@@ -74,9 +170,7 @@ def generate_guide(output: Path, chromium: Path, firefox_manifest: Path, commit:
 
 def open_guide(page: Path) -> bool:
     """Open HTML in the default browser when graphical; never open all browsers."""
-    if os.environ.get("GLG_OPEN_BROWSER", "1") == "0":
-        return False
-    if not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")):
+    if not graphical_launch_allowed():
         return False
     opener = shutil.which("xdg-open")
     if not opener:
@@ -98,6 +192,8 @@ def main():
     parser.add_argument("--commit", required=True)
     parser.add_argument("--open", action="store_true", help="Open the local guide")
     parser.add_argument("--open-only", action="store_true", help="Open an existing guide without rebuilding")
+    parser.add_argument("--open-extensions", action="store_true",
+                        help="Launch the extensions page directly using the detected browser executable")
     args = parser.parse_args()
     if args.open_only:
         page = args.output.expanduser().absolute()
@@ -115,6 +211,13 @@ def main():
         else:
             print("Could not automatically open the guide. Open this local HTML file manually:")
             print(" ", page.as_uri())
+    if args.open_extensions:
+        browser = open_browser_extensions()
+        if browser:
+            print(f"Requested the extensions page directly in {browser}.")
+        else:
+            print("Could not launch an extensions page automatically.")
+            print("Open your browser's extensions/settings address from the guide manually.")
     return 0
 
 

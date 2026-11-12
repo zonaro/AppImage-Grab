@@ -95,14 +95,20 @@ Firefox: about:debugging -> This Firefox -> Load Temporary Add-on -> manifest.js
 After updating, reload the unpacked extension in your browser extensions page.
 Your ON/OFF preference is preserved. The native host is already updated.
 
-To skip automatic guide opening on future runs: GLG_OPEN_BROWSER=0
+The installer opens the installation guide and the default browser's extension
+management page directly via the browser executable (no blocked HTML link).
+If detection fails, paste the browser-specific extensions URL manually.
+
+To skip both automatic browser launches: GLG_OPEN_BROWSER=0
 EOF
 
-# Open the local HTML guide in the default browser when a graphical session is
-# available. Never silently install or activate extensions.
+# Show the guide, then launch the default browser's internal extensions page
+# through its actual executable. xdg-open/file:// cannot navigate to internal
+# edge://, chrome:// or about: pages. Never activate extensions automatically.
 python3 "$DEST/scripts/generate_install_guide.py" \
   --output "$GUIDE" \
   --chromium "$DEST/dist/chromium" \
   --firefox-manifest "$DEST/dist/firefox/manifest.json" \
   --commit "$REVISION" \
-  --open-only
+  --open-only \
+  --open-extensions
