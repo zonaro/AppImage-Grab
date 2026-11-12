@@ -10,6 +10,7 @@ const tr = globalThis.GLGI18n?.translate || (message => message);
 const HOST = 'br.com.redclaw.gear_lever_grab';
 const working = new Set();
 const SUCCESSFUL_INTEGRATIONS = new Set([
+  'integrated_by_gearlever', // The CLI alone accepts or rejects the AppImage.
   'integrated_with_source', 'integrated_without_source',
   'embedded_source_preserved', 'existing_source_preserved',
   'integrated_unlisted' // Gear Lever confirmed the copied file but CLI list is stale.
@@ -21,8 +22,8 @@ async function logActivity(data) {
 }
 
 async function notifyIntegrated(download, reply) {
-  if (!SUCCESSFUL_INTEGRATIONS.has(reply.status) || !reply.installedPath) return;
-  const name = (reply.installedPath.split('/').pop() || 'AppImage').slice(0, 100);
+  if (!SUCCESSFUL_INTEGRATIONS.has(reply.status)) return;
+  const name = ((reply.installedPath || download.filename || '').split('/').pop() || 'AppImage').slice(0, 100);
   const unlisted = reply.status === 'integrated_unlisted';
   try {
     await GLGNotifications.emit({kind: 'integrationSuccess', id: 'glg-integrated-' + download.id,
@@ -245,7 +246,9 @@ async function finished(delta) {
     const pending = latest.pending || {};
     delete pending[delta.id];
     await api.storage.local.set({ processed, pending });
-    const details = reply.status === 'integrated_unlisted'
+    const details = reply.status === 'integrated_by_gearlever'
+      ? 'Integração concluída pelo Gear Lever.'
+      : reply.status === 'integrated_unlisted'
       ? 'Gear Lever confirmou a integração, mas ainda não listou o aplicativo; confira o gerenciador.'
       : reply.status === 'integrated_with_source'
       ? 'Integrado com atualizações: ' + reply.sourceOrigin

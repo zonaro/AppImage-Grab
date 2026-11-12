@@ -70,15 +70,16 @@ To avoid automatically opening the HTML guide, set `GLG_OPEN_BROWSER=0` in the e
 
 When the extension's toggle is **ON**:
 
-1. It observes completed HTTPS downloads ending in `.AppImage`.
-2. Native Messaging sends the filename and download URL to the local Python bridge. No permanent background daemon is required.
-3. The bridge validates the file and tries to identify a GitHub, GitLab or Codeberg release asset.
-4. The asset's version is replaced by a wildcard while retaining the architecture and product edition, for example `App-v2.6.1-x86_64.AppImage` → `App-*-x86_64.AppImage`. Ambiguous wildcard patterns are verified against the release assets; if a reliable source cannot be identified, no custom update source is registered.
-5. The bridge invokes the **Gear Lever CLI** to integrate the file and, when safe, register its update source. Gear Lever determines the integration destination and manages future updates.
+1. It observes completed downloads with a filename ending in `.AppImage`.
+2. Native Messaging passes the local download path to the Python bridge. No permanent daemon is required.
+3. The bridge calls **Gear Lever's public CLI** with `--integrate <downloaded-file> -y`.
+4. **Gear Lever alone** determines whether the file is supported, where to install it, whether it is already integrated, and how to manage its updates. Grab forwards the CLI's success/failure result and records any error in **History**. It does not inspect AppImage magic bytes, ELF headers, MIME types, architectures or file contents; it does not compare the installed copy or register an automatic update source.
 
-The extension **does not run downloaded AppImages directly**, but Gear Lever may inspect their contents. File-format checks do not verify software authenticity: download only from sources you trust.
+The bridge keeps only basic Native Messaging input-safety checks (absolute `.AppImage` path, user-owned regular file, no symlink) and deduplicates identical completed downloads. These checks are **not** AppImage format validation.
 
-The native bridge identifies the actual integrated path using Gear Lever's CLI success output and the post-integration `--list-installed --json` data, verifying file contents when the original download still exists. Gear Lever can rename the AppImage or delete the download after copying it. If the CLI confirms success and the copied file exists but Gear Lever's installed list has not registered it, Grab reports **integration confirmed, listing pending**, does not overwrite/create an update source for the unlisted entry, and avoids reporting an unverified destination as a fully registered installation. Check the Gear Lever app list before retrying to avoid duplicates.
+The extension **never executes downloaded AppImages itself**. Gear Lever may inspect or extract them when installing. A filename ending in `.AppImage` is not proof that a download is authentic: obtain applications from developers you trust.
+
+The installed location is taken from Gear Lever's CLI output when present, for display only. No failure is fabricated when Gear Lever successfully integrates an AppImage but renames it or omits its destination in CLI output. An already-integrated result from Gear Lever does not trigger a second install or a success notification. Existing update sources remain entirely Gear Lever's responsibility; explicit source edits in the manager still use Gear Lever's CLI.
 
 ## Browser notifications and link-based installation
 
@@ -98,7 +99,7 @@ Use **Send test notification** to check desktop delivery without downloading any
 
 AppImage update availability is checked on a conservative 12-hour browser alarm, independently of the Grab extension's own Git commit checks. Only exact paths confirmed by Gear Lever's `--list-updates --json` and `--list-installed --json` can trigger alerts; repeated results are deduplicated across restarts and offline errors never clear the last valid state. The notifications open the manager but **never install, download, or update an AppImage on click**. Manual updates continue to require confirmation and are run through the Gear Lever CLI.
 
-The manager's **Add AppImage by link** field accepts direct GitHub, GitLab, and Codeberg release-asset links, plus GitHub, GitLab, and Codeberg repository/release pages. For a repository, it lists matching AppImage assets and their detected architecture; the user chooses which file to download and confirms the action. The browser performs the download, and the Native Messaging bridge asks Gear Lever to integrate it after completion. This manual action works independently of the automatic download toggle. Only trusted provider domains and release URLs are accepted.
+The manager's **Add AppImage by link** field accepts direct GitHub, GitLab, and Codeberg release-asset links, plus GitHub, GitLab, and Codeberg repository/release pages. For a repository, it lists matching AppImage assets and their detected architecture; the user chooses which file to download and confirms the action. The browser downloads the chosen asset, and the Native Messaging bridge asks Gear Lever to integrate it after completion. This manual action works independently of the automatic download toggle. Trusted release providers are used to resolve links, but **download-source selection is not AppImage file validation**.
 
 ## Install suggestions while browsing
 
@@ -106,7 +107,7 @@ When you visit a **supported GitHub, GitLab, or Codeberg repository/release page
 
 - A browser desktop notification suggests installation. Click it or its **View and install** action to open the manager with that source already selected; it never downloads automatically.
 - The extension popup shows an **Install in Gear Lever** button on compatible repository pages. If a release contains several AppImages, the popup lets you choose the exact filename and CPU architecture first.
-- Each install starts on the user's explicit **Install** click, without an additional JavaScript confirmation dialog. The user still chooses an exact asset/architecture; the browser download and the Native Messaging resolver continue to validate the selected file. Successful integration triggers the existing desktop notification.
+- Each install starts on the user's explicit **Install** click, without an additional JavaScript confirmation dialog. The user still chooses an exact asset/architecture; the browser download and Native Messaging resolver confirm the selected release URL, while Gear Lever alone validates the file. Successful integration triggers the existing desktop notification.
 - Passive repository suggestions can be disabled independently from download automation with **Suggest AppImages when visiting repositories** in the popup. Suggestions are on by default and each repository is notified **at most once per 24 hours**, even after browser restarts.
 - The extension requests the WebExtensions `tabs` permission solely to inspect open tab URLs for supported provider/repository patterns. It does not read page content, forms, cookies, or private URLs, and it never tries to resolve arbitrary websites. Only the three known providers currently have release resolvers.
 - No recommendation is shown when the provider has no AppImage release or the local bridge cannot verify a compatible release. A browser or desktop may suppress notifications; the popup remains available.
@@ -183,7 +184,7 @@ The generated HTML is a local, self-contained file. The guide uses no external a
 - Browsers require the user's explicit approval for manually loaded extensions.
 - Firefox temporary unsigned extensions do not survive a browser restart.
 - Some browsers distributed inside Flatpak sandboxes need extra Native Messaging configuration.
-- If redirects obscure a release URL or the release's asset names are ambiguous, Gear Lever Grab may integrate the AppImage without a custom update source.
+- Automatic integration intentionally never injects a custom update source; Gear Lever owns updates and any existing embedded source. Users can manage supported sources explicitly in the manager.
 - Real-world QA on all supported browsers and Fedora configurations is ongoing; please see the [issue tracker](https://github.com/zonaro/gear-lever-grab/issues).
 
 ## Uninstall

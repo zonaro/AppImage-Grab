@@ -6,14 +6,10 @@ Chrome/Chromium/Brave/Vivaldi/Edge/Firefox + downloads API
 WebExtension / background.js
     ↓ Native Messaging (stdio JSON)
 bridge.host
-    ├─ valida .AppImage / ELF / arquivo regular / HTTPS
-    ├─ deduplica (flock + recibos em XDG_STATE_HOME)
-    ├─ detect_source: URL asset de releases GitHub/GitLab/Codeberg
+    ├─ verifica só limites de segurança Native Messaging (caminho absoluto do usuário)
+    ├─ deduplica downloads idênticos (flock + recibos em XDG_STATE_HOME)
     └─ bridge.gearlever: CLI pública
-          ├─ --list-installed --json
-          ├─ --integrate <caminho> -y
-          ├─ --list-installed --json
-          └─ --set-update-source <instalado> --manager <provedor> chave=valor ...
+          └─ --integrate <caminho> -y  [autoridade única sobre o AppImage]
 ```
 
 - Estado persistente de popup: browser.storage.local (enabled, pending, processed, lastResult).
@@ -29,8 +25,8 @@ bridge.host
 
 ## v0.2 — arquitetura e UI
 
-- `bridge.sources` extrai o **nome do asset do release** da URL original; troca semver por `*` mantendo arquitetura e edição.
-- `bridge.sources.verify_source` compara arquitetura do asset com ELF `e_machine`; para wildcards consulta API do release conhecido, exige asset original presente e **único match** para o glob. Sem verificação ou glob ambíguo: não configura fonte.
+- `bridge.sources` permanece como código legado auxiliar, mas não participa da integração automática. Não usamos ELF/e_machine, MIME, magic bytes, hashes, arquitetura nem conteúdo para decidir se o Gear Lever pode instalar algo. O resolvedor de links continua verificando URLs de releases para apresentar escolhas seguras ao usuário.
+- A integração automática não altera fontes de atualização, não gera wildcards e não tenta reconciliar `--list-installed`; fontes embutidas e demais configurações são geridas pelo Gear Lever. O usuário pode editá-las explicitamente na interface gerencial.
 - A biblioteca `bridge.manager.AppManager` oferece leitura de instalados/updates e ações validadas na CLI Gear Lever (atualizar, remover para lixeira, editar/desfazer fonte).
 - O host Native Messaging aceita `listInstalled`, `listUpdates`, `updateApp`, `removeApp`, `setSource`, `unsetSource`, além de `integrate` e `ping`. Operações mutáveis exigem `confirmed: true` e caminho exatamente presente na lista do Gear Lever.
 - Popup oferece acesso rápido e toggle; `manager.html` abre em aba própria para tela completa, com busca, status e ações, sem executar programas arbitrários.
@@ -67,8 +63,8 @@ bridge.host
 - `bridge/link_resolver.py` validates direct AppImage assets from GitHub, GitLab and Codeberg, and resolves supported provider repository/release pages through their fixed public APIs. User-chosen assets are listed by filename and architecture; do not infer architecture if missing.
 - `extension/common/manager.js` presents a link-input form; the direct Install click after choosing an asset is consent, without a second confirmation modal. Background `startManagedDownload` re-resolves the origin and only starts browser downloads for assets confirmed by the native resolver; no direct Python shell/download execution.
 - Manual downloads are recorded in `storage.local.pending` and processed even with automatic download toggle OFF. Downloads that are interrupted do not yield success.
-- Native Messaging `integrate` must confirm a successful Gear Lever status and an installed path before a browser desktop notification is shown. `already_processed` and failed imports never trigger a success notification. Browser/OS notification permission may suppress display without undoing a completed integration.
-- Gear Lever CLI prints the actual, potentially renamed destination path on success. Match it against the returned installed list and source contents, rather than assuming one arbitrary added row identifies the download. If the Gear Lever CLI confirms successful copying but the JSON installed list has not registered it, return `integrated_unlisted` with an explicit pending-listing warning, *without* registering an update source or retrying the integration. An already integrated same-content AppImage returns `already_processed` without replacing its update configuration.
+- Native Messaging `integrate` trusts `gearlever --integrate <path> -y` return code. Zero means success, with a distinct `already_processed` response when the CLI says so; nonzero CLI errors propagate to History. A Gear Lever success notification is allowed without `installedPath` (fallback to downloaded filename). Browser/OS notification suppression is independent.
+- The CLI may print its actual destination path; this is display metadata only. No secondary verification, no content comparison, no reconciliation against `--list-installed`, no injected update source and no automatic reimport. Gear Lever remains the sole AppImage format and integration authority.
 - A successful integration refreshes the popup and browser manager app list via changes to `lastResult`. Keep this behavior independent from the extension's own Git commit update indicator.
 - Browser extension icons are PNG 16/32/48 derived from the green gear-and-glove graphic, stored under `extension/common/icons/`; site `docs/assets/favicon.png` shares the icon. `build-extensions.sh` must recursively copy all common assets.
 

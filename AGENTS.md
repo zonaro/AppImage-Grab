@@ -2,8 +2,8 @@
 
 - Monorepo Linux, Python stdlib + WebExtensions JS; sem dependências extras.
 - Gear Lever é o backend, não recriar nem alterar banco/metadata internos dele.
-- Extensão OFF por padrão; ON integra automaticamente downloads HTTPS .AppImage após conclusão. OFF não intercepta downloads.
-- Segurança: não executar AppImages diretamente, nunca usar shell=True, validar arquivos regulares, origem e sintaxe das fontes. Nunca inventar URL de updates.
+- Extensão OFF por padrão; ON integra automaticamente downloads concluídos com extensão .AppImage. OFF não intercepta downloads.
+- Segurança: não executar AppImages diretamente, nunca usar shell=True. No host, validar apenas a segurança do caminho recebido (absoluto, sufixo .AppImage, arquivo regular do usuário sem symlinks). Não validar assinatura ELF, MIME, magic bytes, tamanho mínimo, conteúdo, hash, arquitetura ou localização do resultado. Gear Lever decide o suporte ao arquivo. URLs de download selecionadas manualmente ainda devem ser verificadas quanto à origem pelo resolvedor; nunca inventar URL de updates.
 - Não sobrescrever fonte de atualização já existente ou embutida. Usar Gear Lever CLI.
 - Pasta final deve ser controlada por Gear Lever; nunca mover arquivos manualmente.
 - Native host de uma solicitação por processo, comunicação JSON length-prefixed em stdin/stdout.
@@ -11,7 +11,7 @@
 - Atualizar README, .agents e testes quando mudar contrato, CLI ou fluxos.
 - Testes: python3 -m unittest discover -s tests -v; node --check extension/common/background.js; bash -n install.sh uninstall.sh scripts/build-extensions.sh.
 
-- Após v0.2, não gerar wildcard que misture arquiteturas/edições: validar asset original e correspondência única contra API do release; quando não for possível, manter fonte desconhecida.
+- O resolvedor de links deve continuar oferecendo escolhas de arquivo/arquitetura apenas quando o release é verificável, mas a integração automática NÃO detecta fontes, NÃO gera wildcards e NÃO chama --set-update-source. Fontes de atualização são responsabilidade do Gear Lever ou de edição explícita do usuário no manager.
 - Interface web: Native Messaging API com ações allowlisted, confirmação explícita e path conferido na lista do Gear Lever; atualizações não podem forçar execução de apps abertos.
 - Testes devem incluir novas rotas de gestão e carregamento dos recursos `manager.html`/`native-client.js`.
 
@@ -36,8 +36,8 @@
 - Regression tests: tests/test_source_config.py and tests/test_manager.py. Maintain exact path matching and fail-closed behavior on offline/missing config.
 
 - When editing link imports: never download arbitrary URL schemes or hosts; trust only explicit provider release assets and fixed GitHub/GitLab/Codeberg APIs. Asset/architecture selection followed by a direct Install click establishes user intent without a second dialog. Browser background must revalidate the selected asset.
-- Native host must confirm Gear Lever integration before sending desktop success notifications. No success toast for failed/duplicate imports. Automated ON/OFF does not block explicit user-initiated downloads.
-- Trust exact CLI success output and verify its destination path/content; do not infer successful installs from arbitrary new entries in `listInstalled`. If Gear Lever confirmed integration but `listInstalled` has not indexed the app, return `integrated_unlisted` with a clear warning, preserve any existing source configuration and never trigger an automatic reimport. Do not set an update source for unlisted apps.
+- A integração automática deve confiar somente no retorno da CLI pública `gearlever --integrate <path> -y`. Código de saída 0 é sucesso; `This AppImage is already integrated` significa já processado, sem nova notificação. Erros (retorno não zero) são registrados em History. Não exigir installedPath nem --list-installed para confirmar. O modo ON/OFF não bloqueia imports manuais.
+- Nunca revalidar cópia instalada, comparar hashes/tamanhos, consultar a lista de instalados ou tentar inferir destinos no fluxo `integrate`. Se Gear Lever informar caminho na saída, usá-lo apenas para mostrar ao usuário. Sem caminho na saída, o sucesso continua válido (filename original para notificação). Não registrar fonte de atualização automaticamente e não modificar fontes preexistentes.
 - Preserve icon assets from `extension/common/icons` in both unpacked extension builds and use matching favicon under `docs/assets/favicon.png`.
 
 - On supported GitHub/GitLab/Codeberg repository/release tabs, `page-offers.js` conservatively canonicalizes the URL. `page-offer-background.js` resolves releases through the existing Native Messaging host and offers install notifications only when assets are confirmed. Never introspect page content or visit unsupported hosts.

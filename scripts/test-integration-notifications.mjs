@@ -6,7 +6,7 @@ import vm from 'node:vm';
 const script = readFileSync('extension/common/background.js','utf8');
 const noticesScript = readFileSync('extension/common/notifications.js', 'utf8');
 const activityScript = readFileSync('extension/common/activity-log.js', 'utf8');
-async function runCase({enabled, manual, integrationStatus, expectedNotifications, notificationFails = false}) {
+async function runCase({enabled, manual, integrationStatus, expectedNotifications, notificationFails = false, installedPath = '/home/user/AppImages/app.AppImage'}) {
   let changed = null, handler = null;
   const notices = [];
   const state = {enabled, pending: manual ? {42: {manual:true, url:'https://github.com/a/b/releases/download/v1/app.AppImage'}} : {},
@@ -49,7 +49,7 @@ async function runCase({enabled, manual, integrationStatus, expectedNotification
           postMessage(){
             queueMicrotask(()=>callbacks.forEach(fn=>fn({
               ok:true,status:integrationStatus,
-              installedPath:'/home/user/AppImages/app.AppImage'})));
+              installedPath})));
           },
           disconnect(){}
         };
@@ -77,14 +77,16 @@ async function runCase({enabled, manual, integrationStatus, expectedNotification
     assert.equal(notices[0].info.iconUrl,'chrome-extension://app/icons/icon-48.png');
   }
   assert.equal(state.lastResult.status,
-    ['integrated_with_source','integrated_without_source','integrated_unlisted'].includes(integrationStatus)?'success':'error');
+    ['integrated_by_gearlever','integrated_with_source','integrated_without_source','integrated_unlisted'].includes(integrationStatus)?'success':'error');
   assert.equal(state.activityHistory.length,1,'one persistent event per download');
   assert.equal(state.activityHistory[0].name,'app.AppImage');
   assert.equal(state.activityHistory[0].status,
-    ['integrated_with_source','integrated_without_source'].includes(integrationStatus)
+    ['integrated_by_gearlever','integrated_with_source','integrated_without_source'].includes(integrationStatus)
       ? 'success' : integrationStatus === 'integrated_unlisted' ? 'warning' : 'error');
   assert.ok(handler,'Manager download handler registered');
 }
+await runCase({enabled:true,manual:false,integrationStatus:'integrated_by_gearlever',expectedNotifications:1,
+  installedPath:null});
 await runCase({enabled:true,manual:false,integrationStatus:'integrated_with_source',expectedNotifications:1});
 await runCase({enabled:false,manual:true,integrationStatus:'integrated_without_source',expectedNotifications:1});
 await runCase({enabled:true,manual:false,integrationStatus:'integrated_unlisted',expectedNotifications:1});

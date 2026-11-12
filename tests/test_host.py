@@ -13,11 +13,9 @@ from bridge.gearlever import IntegrationResult
 class FakeGearLever:
     calls = []
 
-    def integrate(self, file, source):
-        self.calls.append((file, source))
-        return IntegrationResult(str(file), source.manager if source else None,
-                                 source.origin if source else None,
-                                 "integrated_with_source" if source else "integrated_without_source")
+    def integrate(self, file):
+        self.calls.append(file)
+        return IntegrationResult(str(file), None, None, "integrated_by_gearlever")
 
 
 class HostTests(unittest.TestCase):
@@ -31,17 +29,25 @@ class HostTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             host.read_message(io.BytesIO(struct.pack("@I", host.MAX_BYTES + 1)))
 
-    def test_fake_file_rejected(self):
+    def test_non_appimage_payload_is_delegated_without_magic_check(self):
+        # Gear Lever alone determines whether this file's format is supported.
         with tempfile.TemporaryDirectory() as dirname:
-            target = Path(dirname) / "invalid.AppImage"
-            target.write_bytes(b"hello world invalid file")
-            with self.assertRaises(ValueError):
-                host.validate_file(str(target))
+            target = Path(dirname) / "Beeper-4.3.308-x86_64 (1).AppImage"
+            target.write_bytes(b"NOT AN ELF MAGIC HEADER")
+            request = {"action": "integrate", "filename": str(target),
+                       "url": "https://example.com/Beeper.AppImage"}
+            FakeGearLever.calls = []
+            with patch.object(host, "STATE_DIR", Path(dirname) / "state"):
+                result = host.handle(request, FakeGearLever)
+            self.assertEqual(result["status"], "integrated_by_gearlever")
+            self.assertEqual(FakeGearLever.calls, [target])
+            self.assertIsNone(result["sourcePattern"])
+            self.assertIsNone(result["architecture"])
 
-    def test_good_download_and_deduplication(self):
+    def test_download_deduplication_does_not_reintegrate(self):
         with tempfile.TemporaryDirectory() as dirname:
             target = Path(dirname) / "example.AppImage"
-            target.write_bytes(b"\x7fELF" + b"\0" * 4 + b"AI\x02" + b"\0" * 32)
+            target.write_bytes(b"arbitrary bytes delegated to Gear Lever")
             request = {
                 "action": "integrate", "filename": str(target),
                 "url": "https://github.com/example/tool/releases/download/v1.2/example.AppImage"
@@ -50,34 +56,36 @@ class HostTests(unittest.TestCase):
             with patch.object(host, "STATE_DIR", Path(dirname) / "state"):
                 first = host.handle(request, FakeGearLever)
                 repeated = host.handle(request, FakeGearLever)
-            self.assertEqual(first["status"], "integrated_with_source")
+            self.assertEqual(first["status"], "integrated_by_gearlever")
             self.assertEqual(repeated["status"], "already_processed")
             self.assertEqual(len(FakeGearLever.calls), 1)
 
-    def test_wildcard_source_is_verified(self):
-        with tempfile.TemporaryDirectory() as dirname:
-            target = Path(dirname) / "myapp-1.2-x86_64.AppImage"
-            header = bytearray(60)
-            header[0:4] = b"\x7fELF"
-            header[5] = 1
-            header[8:11] = b"AI\x02"
-            header[18:20] = (62).to_bytes(2, "little")
-            target.write_bytes(header)
-            self.assertEqual(host.elf_architecture(target), "x86_64")
-            request = {"action": "integrate", "filename": str(target),
-                       "url": "https://github.com/a/b/releases/download/v1.2/myapp-1.2-arm64.AppImage"}
-            FakeGearLever.calls = []
-            with patch.object(host, "STATE_DIR", Path(dirname) / "state"):
-                result = host.handle(request, FakeGearLever)
-            self.assertEqual(result["status"], "integrated_without_source")
-            self.assertIsNone(FakeGearLever.calls[0][1])
-
-    def test_http_rejected(self):
+    def test_untrusted_http_source_is_not_used_to_classify_file(self):
+        # Origin is metadata for deduplication, not an AppImage validity gate.
         with tempfile.TemporaryDirectory() as dirname:
             target = Path(dirname) / "example.AppImage"
-            target.write_bytes(b"\x7fELF" + b"\0" * 4 + b"AI\x02" + b"\0" * 32)
+            target.write_bytes(b"opaque application data")
+            FakeGearLever.calls = []
+            with patch.object(host, "STATE_DIR", Path(dirname) / "state"):
+                result = host.handle({"action": "integrate", "filename": str(target),
+                                      "url": "http://example.com/example.AppImage"}, FakeGearLever)
+            self.assertEqual(result["status"], "integrated_by_gearlever")
+            self.assertEqual(FakeGearLever.calls, [target])
+
+    def test_native_host_rejects_unsafe_path_only(self):
+        with tempfile.TemporaryDirectory() as dirname:
+            target = Path(dirname) / "test.AppImage"
+            target.write_bytes(b"opaque bytes")
             with self.assertRaises(ValueError):
-                host.handle({"action": "integrate", "filename": str(target), "url": "http://example.com/a.AppImage"})
+                host.validate_file("relative.AppImage")
+            with self.assertRaises(ValueError):
+                host.validate_file(str(target) + "\\x00")
+            with self.assertRaises(ValueError):
+                host.validate_file(str(target.with_suffix(".txt")))
+            symlink = Path(dirname) / "symlink.AppImage"
+            symlink.symlink_to(target)
+            with self.assertRaises(ValueError):
+                host.validate_file(str(symlink))
 
     def test_local_host_log_is_read_only_and_redacted(self):
         with tempfile.TemporaryDirectory() as dirname:

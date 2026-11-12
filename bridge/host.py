@@ -13,7 +13,6 @@ import sys
 from .gearlever import GearLever, GearLeverError
 from .manager import AppManager
 from .link_resolver import resolve_link
-from .sources import architecture, detect_source, verify_source
 
 def installed_commit() -> str | None:
     """Read the commit recorded by the installer, never from an untrusted request."""
@@ -30,7 +29,6 @@ def installed_commit() -> str | None:
 
 MAX_BYTES = 1024 * 1024
 STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local/state"))) / "gear-lever-grab"
-ELF_ARCH = {3: "x86", 40: "arm", 62: "x86_64", 183: "arm64", 243: "riscv64"}
 
 
 def _read_exact(stream, length):
@@ -76,34 +74,26 @@ def validate_file(value):
     metadata = file.lstat()
     if not stat.S_ISREG(metadata.st_mode) or metadata.st_uid != os.getuid():
         raise ValueError("AppImage deve ser arquivo regular pertencente ao usuário (sem symlinks)")
-    if metadata.st_size < 20:
-        raise ValueError("Arquivo incompleto")
-    with file.open("rb") as stream:
-        header = stream.read(20)
-    if header[:4] != b"\x7fELF" or header[8:11] not in (b"AI\x01", b"AI\x02"):
-        raise ValueError("Arquivo não possui assinatura de AppImage Tipo 1 ou 2")
+    # Only enforce the Native Messaging file/path boundary. Gear Lever itself
+    # owns every format, MIME, ELF, architecture and installation decision.
     return file
 
 
-def elf_architecture(file: Path):
-    with file.open("rb") as stream:
-        header = stream.read(20)
-    byteorder = {1: "little", 2: "big"}.get(header[5]) if len(header) >= 20 else None
-    if not byteorder:
-        return None
-    return ELF_ARCH.get(int.from_bytes(header[18:20], byteorder))
-
-
 def _integrate(request, adapter_factory):
+    # The browser decides whether a completed download has an .AppImage name.
+    # This native bridge only checks that the local path is safe to hand to the
+    # Gear Lever CLI; it never inspects or classifies the AppImage's bytes.
     file = validate_file(request.get("filename"))
-    fields = {k: request.get(k, "") for k in ("url", "finalUrl", "referrer")}
-    if any(not isinstance(v, str) or len(v) > 8192 for v in fields.values()):
+    origin = request.get("url", "")
+    if origin is None:
+        origin = ""
+    if not isinstance(origin, str) or len(origin) > 8192:
         raise ValueError("URL inválida")
-    if not fields["url"].startswith("https://"):
-        raise ValueError("Somente downloads HTTPS são processados automaticamente")
 
     STATE_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
-    identity = json.dumps([str(file), file.stat().st_size, file.stat().st_mtime_ns, fields["url"]])
+    # Fingerprint prevents processing one completed download more than once.
+    # File metadata is used only for idempotence, not format validation.
+    identity = json.dumps([str(file), file.stat().st_size, file.stat().st_mtime_ns, origin])
     key = hashlib.sha256(identity.encode()).hexdigest()
     with (STATE_DIR / "integrations.lock").open("a+") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
@@ -117,17 +107,16 @@ def _integrate(request, adapter_factory):
         if key in previous:
             return {"ok": True, "status": "already_processed", **previous[key]}
 
-        source = detect_source(fields["url"], final_url=fields["finalUrl"],
-                               referrer=fields["referrer"])
-        elf_arch = elf_architecture(file)
-        source = verify_source(source, elf_arch=elf_arch)
-        result = adapter_factory().integrate(file, source)
+        # Gear Lever is the sole authority on format support, destination,
+        # existing installations and built-in update sources. In particular,
+        # never register/overwrite an update source automatically.
+        result = adapter_factory().integrate(file)
         saved = {
             "installedPath": result.installed_path,
             "updateManager": result.manager,
             "sourceOrigin": result.origin,
-            "sourcePattern": source.pattern if result.status == "integrated_with_source" and source else None,
-            "architecture": elf_arch or (architecture(source.asset_name) if source else None),
+            "sourcePattern": None,
+            "architecture": None,
         }
         previous[key] = saved
         temp = receipts.with_suffix(".tmp")
