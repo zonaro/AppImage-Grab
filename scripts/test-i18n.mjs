@@ -100,7 +100,8 @@ for (const page of ['popup', 'manager']) {
   const invariant = new Set(['AppImage Grab', 'AppImage Grab update available',
     'Copy update command', 'Check again', 'BETA', 'AppImagePool', 'AppImageHub',
     'GitHub Releases', 'GitLab Releases', 'Codeberg Releases',
-    'MeuApp-*-x86_64.AppImage', 'https://github.com/autor/projeto/releases/latest']);
+    'MeuApp-*-x86_64.AppImage', 'https://github.com/autor/projeto/releases/latest',
+    'Gear Lever', 'Shelly', 'GEAR LEVER']);
   const candidates = [
     ...[...htmlText.matchAll(/>([^<>]+)</g)].map(match => match[1].trim()),
     ...[...htmlText.matchAll(/(?:placeholder|title|aria-label|alt)="([^"]+)"/g)]
