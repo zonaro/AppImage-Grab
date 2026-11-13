@@ -18,6 +18,9 @@ globalThis.AIGI18n = (() => {
   // Each entry: current Portuguese source, English fallback, Spanish translation.
   // English UI strings are registered as aliases to cover existing update banners.
   const phrases = [
+    ["Escolher gerenciador de AppImages", "Choose AppImage manager", "Elegir gestor de AppImages"],
+    ["Gerenciador", "Manager", "Gestor"],
+    ["GERENCIADO PELO", "MANAGED BY", "GESTIONADO POR"],
     ["Verificando gerenciadores instalados…", "Checking installed managers…", "Comprobando gestores instalados…"],
     ["Instalar no gerenciador", "Install with selected manager", "Instalar con el gestor seleccionado"],
     ["O gerenciador selecionado é responsável pelas instalações e atualizações. A integração automática só roda com ON.", "The selected manager handles installations and updates. Automatic integration only runs when ON.", "El gestor seleccionado se encarga de las instalaciones y actualizaciones. La integración automática solo funciona con ON."],
