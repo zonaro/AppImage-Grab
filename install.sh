@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Re-running this script installs or repairs the newest Git main commit.
 set -euo pipefail
-REPOSITORY="https://github.com/zonaro/gear-lever-grab.git"
-if [[ "$(printenv GLG_FROM_MAIN || :)" != "1" ]]; then
+REPOSITORY="https://github.com/zonaro/AppImage-Grab.git"
+if [[ "$(printenv AIG_FROM_MAIN || :)" != "1" ]]; then
   command -v git >/dev/null || { echo "Git is required to install/update." >&2; exit 1; }
   TEMP_DIR="$(mktemp -d)"
   trap 'rm -rf -- "$TEMP_DIR"' EXIT
-  echo "Fetching the latest Gear Lever Grab revision from main…"
+  echo "Fetching the latest AppImage Grab revision from main…"
   git clone --quiet --depth 1 --branch main "$REPOSITORY" "$TEMP_DIR/repository"
-  GLG_FROM_MAIN=1 bash "$TEMP_DIR/repository/install.sh"
+  AIG_FROM_MAIN=1 bash "$TEMP_DIR/repository/install.sh"
   exit $?
 fi
 ROOT="$(cd "$(dirname "$0")" && pwd)"
@@ -16,28 +16,30 @@ ROOT="$(cd "$(dirname "$0")" && pwd)"
 command -v python3 >/dev/null || { echo "Python 3 is required." >&2; exit 1; }
 REVISION="$(git -C "$ROOT" rev-parse --verify HEAD)"
 [[ "$REVISION" =~ ^[[:xdigit:]]{40}$ ]] || { echo "Invalid Git commit SHA." >&2; exit 1; }
-DEST="$HOME/.local/share/gear-lever-grab"
-if [ -n "$(printenv XDG_DATA_HOME || :)" ]; then DEST="$(printenv XDG_DATA_HOME)/gear-lever-grab"; fi
+DEST="$HOME/.local/share/appimage-grab"
+if [ -n "$(printenv XDG_DATA_HOME || :)" ]; then DEST="$(printenv XDG_DATA_HOME)/appimage-grab"; fi
 # Report the installed SHA versus the freshly fetched main SHA.
 PREVIOUS_COMMIT=""
 if [[ -f "$DEST/version.json" ]]; then
   PREVIOUS_COMMIT="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("commit",""))' "$DEST/version.json" 2>/dev/null || :)"
 fi
 if [[ -z "$PREVIOUS_COMMIT" ]]; then
-  printf 'Installing Gear Lever Grab at main commit: %s\n' "$REVISION"
+  printf 'Installing AppImage Grab at main commit: %s\n' "$REVISION"
 elif [[ "$PREVIOUS_COMMIT" == "$REVISION" ]]; then
   printf 'Already at latest main commit: %s (refreshing files)\n' "$REVISION"
 else
-  printf 'Updating Gear Lever Grab from %s to %s\n' "$PREVIOUS_COMMIT" "$REVISION"
+  printf 'Updating AppImage Grab from %s to %s\n' "$PREVIOUS_COMMIT" "$REVISION"
 fi
-BIN="$HOME/.local/bin/gear-lever-grab-host"
+BIN="$HOME/.local/bin/appimage-grab-host"
 EXT_ID="$(tr -d '\n' < "$ROOT/extension/chromium/id.txt")"
 
 command -v python3 >/dev/null || { echo 'python3 is required' >&2; exit 1; }
-if ! command -v gearlever >/dev/null && ! { command -v flatpak >/dev/null && flatpak info it.mijorus.gearlever >/dev/null 2>&1; }; then
-  echo 'Warning: Gear Lever was not detected. Install it before activating the extension.' >&2
+if ! command -v shelly >/dev/null && ! command -v gearlever >/dev/null && ! {
+  command -v flatpak >/dev/null && flatpak info it.mijorus.gearlever >/dev/null 2>&1;
+}; then
+  echo 'Warning: Neither Shelly nor Gear Lever was detected. Install one before integrating AppImages.' >&2
 fi
-GLG_BUILD_SHA="$REVISION" bash "$ROOT/scripts/build-extensions.sh"
+AIG_BUILD_SHA="$REVISION" bash "$ROOT/scripts/build-extensions.sh"
 mkdir -p "$DEST" "$(dirname "$BIN")"
 cp -a "$ROOT/bridge" "$ROOT/scripts" "$ROOT/extension" "$ROOT/dist" "$DEST/"
 cp "$ROOT/uninstall.sh" "$DEST/uninstall.sh"
@@ -75,7 +77,7 @@ printf '\nInstalled Git main commit: %s\n' "$REVISION"
 
 cat <<EOF
 
-Gear Lever Grab installed/updated successfully.
+AppImage Grab installed/updated successfully.
 Installed main commit: $REVISION
 Native Messaging host: $BIN
 
@@ -93,7 +95,7 @@ Chrome/Edge/Brave/Chromium: Developer mode -> Load unpacked -> select the folder
 Firefox: about:debugging -> This Firefox -> Load Temporary Add-on -> manifest.json.
 
 After updating, reload the unpacked extension in your browser extensions page.
-When updating, the installer requests a search for Gear Lever Grab in supported
+When updating, the installer requests a search for AppImage Grab in supported
 Chromium-family extension pages. If ignored, use the page's search field.
 Your ON/OFF preference is preserved. The native host is already updated.
 
@@ -101,7 +103,7 @@ The installer opens the installation guide and the default browser's extension
 management page directly via the browser executable (no blocked HTML link).
 If detection fails, paste the browser-specific extensions URL manually.
 
-To skip both automatic browser launches: GLG_OPEN_BROWSER=0
+To skip both automatic browser launches: AIG_OPEN_BROWSER=0
 EOF
 
 # Show the guide on both first install and update, then launch the default

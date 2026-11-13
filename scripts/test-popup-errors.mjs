@@ -41,9 +41,9 @@ const api={
 };
 const context=vm.createContext({
   browser:api, Date, Number, String, Error, console,
-  GLGNative:{async request(){throw Error('native host unavailable');}},
-  GLGUpdate:{COMMAND:'install command',async check(){throw Error('update check offline');}},
-  GLGI18n:{translate:value=>value,locale:'pt-BR'},
+  AIGNative:{async request(){throw Error('native host unavailable');}},
+  AIGUpdate:{COMMAND:'install command',async check(){throw Error('update check offline');}},
+  AIGI18n:{translate:value=>value,locale:'pt-BR'},
   document:{
     querySelector:()=>versionLabel,
     getElementById:id=>{assert.ok(elements[id], 'Missing DOM node '+id);return elements[id];},
@@ -79,7 +79,7 @@ assert.equal(elements['recheck-updates'].disabled,false,'failed update check mus
 assert.match(elements['popup-error'].textContent,/Não foi possível verificar atualizações: update check offline/);
 
 // Also guard the success branch against the same expired event reference.
-context.GLGUpdate.check=async()=>({updateAvailable:false,needsReload:false});
+context.AIGUpdate.check=async()=>({updateAvailable:false,needsReload:false});
 const successEvent={currentTarget:elements['recheck-updates']};
 const successfulCheck=elements['recheck-updates'].handlers.click(successEvent);
 successEvent.currentTarget=null;

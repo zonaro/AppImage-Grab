@@ -6,7 +6,7 @@ from pathlib import Path
 import shutil
 import re
 
-NAME = "br.com.redclaw.gear_lever_grab"
+NAME = "br.com.redclaw.appimage_grab"
 BROWSERS = [
     ("Google Chrome", ("google-chrome", "google-chrome-stable"), ".config/google-chrome/NativeMessagingHosts", "chromium"),
     ("Chromium", ("chromium", "chromium-browser"), ".config/chromium/NativeMessagingHosts", "chromium"),
@@ -49,11 +49,11 @@ def main():
                     print(f"Host preservado (manifesto diferente): {label}")
             continue
         manifest = {
-            "name": NAME, "description": "Integra downloads AppImage com Gear Lever",
+            "name": NAME, "description": "Integra downloads AppImage com Gear Lever ou Shelly",
             "path": args.host_path, "type": "stdio",
         }
         if family == "firefox":
-            manifest["allowed_extensions"] = ["gear-lever-grab@redclaw.com.br"]
+            manifest["allowed_extensions"] = ["appimage-grab@redclaw.com.br"]
         else:
             manifest["allowed_origins"] = [f"chrome-extension://{args.extension_id}/"]
         destination.parent.mkdir(parents=True, exist_ok=True)

@@ -11,7 +11,7 @@ Content constraints:
 - The UI illustration is explicitly labeled as illustrative; no fabricated user reviews, metrics, or endorsements.
 - All user-facing content must be translated into pt-BR, en, es using docs/assets/i18n.js. Keep translations synchronized with data-i18n keys.
 
-Public site after Pages is enabled: https://zonaro.github.io/gear-lever-grab/
+Public site after Pages is enabled: https://zonaro.github.io/AppImage-Grab/
 Publish source: main /docs. Landing CI: .github/workflows/landing.yml.
 
 Validate: node --check docs/assets/main.js; node --check docs/assets/i18n.js; node scripts/check-docs.mjs.

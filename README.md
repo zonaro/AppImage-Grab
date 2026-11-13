@@ -1,17 +1,17 @@
-# Gear Lever Grab
+# AppImage Grab
 
-**Download an AppImage in your browser. Let Gear Lever take care of the rest.**
+**Download an AppImage in your browser. Let Gear Lever or Shelly take care of the rest.**
 
-Gear Lever Grab is a Linux browser extension with a small Python Native Messaging bridge. When you enable it, the extension detects completed HTTPS AppImage downloads and integrates them into **Gear Lever**. For recognized GitHub, GitLab, and Codeberg release assets, it attempts to configure the correct update source while preserving the AppImage's architecture and edition.
+AppImage Grab is a Linux WebExtension with a small Python Native Messaging bridge. When enabled, it hands completed `.AppImage` downloads to your choice of **Gear Lever** or **Shelly ALPM**. The selected manager validates and installs each AppImage and owns its update sources; Grab never executes a downloaded AppImage or edits a manager's application registry.
 
-[Website](https://zonaro.github.io/gear-lever-grab/) · [Issues](https://github.com/zonaro/gear-lever-grab/issues) · [Architecture](.agents/architecture.md)
+[Website](https://zonaro.github.io/AppImage-Grab/) · [Issues](https://github.com/zonaro/AppImage-Grab/issues) · [Architecture](.agents/architecture.md)
 
 ## Install and update in one command
 
-Requirements: Linux, Python 3.10+, Git, curl, and Gear Lever (recent enough to support `--list-installed --json`).
+Requirements: Linux, Python 3.10+, Git, curl, and at least one supported manager: **Gear Lever** (CLI supporting `--list-installed --json`) or **Shelly ALPM** (CLI supporting `shelly list appimage --json`). Both are optional individually; you do not need both.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/zonaro/gear-lever-grab/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/zonaro/AppImage-Grab/main/install.sh | bash
 ```
 
 This same command **installs or updates** the Python Native Messaging bridge and the unpacked browser extension files to the latest commit on `main`. The full Git commit SHA is the installed revision. You can [inspect the installer](install.sh) before running it. No root privileges or changes to managed browser policies are required.
@@ -20,11 +20,11 @@ The script:
 
 - Detects locally installed browsers and registers their Native Messaging host manifest (when supported).
 - Builds **unpacked browser extension directories only**, including the correct commit stamp.
-- Installs the Chromium-family extension at `$XDG_DATA_HOME/gear-lever-grab/dist/chromium` (defaults to `~/.local/share/gear-lever-grab/dist/chromium`).
-- Installs the Firefox extension at `$XDG_DATA_HOME/gear-lever-grab/dist/firefox`.
-- Installs or updates the Python bridge at `$XDG_DATA_HOME/gear-lever-grab/bridge` and its launcher at `~/.local/bin/gear-lever-grab-host`.
-- Generates a **standalone local HTML installation guide** at `$XDG_DATA_HOME/gear-lever-grab/install-guide.html`, with absolute paths that match this computer, detected browsers, copy buttons, and PT-BR/EN/ES instructions.
-- Opens the guide in the default browser, then launches **that browser's own extensions page directly using its installed executable**, e.g. `microsoft-edge --new-tab edge://extensions/` or `firefox -new-tab 'about:debugging#/runtime/this-firefox'`. On an **update or reinstall**, if a prior installed `version.json` is found, Chromium-family browsers are opened with a best-effort search hint such as `edge://extensions/?q=Gear%20Lever%20Grab` to help find the unpacked extension for reloading. The browser may ignore this unofficial parameter; the regular extensions list still opens. Firefox continues to open `about:debugging` with no search parameter. The installer looks up the default browser via `xdg-settings` / `xdg-mime`; when no matching default is known, it selects one detected supported browser rather than launching all of them. The terminal always prints the guide path and manual instructions.
+- Installs the Chromium-family extension at `$XDG_DATA_HOME/appimage-grab/dist/chromium` (defaults to `~/.local/share/appimage-grab/dist/chromium`).
+- Installs the Firefox extension at `$XDG_DATA_HOME/appimage-grab/dist/firefox`.
+- Installs or updates the Python bridge at `$XDG_DATA_HOME/appimage-grab/bridge` and its launcher at `~/.local/bin/appimage-grab-host`.
+- Generates a **standalone local HTML installation guide** at `$XDG_DATA_HOME/appimage-grab/install-guide.html`, with absolute paths that match this computer, detected browsers, copy buttons, and PT-BR/EN/ES instructions.
+- Opens the guide in the default browser, then launches **that browser's own extensions page directly using its installed executable**, e.g. `microsoft-edge --new-tab edge://extensions/` or `firefox -new-tab 'about:debugging#/runtime/this-firefox'`. On an **update or reinstall**, if a prior installed `version.json` is found, Chromium-family browsers are opened with a best-effort search hint such as `edge://extensions/?q=AppImage%20Grab` to help find the unpacked extension for reloading. The browser may ignore this unofficial parameter; the regular extensions list still opens. Firefox continues to open `about:debugging` with no search parameter. The installer looks up the default browser via `xdg-settings` / `xdg-mime`; when no matching default is known, it selects one detected supported browser rather than launching all of them. The terminal always prints the guide path and manual instructions.
 - Removes obsolete local package artifacts from older Grab installations; previous signing keys, if present, are deliberately preserved rather than deleted.
 
 **No CRX or XPI packages are generated, and browser extensions are never silently injected or activated.** The browser installation step is yours to complete. The extension's download automation remains **OFF until you turn it ON**, even after the installer is updated.
@@ -34,7 +34,7 @@ The script:
 After running the installer in a graphical session, the local HTML guide **and your default browser's extensions page** should open automatically. The extensions page is opened by the browser executable, not by following a blocked `file://` hyperlink. You can reopen the guide at any time:
 
 ```text
-~/.local/share/gear-lever-grab/install-guide.html
+~/.local/share/appimage-grab/install-guide.html
 ```
 
 The guide lists detected browsers, their extension-page addresses, and the **real absolute filesystem path** of the appropriate extension. Use its **Copy address** button if you want to open the extensions page in a different browser or the automatic launch fails: paste the internal URL directly into that browser's address bar. The local HTML guide intentionally does not contain a nonfunctional link to internal browser pages.
@@ -44,7 +44,7 @@ The guide lists detected browsers, their extension-page addresses, and the **rea
 1. Open the relevant extension management page, such as `edge://extensions`, `chrome://extensions` or `brave://extensions`.
 2. Enable **Developer mode**.
 3. Choose **Load unpacked**.
-4. Select the directory indicated in the guide. By default it is `~/.local/share/gear-lever-grab/dist/chromium`. **Select the directory**, not `manifest.json`.
+4. Select the directory indicated in the guide. By default it is `~/.local/share/appimage-grab/dist/chromium`. **Select the directory**, not `manifest.json`.
 5. If necessary, enable the extension in the browser. Open its popup and turn **ON** only if you want automatic AppImage integration.
 
 ### Firefox, Floorp, and Waterfox
@@ -58,13 +58,32 @@ The guide lists detected browsers, their extension-page addresses, and the **rea
 
 ### What happens on update?
 
-Run the same one-liner. The bridge and unpacked extension folders are refreshed from the latest main commit. The installer regenerates the guide and **still opens both the guide and the browser's extensions page** (when graphical). If a previous installation is detected via `version.json`, it attempts to open Chromium/Edge with `?q=Gear%20Lever%20Grab`, a convenience hint not guaranteed to be recognized by every browser version. On first installation the extension page is unfiltered. **Reload the extension from your browser's extensions page** so the new JavaScript is activated. Previously saved ON/OFF settings remain in browser storage.
+Run the same one-liner. The bridge and unpacked extension folders are refreshed from the latest main commit. The installer regenerates the guide and **still opens both the guide and the browser's extensions page** (when graphical). If a previous installation is detected via `version.json`, it attempts to open Chromium/Edge with `?q=AppImage%20Grab`, a convenience hint not guaranteed to be recognized by every browser version. On first installation the extension page is unfiltered. **Reload the extension from your browser's extensions page** so the new JavaScript is activated. Previously saved ON/OFF settings remain in browser storage.
 
 The extension itself checks GitHub's latest main SHA periodically, and shows a **NEW** badge and an update command when your installed extension/bridge is behind. This check does **not** execute any remote code automatically.
 
 The unpacked extension's version is generated from the **Git commit timestamp**, not the installation time. Both browsers receive the same `YY.DDD.HHmm` timestamp-based release label (two-digit year, day of year, 24-hour time and minute), preserving the timezone recorded in the commit. For example, a commit at 03:52 on November 11, 2026 gives `26.315.0352`. Browser manifests cannot include leading zeros in nonzero numeric components, so the mandatory `version` is `26.315.352`; `version_name` preserves `26.315.0352` for browsers that display it. Leap years may use day 366. Two commits in the same minute share the same manifest version, but the SHA still changes and powers the Grab update checker. The manifests in `extension/` are build templates; **load the generated `dist/` extension**, not the templates. After running the installer, **reload the unpacked extension** in the browser to activate the latest scripts and version.
 
-To skip opening **both** the HTML guide and the browser's extensions page, set `GLG_OPEN_BROWSER=0` in the environment used to run the installer. In headless sessions the installer prints the guide location and the browser-specific manual URL instead.
+To skip opening **both** the HTML guide and the browser's extensions page, set `AIG_OPEN_BROWSER=0` in the environment used to run the installer. In headless sessions the installer prints the guide location and the browser-specific manual URL instead.
+
+## Choose Gear Lever or Shelly
+
+In the extension popup or manager tab, choose **Gear Lever** or **Shelly**. The setting applies to automatic downloads, manual installs, the store, installed-app lists and update checks. Each AppImage download retains the manager selected when the download began, even if you switch managers before it finishes. Gear Lever is the default for established installations; where only Shelly is detected the popup can select it automatically.
+
+The managers have separate installed-app libraries: changing the selector **does not move, uninstall, duplicate or migrate** any apps.
+
+| Capability | Gear Lever | Shelly ALPM |
+| --- | --- | --- |
+| Install an AppImage | `gearlever --integrate <file> -y` | `shelly install appimage <file> --no-confirm` |
+| List installed apps | Gear Lever JSON CLI | `shelly list appimage --json` |
+| Check for updates | Gear Lever JSON CLI | `shelly list-updates appimage --json` |
+| Update | Individually, after confirmation | **All eligible AppImages together**, after explicit confirmation |
+| Remove | Gear Lever CLI (trash behavior) | Shelly CLI |
+| Edit update sources | Gear Lever-only source editor | Use Shelly itself |
+
+Shelly's public AppImage upgrade operation is collective: the browser **never** labels it as a per-app update. Similarly, Gear Lever's update-source editor is hidden in Shelly mode; Grab does not write Shelly's configuration database.
+
+See the upstream [Shelly CLI reference](https://www.seafoam-labs.org/shelly-alpm/docs/cli-reference/) and [Shelly AppImage guide](https://www.seafoam-labs.org/shelly-alpm/docs/appimage/).
 
 ## How AppImage integration works
 
@@ -72,49 +91,49 @@ When the extension's toggle is **ON**:
 
 1. It observes completed downloads with a filename ending in `.AppImage`.
 2. Native Messaging passes the local download path to the Python bridge. No permanent daemon is required.
-3. The bridge calls **Gear Lever's public CLI** with `--integrate <downloaded-file> -y`.
-4. **Gear Lever alone** determines whether the file is supported, where to install it, whether it is already integrated, and how to manage its updates. Grab forwards the CLI's success/failure result and records any error in **History**. It does not inspect AppImage magic bytes, ELF headers, MIME types, architectures or file contents; it does not compare the installed copy or register an automatic update source.
+3. The native bridge calls the selected CLI: Gear Lever with `--integrate <downloaded-file> -y`, or Shelly with `install appimage <downloaded-file> --no-confirm`.
+4. **The selected manager alone** decides whether the file is valid, where to install it, and how to handle its updates. Grab forwards the CLI's success/failure result and records any error in **History**. It does not inspect AppImage magic bytes, ELF headers, MIME types, architectures or file contents; it does not compare the installed copy or register an automatic update source.
 
 The bridge keeps only basic Native Messaging input-safety checks (absolute `.AppImage` path, user-owned regular file, no symlink) and deduplicates identical completed downloads. These checks are **not** AppImage format validation.
 
-The extension **never executes downloaded AppImages itself**. Gear Lever may inspect or extract them when installing. A filename ending in `.AppImage` is not proof that a download is authentic: obtain applications from developers you trust.
+The extension **never executes downloaded AppImages itself**. The selected manager may inspect or extract them during installation. A filename ending in `.AppImage` is not proof that a download is authentic: obtain applications from developers you trust.
 
-The installed location is taken from Gear Lever's CLI output when present, for display only. No failure is fabricated when Gear Lever successfully integrates an AppImage but renames it or omits its destination in CLI output. An already-integrated result from Gear Lever does not trigger a second install or a success notification. Existing update sources remain entirely Gear Lever's responsibility; explicit source edits in the manager still use Gear Lever's CLI.
+For Gear Lever, the installed location is taken from its CLI output when present, for display only. Shelly reports a successful import via its command exit status; it owns the installation path. No failure is fabricated when Gear Lever successfully integrates an AppImage but renames it or omits its destination in CLI output. An already-integrated result from Gear Lever does not trigger a second install or a success notification. Existing update sources remain entirely Gear Lever's responsibility; explicit source edits in the manager still use Gear Lever's CLI.
 
 ## Browser notifications and link-based installation
 
-When the download integration completes and Gear Lever confirms the new installation, the extension issues an OS/browser **notification** using its icon. A failed download or failed integration never produces a success notification. Notification delivery depends on browser and desktop notification permissions.
+When the download integration completes and the selected manager confirms the installation, the extension issues an OS/browser **notification** using its icon. A failed download or failed integration never produces a success notification. Notification delivery depends on browser and desktop notification permissions.
 
 The manager also provides a **Notifications** section, accessible from the popup. Its independent categories cover repository suggestions, successful integrations, integration errors, available AppImage updates, completed manual updates, and update errors. Preferences persist across browser restarts, preserve the previous repository-suggestion toggle, and do not change download automation. A small local history records notification attempts (up to 50) without full file paths or private links. A notification accepted by the browser API is **not proof** that GNOME or another desktop actually displayed it.
 
 ### Installation history and troubleshooting
 
-Open **Manage in browser → History** to inspect a persistent, browser-local log of the last **200** installation/download/update operations. Each entry records the AppImage filename, phase (download/integration/update), current outcome, timestamp and the **actual error returned by the Native Messaging bridge / Gear Lever CLI**. The same download ID is updated as it progresses, preventing duplicate lines. Search by filename or error, filter failed/pending/successful operations, expand details, copy a diagnostic report, refresh or clear browser history. No remote server, telemetry, full local paths, private download URLs or secrets are stored in this activity history.
+Open **Manage in browser → History** to inspect a persistent, browser-local log of the last **200** installation/download/update operations. Each entry records the AppImage filename, phase (download/integration/update), current outcome, timestamp and the **actual error returned by the Native Messaging bridge / selected manager CLI**. The same download ID is updated as it progresses, preventing duplicate lines. Search by filename or error, filter failed/pending/successful operations, expand details, copy a diagnostic report, refresh or clear browser history. No remote server, telemetry, full local paths, private download URLs or secrets are stored in this activity history.
 
-The History page can also display a **read-only, redacted tail of the Gear Lever Grab Native Messaging bridge's own `host.log`** (warnings and errors, up to 80 lines). This file already exists under `$XDG_STATE_HOME/gear-lever-grab/host.log` (or `~/.local/state/gear-lever-grab/host.log`). **It is not Gear Lever's internal log**. The host has no general file-browsing access and never exposes raw stack traces or arbitrary paths. Older installations are not retroactively added to browser history; the bridge log may contain older failed requests. Clearing browser history deliberately leaves the local service log intact.
+The History page can also display a **read-only, redacted tail of the AppImage Grab Native Messaging bridge's own `host.log`** (warnings and errors, up to 80 lines). This file already exists under `$XDG_STATE_HOME/appimage-grab/host.log` (or `~/.local/state/appimage-grab/host.log`). **It is not Gear Lever's internal log**. The host has no general file-browsing access and never exposes raw stack traces or arbitrary paths. Older installations are not retroactively added to browser history; the bridge log may contain older failed requests. Clearing browser history deliberately leaves the local service log intact.
 
 If an installation fails, open **History**, filter **Errors**, expand its entry and inspect the CLI/host message. If the Native Messaging host cannot be reached, the browser history still records the failure. Existing installed apps are never changed by opening logs.
 
 Use **Send test notification** to check desktop delivery without downloading anything. The diagnostics panel reports browser permission (where available), Native Messaging connectivity and recent update checks. If no alert appears, verify that the newest built `dist/chromium` or `dist/firefox` extension is loaded and reloaded, that browser notifications are permitted, and that the GNOME **Do Not Disturb** setting and browser application notifications are enabled. Errors may be recorded locally when the OS suppresses a toast.
 
-AppImage update availability is checked on a conservative 12-hour browser alarm, independently of the Grab extension's own Git commit checks. Only exact paths confirmed by Gear Lever's `--list-updates --json` and `--list-installed --json` can trigger alerts; repeated results are deduplicated across restarts and offline errors never clear the last valid state. The notifications open the manager but **never install, download, or update an AppImage on click**. Manual updates continue to require confirmation and are run through the Gear Lever CLI.
+AppImage update availability is checked on a conservative 12-hour browser alarm, independently of the Grab extension's own Git commit checks. Only AppImages matched to installed applications using the selected manager's JSON CLI can trigger alerts; repeated results are deduplicated across restarts and offline errors never clear the last valid state. The notifications open the manager but **never install, download, or update an AppImage on click**. Manual operations still require confirmation. Gear Lever supports per-app updates; Shelly exposes a confirmed collective AppImage upgrade.
 
-The manager's **Add AppImage by link** field accepts direct GitHub, GitLab, and Codeberg release-asset links, plus GitHub, GitLab, and Codeberg repository/release pages. For a repository, it lists matching AppImage assets and their detected architecture; the user chooses which file to download and confirms the action. The browser downloads the chosen asset, and the Native Messaging bridge asks Gear Lever to integrate it after completion. This manual action works independently of the automatic download toggle. Trusted release providers are used to resolve links, but **download-source selection is not AppImage file validation**.
+The manager's **Add AppImage by link** field accepts direct GitHub, GitLab, and Codeberg release-asset links, plus GitHub, GitLab, and Codeberg repository/release pages. For a repository, it lists matching AppImage assets and their detected architecture; the user chooses which file to download and confirms the action. The browser downloads the chosen asset, and the Native Messaging bridge asks the selected manager to integrate it after completion. This manual action works independently of the automatic download toggle. Trusted release providers are used to resolve links, but **download-source selection is not AppImage file validation**.
 
 ## Install suggestions while browsing
 
 When you visit a **supported GitHub, GitLab, or Codeberg repository/release page**, the extension reads the tab URL (not the page contents), asks the existing Native Messaging resolver for AppImage release assets and, when a compatible asset is found, offers to install it.
 
 - A browser desktop notification suggests installation. Click it or its **View and install** action to open the manager with that source already selected; it never downloads automatically.
-- The extension popup shows an **Install in Gear Lever** button on compatible repository pages. If a release contains several AppImages, the popup lets you choose the exact filename and CPU architecture first.
-- Each install starts on the user's explicit **Install** click, without an additional JavaScript confirmation dialog. The user still chooses an exact asset/architecture; the browser download and Native Messaging resolver confirm the selected release URL, while Gear Lever alone validates the file. Successful integration triggers the existing desktop notification.
+- The extension popup shows an **Install in manager** button on compatible repository pages. If a release contains several AppImages, the popup lets you choose the exact filename and CPU architecture first.
+- Each install starts on the user's explicit **Install** click, without an additional JavaScript confirmation dialog. The user still chooses an exact asset/architecture; the browser download and Native Messaging resolver confirm the selected release URL, while the chosen manager alone validates the file. Successful integration triggers the existing desktop notification.
 - Passive repository suggestions can be disabled independently from download automation with **Suggest AppImages when visiting repositories** in the popup. Suggestions are on by default and each repository is notified **at most once per 24 hours**, even after browser restarts.
 - The extension requests the WebExtensions `tabs` permission solely to inspect open tab URLs for supported provider/repository patterns. It does not read page content, forms, cookies, or private URLs, and it never tries to resolve arbitrary websites. Only the three known providers currently have release resolvers.
 - No recommendation is shown when the provider has no AppImage release or the local bridge cannot verify a compatible release. A browser or desktop may suppress notifications; the popup remains available.
 
 ## Browser-based AppImage manager
 
-The extension's popup includes the ON/OFF toggle, a quick view of installed AppImages and last activity. Recoverable popup errors (Native Messaging unavailable, failed settings writes, update checks or browser navigation) now appear in an inline error message instead of generating unhandled promise rejections. Failed toggle changes are rolled back in the interface; a disconnected host does not prevent the popup from rendering. The **Manage in browser** screen opens a tab with search, installed versions, update sources, update checks, manual updates and removals. Only verified available updates are offered; confirmations are required before modifying installed apps or their sources. This is a browser frontend for the Gear Lever CLI, not a clone of the GTK implementation.
+The extension's popup includes the manager selector, ON/OFF toggle, a quick view of installed AppImages and last activity. Recoverable popup errors (Native Messaging unavailable, failed settings writes, update checks or browser navigation) now appear in an inline error message instead of generating unhandled promise rejections. Failed toggle changes are rolled back in the interface; a disconnected host does not prevent the popup from rendering. The **Manage in browser** screen opens a tab with search, installed versions, update sources, update checks, manual updates and removals. Only verified available updates are offered; confirmations are required before modifying installed apps or their sources. This is a browser frontend for the selected manager's CLI, not a replacement for its own app or configuration.
 
 ### Extension languages
 
@@ -151,8 +170,8 @@ This read-only compatibility layer depends on Gear Lever's current INI layout. I
 ## Development and tests
 
 ```bash
-git clone https://github.com/zonaro/gear-lever-grab.git
-cd gear-lever-grab
+git clone https://github.com/zonaro/AppImage-Grab.git
+cd appimage-grab
 bash scripts/build-extensions.sh
 python3 -m unittest discover -s tests -v
 node scripts/test-update-check.mjs
@@ -171,7 +190,7 @@ Both extension builds are always directories in `dist/chromium` and `dist/firefo
 
 ```bash
 python3 scripts/generate_install_guide.py \
-  --output /tmp/gear-lever-grab-guide.html \
+  --output /tmp/appimage-grab-guide.html \
   --chromium dist/chromium \
   --firefox-manifest dist/firefox/manifest.json \
   --commit "$(git rev-parse HEAD)"
@@ -185,16 +204,16 @@ The generated HTML is a local, self-contained file. The guide uses no external a
 - Firefox temporary unsigned extensions do not survive a browser restart.
 - Some browsers distributed inside Flatpak sandboxes need extra Native Messaging configuration.
 - Automatic integration intentionally never injects a custom update source; Gear Lever owns updates and any existing embedded source. Users can manage supported sources explicitly in the manager.
-- Real-world QA on all supported browsers and Fedora configurations is ongoing; please see the [issue tracker](https://github.com/zonaro/gear-lever-grab/issues).
+- Real-world QA on all supported browsers and Fedora configurations is ongoing; please see the [issue tracker](https://github.com/zonaro/AppImage-Grab/issues).
 
 ## Uninstall
 
 ```bash
-bash "$HOME/.local/share/gear-lever-grab/uninstall.sh"
+bash "$HOME/.local/share/appimage-grab/uninstall.sh"
 ```
 
 If `XDG_DATA_HOME` is customized, use that location instead. Uninstall the browser extension from the browser's own management page. Already integrated AppImages remain managed by Gear Lever. Signing keys left from older releases are not removed automatically.
 
 ## License
 
-See [LICENSE](LICENSE). Gear Lever Grab is an independent open-source project and is not officially affiliated with Gear Lever.
+See [LICENSE](LICENSE). AppImage Grab is an independent open-source project and is not officially affiliated with Gear Lever.

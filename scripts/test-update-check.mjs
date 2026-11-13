@@ -19,11 +19,11 @@ function setup({host = OLD, remote = NEW, fail = false, saved = null} = {}) {
     fetch: async (url) => {
       calls++;
       if (fail) throw Error('offline');
-      assert.match(url, /api\.github\.com\/repos\/zonaro\/gear-lever-grab\/commits\/main/);
+      assert.match(url, /api\.github\.com\/repos\/zonaro\/appimage-grab\/commits\/main/);
       return {ok: true, json: async () => ({sha: remote})};
     },
     globalThis: {
-      GLG_BUILD_COMMIT: OLD,
+      AIG_BUILD_COMMIT: OLD,
       browser: {
         runtime: {getURL: file => 'moz-extension://test/' + file},
         storage: {local: {
@@ -31,14 +31,14 @@ function setup({host = OLD, remote = NEW, fail = false, saved = null} = {}) {
           async set(update) {Object.assign(stored, update);}
         }}
       },
-      GLGNative: {request: async ({action}) => {
+      AIGNative: {request: async ({action}) => {
         assert.equal(action, 'getVersion');
         return {commit: host};
       }}
     }
   };
   vm.runInNewContext(code, context);
-  return {api: context.globalThis.GLGUpdate, stored, getCalls: () => calls};
+  return {api: context.globalThis.AIGUpdate, stored, getCalls: () => calls};
 }
 
 async function run() {

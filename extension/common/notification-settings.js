@@ -1,7 +1,7 @@
 /* Notification preferences and local diagnostics in manager.html. */
-globalThis.GLGNotificationUI = (() => {
+globalThis.AIGNotificationUI = (() => {
   const api = globalThis.browser || globalThis.chrome;
-  const tr = globalThis.GLGI18n?.translate || (value => value);
+  const tr = globalThis.AIGI18n?.translate || (value => value);
   const keys = ['suggestions', 'integrationSuccess', 'integrationError',
     'updatesAvailable', 'updatesCompleted', 'updatesError'];
   const inputs = Array.from(document.querySelectorAll('[data-notification]'));
@@ -29,7 +29,7 @@ globalThis.GLGNotificationUI = (() => {
       message.textContent = tr(event.message || '');
       const info = document.createElement('small');
       const stamp = event.at && !Number.isNaN(Date.parse(event.at))
-        ? new Date(event.at).toLocaleString(globalThis.GLGI18n?.locale || 'en') : '';
+        ? new Date(event.at).toLocaleString(globalThis.AIGI18n?.locale || 'en') : '';
       info.textContent = stamp + ' · ' + tr({requested: 'Solicitada ao navegador',
         shown: 'Exibida (confirmada pela API)', blocked: 'Bloqueada',
         error: 'Erro ao solicitar'}[event.status] || event.status || '');

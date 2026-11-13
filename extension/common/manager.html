@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#f5f6f8">
-<title>Meus AppImages — Gear Lever Grab</title>
+<title>Meus AppImages — AppImage Grab</title>
 <link rel="stylesheet" href="manager.css">
 <script defer src="build-revision.js"></script>
 <script defer src="i18n.js"></script>
@@ -19,7 +19,7 @@
 <body>
 <div class="app-layout">
   <aside class="sidebar">
-    <div class="brand"><img src="icons/icon-48.png" class="brand-icon" width="42" height="42" alt=""><div><strong>Gear Lever Grab</strong><small>Gerenciador de AppImages</small></div></div>
+    <div class="brand"><img src="icons/icon-48.png" class="brand-icon" width="42" height="42" alt=""><div><strong>AppImage Grab</strong><small>Gerenciador de AppImages</small></div></div>
     <nav aria-label="Navegação do gerenciador">
       <button type="button" class="nav-item active" id="nav-installed"><span aria-hidden="true">▣</span> Instalados</button>
       <button type="button" class="nav-item" id="nav-updates"><span aria-hidden="true">↻</span> Atualizações</button>
@@ -28,24 +28,24 @@
       <button type="button" class="nav-item" id="nav-history"><span aria-hidden="true">☷</span> Histórico</button>
     </nav>
     <div class="sidebar-bottom">
-      <div class="side-info"><span class="status-led" aria-hidden="true"></span> Conectado ao Gear Lever local</div>
-      <a href="https://github.com/zonaro/gear-lever-grab" target="_blank" rel="noopener noreferrer">Documentação e código ↗</a>
-      <small>Interface web local. Os comandos são executados pelo Gear Lever através do serviço Native Messaging.</small>
+      <div class="side-info"><span class="status-led" aria-hidden="true"></span> Gerenciador: <strong id="backend-side-name">Gear Lever</strong></div>
+      <a href="https://github.com/zonaro/AppImage-Grab" target="_blank" rel="noopener noreferrer">Documentação e código ↗</a>
+      <small>Interface web local. Os comandos são executados pelo gerenciador selecionado através do serviço Native Messaging.</small>
     </div>
   </aside>
   <main class="content">
     <header class="topbar">
       <div><span class="breadcrumb">Gerenciador / <strong id="breadcrumb">Instalados</strong></span></div>
-      <div class="top-actions"><label class="automation" title="Integração automática"><span>Download automático</span><input type="checkbox" id="enabled" role="switch" aria-label="Ativar integração automática"></label><button type="button" id="refresh" class="button secondary"><span aria-hidden="true">↻</span> <span id="refresh-label">Atualizar lista</span></button></div>
+      <div class="top-actions"><label class="backend-select">Gerenciador <select id="integration-backend" aria-label="Gerenciador de AppImages"><option value="gearlever">Gear Lever</option><option value="shelly">Shelly</option></select></label><label class="automation" title="Integração automática"><span>Download automático</span><input type="checkbox" id="enabled" role="switch" aria-label="Ativar integração automática"></label><button type="button" id="refresh" class="button secondary"><span aria-hidden="true">↻</span> <span id="refresh-label">Atualizar lista</span></button></div>
     </header>
     <div class="body-content">
       <section id="grab-update-banner" class="disclaimer" hidden role="status" aria-live="polite">
-        <strong id="grab-update-title">Gear Lever Grab update available</strong>
+        <strong id="grab-update-title">AppImage Grab update available</strong>
         <p id="grab-update-description"></p>
         <button type="button" class="button secondary" id="grab-update-copy">Copy update command</button>
       </section>
       <div id="installed-view">
-      <section class="headline"><div><p class="eyebrow">GERENCIADO PELO GEAR LEVER</p><h1>Meus AppImages</h1><p class="subtitle">Todos os seus aplicativos em um só lugar. Consulte versões, verifique atualizações e gerencie fontes sem sair do navegador.</p></div><span class="beta-tag">BETA</span></section>
+      <section class="headline"><div><p class="eyebrow">GERENCIADO PELO <span id="backend-title">GEAR LEVER</span></p><h1>Meus AppImages</h1><p class="subtitle">Todos os seus aplicativos em um só lugar. Consulte versões, verifique atualizações e gerencie fontes sem sair do navegador.</p></div><span class="beta-tag">BETA</span></section>
       <section class="stats" aria-label="Resumo">
         <article class="stat"><span class="stat-symbol green" aria-hidden="true">▣</span><div><span>Instalados</span><strong id="total-count">—</strong></div></article>
         <article class="stat"><span class="stat-symbol purple" aria-hidden="true">⌁</span><div><span>Com fonte de atualização</span><strong id="sources-count">—</strong></div></article>
@@ -65,24 +65,24 @@
         <div id="link-choices" hidden class="link-result">
           <label for="link-asset">Arquivo para baixar</label>
           <select id="link-asset"></select>
-          <button type="button" id="link-download" class="button primary">Baixar e adicionar ao Gear Lever</button>
+          <button type="button" id="link-download" class="button primary">Baixar e integrar</button>
         </div>
         <p id="link-feedback" role="status" aria-live="polite" class="notice"></p>
-        <p class="source-help">O navegador fará o download; a extensão confirmará a integração pelo Gear Lever. Escolha a arquitetura correta e instale apenas arquivos de fontes confiáveis.</p>
+        <p class="source-help">O navegador fará o download; o <span class="backend-inline-name">Gear Lever</span> cuidará da integração. Escolha a arquitetura correta e instale apenas arquivos de fontes confiáveis.</p>
       </section>
             <section class="catalog" aria-labelledby="catalog-title">
         <div class="catalog-header">
           <div><h2 id="catalog-title">Aplicativos instalados</h2><p id="list-subtitle">Carregando aplicativos do Gear Lever…</p></div>
-          <button type="button" id="check-updates" class="button primary">Verificar atualizações</button>
+          <button type="button" id="check-updates" class="button primary">Verificar atualizações</button><button type="button" id="update-all-shelly" class="button primary" hidden>Atualizar todos no Shelly</button>
         </div>
         <div class="filters"><label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Buscar aplicativo ou arquivo…" aria-label="Buscar AppImages"></label><div class="segments" role="group" aria-label="Filtro"><button type="button" class="active" id="filter-all">Todos</button><button type="button" id="filter-updates">Com atualização</button></div></div>
         <div id="notice" class="notice" role="status" aria-live="polite"></div>
         <div id="apps" class="apps" aria-live="polite"></div>
       </section>
-      <section class="disclaimer"><strong>O Gear Lever permanece no controle.</strong> Esta interface usa as operações oficiais da CLI do Gear Lever. Atualizações, alterações nas fontes e remoções só são realizadas mediante sua confirmação. A remoção usa a lixeira padrão do Gear Lever.</section>
+      <section class="disclaimer"><strong>O gerenciador escolhido permanece no controle.</strong> Esta interface utiliza sua CLI pública. No Shelly, as atualizações de AppImage são coletivas e fontes devem ser configuradas pelo próprio Shelly; no Gear Lever permanecem disponíveis as ações individuais e o editor de fontes. Todas as operações destrutivas exigem confirmação.</section>
       </div>
       <div id="store-view" hidden>
-        <section class="headline store-heading"><div><p class="eyebrow">DESCUBRA NOVOS APLICATIVOS</p><h1>Loja de AppImages</h1><p class="subtitle">Explore os catálogos do AppImagePool e AppImageHub. Escolha a arquitetura e confirme o download para integrar ao Gear Lever.</p></div><span class="beta-tag">CATÁLOGOS DA COMUNIDADE</span></section>
+        <section class="headline store-heading"><div><p class="eyebrow">DESCUBRA NOVOS APLICATIVOS</p><h1>Loja de AppImages</h1><p class="subtitle">Explore os catálogos do AppImagePool e AppImageHub. Escolha a arquitetura e confirme o download para integrar ao gerenciador selecionado.</p></div><span class="beta-tag">CATÁLOGOS DA COMUNIDADE</span></section>
         <section class="catalog store-panel" aria-labelledby="store-title">
           <div class="catalog-header"><div><h2 id="store-title">Explorar aplicativos</h2><p>Os arquivos vêm dos seus respectivos desenvolvedores ou do AppImageHub.</p></div><button type="button" class="button secondary" id="store-retry">↻ Recarregar fontes</button></div>
           <div class="store-controls">
@@ -96,7 +96,7 @@
           <div id="store-results" class="store-grid" aria-live="polite"></div>
           <div class="store-bottom"><button type="button" id="store-more" class="button secondary" hidden>Carregar mais aplicativos</button></div>
         </section>
-        <section class="disclaimer"><strong>Downloads sob seu controle.</strong> A loja não executa AppImages e não inicia downloads automaticamente. Alguns registros têm apenas um link externo; a integração só é confirmada pelo Gear Lever.</section>
+        <section class="disclaimer"><strong>Downloads sob seu controle.</strong> A loja não executa AppImages e não inicia downloads automaticamente. Alguns registros têm apenas um link externo; a integração só é confirmada pelo gerenciador selecionado.</section>
       </div>
       <div id="history-view" hidden>
         <section class="headline"><div><p class="eyebrow">INSTALAÇÕES E DIAGNÓSTICO</p>
@@ -127,7 +127,7 @@
         </section>
         <section class="catalog activity-panel" aria-labelledby="host-history-title">
           <div class="catalog-header"><div><h2 id="host-history-title">Log do serviço local</h2>
-            <p>Erros anteriores registrados pelo Gear Lever Grab no host.log. Não é o log interno do Gear Lever.</p></div>
+            <p>Erros anteriores registrados pelo AppImage Grab no host.log. Não é o log interno do Gear Lever.</p></div>
             <button type="button" id="host-log-refresh" class="button secondary">Consultar log local</button>
           </div>
           <p class="notice" id="host-log-status" role="status" aria-live="polite"></p>

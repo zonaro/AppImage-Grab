@@ -1,4 +1,4 @@
-# Gear Lever Grab — landing page
+# AppImage Grab — landing page
 
 Static GitHub Pages landing in \`/docs\`: pure HTML/CSS/JavaScript, no build step and no external services.
 
@@ -6,7 +6,7 @@ Static GitHub Pages landing in \`/docs\`: pure HTML/CSS/JavaScript, no build ste
 
 In **Settings → Pages → Build and deployment** select **Deploy from a branch**, \`main\`, \`/docs\`, then save. This makes the landing available at:
 
-**https://zonaro.github.io/gear-lever-grab/**
+**https://zonaro.github.io/AppImage-Grab/**
 
 Pages is not enabled just by pushing \`/docs\`. GitHub repository settings require activation by a maintainer.
 

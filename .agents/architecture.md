@@ -13,9 +13,9 @@ bridge.host
 ```
 
 - Estado persistente de popup: browser.storage.local (enabled, pending, processed, lastResult).
-- Host: `~/.local/bin/gear-lever-grab-host`.
-- Código instalado: `$XDG_DATA_HOME/gear-lever-grab`.
-- Recibos/log: `$XDG_STATE_HOME/gear-lever-grab`.
+- Host: `~/.local/bin/appimage-grab-host`.
+- Código instalado: `$XDG_DATA_HOME/appimage-grab`.
+- Recibos/log: `$XDG_STATE_HOME/appimage-grab`.
 - A opção `appimages-default-folder` e a movimentação na integração são do Gear Lever (não editamos gsettings).
 - Fontes existentes/embutidas são mantidas.
 - Sem daemon permanente nem auto-update próprio: o Gear Lever atualiza.
@@ -37,16 +37,16 @@ bridge.host
 - `install.sh` clones the latest main, builds only `dist/chromium` and `dist/firefox`, updates the Python Native Messaging host, and stamps the Git main SHA in the extension and bridge.
 - It removes previous `dist/packages` CRX/XPI artifacts, but retains any legacy private signing keys stored outside the application to avoid destructive loss.
 - The host allowlist registers only the stable Chromium unpacked extension ID and the existing Firefox ID.
-- `scripts/generate_install_guide.py` renders `scripts/install-guide-template.html` as the self-contained `$XDG_DATA_HOME/gear-lever-grab/install-guide.html`, using canonical local paths, safely JSON-escaped metadata, detected browsers and PT-BR/EN/ES text.
+- `scripts/generate_install_guide.py` renders `scripts/install-guide-template.html` as the self-contained `$XDG_DATA_HOME/appimage-grab/install-guide.html`, using canonical local paths, safely JSON-escaped metadata, detected browsers and PT-BR/EN/ES text.
 - The guide includes copy-address buttons, exact extension directory/manifest paths and explanatory instructions. A local `file://` page cannot reliably navigate to internal `edge://`, `chrome://` or `about:` URLs, so the HTML no longer advertises a broken open button.
-- With graphical DISPLAY/WAYLAND, `install.sh` opens the local guide using `xdg-open`, **then** passes the matching internal extensions URL directly to the detected browser executable. Previous `$DEST/version.json` is checked before it is overwritten; updates/reinstalls use `--updating` to add a best-effort `?q=Gear%20Lever%20Grab` hint to Chromium-family extensions URLs (e.g. `edge://extensions/?q=Gear%20Lever%20Grab`). The parameter is not an officially guaranteed search API and may be ignored; Firefox always opens the usual `about:debugging` page, while first installs use the unfiltered extensions page. Both guide and extension page still open on updates. The script discovers the default .desktop entry via `xdg-settings` then `xdg-mime`, opens only the matching browser or one fallback. No silent activation/reloading; `GLG_OPEN_BROWSER=0` disables both launches. In headless mode, print paths and manual URLs.
+- With graphical DISPLAY/WAYLAND, `install.sh` opens the local guide using `xdg-open`, **then** passes the matching internal extensions URL directly to the detected browser executable. Previous `$DEST/version.json` is checked before it is overwritten; updates/reinstalls use `--updating` to add a best-effort `?q=AppImage%20Grab` hint to Chromium-family extensions URLs (e.g. `edge://extensions/?q=AppImage%20Grab`). The parameter is not an officially guaranteed search API and may be ignored; Firefox always opens the usual `about:debugging` page, while first installs use the unfiltered extensions page. Both guide and extension page still open on updates. The script discovers the default .desktop entry via `xdg-settings` then `xdg-mime`, opens only the matching browser or one fallback. No silent activation/reloading; `AIG_OPEN_BROWSER=0` disables both launches. In headless mode, print paths and manual URLs.
 - Nothing silently installs or activates the browser extension. Chrome-like browsers use Developer Mode → Load unpacked; Firefox uses temporary loading of manifest.json until official signed distribution is implemented.
 
 ## Git main commit-based updates
 
-- install.sh always clones the latest public main; GLG_FROM_MAIN=1 is only set when re-entering the fetched script. Both local and curl-piped invocations use this flow.
-- scripts/build-extensions.sh reads GLG_BUILD_SHA (or git HEAD), stamps dist/{chromium,firefox}/version.json and build-revision.js. The root version.json is copied to the installed bridge after all preceding steps complete.
-- Python Native Messaging handles getVersion without touching Gear Lever. Browser extension GLGUpdate checks https://api.github.com/repos/zonaro/gear-lever-grab/commits/main at most once per 12h, using storage.local cached result and an MV3 alarm.
+- install.sh always clones the latest public main; AIG_FROM_MAIN=1 is only set when re-entering the fetched script. Both local and curl-piped invocations use this flow.
+- scripts/build-extensions.sh reads AIG_BUILD_SHA (or git HEAD), stamps dist/{chromium,firefox}/version.json and build-revision.js. The root version.json is copied to the installed bridge after all preceding steps complete.
+- Python Native Messaging handles getVersion without touching Gear Lever. Browser extension AIGUpdate checks https://api.github.com/repos/zonaro/AppImage-Grab/commits/main at most once per 12h, using storage.local cached result and an MV3 alarm.
 - Background action badge says NEW if main revision differs from extension revision or bridge revision, otherwise ON/OFF as before. Popup and manager show the three SHAs and a copyable install one-liner. No automatic remote script execution.
 - Reloading an unpacked extension is still required after the installer refreshes the on-disk extension directories; the bridge updates immediately.
 
@@ -87,7 +87,7 @@ bridge.host
 
 ## Histórico de operações
 
-- Background records each completed/failed download and native integration via `GLGActivity.record` in `storage.local.activityHistory`, keyed by browser download ID. Limit: 200 recent operations, no URLs, full paths or credentials.
+- Background records each completed/failed download and native integration via `AIGActivity.record` in `storage.local.activityHistory`, keyed by browser download ID. Limit: 200 recent operations, no URLs, full paths or credentials.
 - Popup async operations must catch Native Messaging/storage/update/navigation failures without killing the UI. The `#popup-error` alert surfaces recoverable errors (tests: `scripts/test-popup-errors.mjs`); failed toggle writes restore their previous visual state. Extension context invalidation after a developer reload is ignored only in the obsolete popup, never as a success signal. A manual request rejected before download has its own operation ID; updates use an operation ID.
 - Manager includes a History tab with search/status filter and explicit copy/clear actions. New entries are announced via `storage.onChanged`; errors retain bridge/CLI error messages for troubleshooting. Notification failure clicks go to `?view=history`.
-- Bridge offers allowlisted `getHostLog` for read-only, bounded, redacted WARN/ERROR entries from the pre-existing `$XDG_STATE_HOME/gear-lever-grab/host.log`. This is NOT Gear Lever's private log; never read arbitrary caller-supplied paths or reveal credentials. Clearing browser history must not delete it.
+- Bridge offers allowlisted `getHostLog` for read-only, bounded, redacted WARN/ERROR entries from the pre-existing `$XDG_STATE_HOME/appimage-grab/host.log`. This is NOT Gear Lever's private log; never read arbitrary caller-supplied paths or reveal credentials. Clearing browser history must not delete it.

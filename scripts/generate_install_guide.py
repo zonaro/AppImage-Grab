@@ -49,7 +49,7 @@ DESKTOP_ALIASES = {
 
 
 def graphical_launch_allowed():
-    return (os.environ.get("GLG_OPEN_BROWSER", "1") != "0" and
+    return (os.environ.get("AIG_OPEN_BROWSER", "1") != "0" and
             bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")))
 
 
@@ -123,7 +123,7 @@ def open_browser_extensions(browsers=None, *, updating=False):
     if updating and family == "chromium":
         # The query is a convenience hint only: each browser controls its own
         # internal extensions page and may ignore unsupported search parameters.
-        address += "?q=" + quote("Gear Lever Grab", safe="")
+        address += "?q=" + quote("AppImage Grab", safe="")
     option = "-new-tab" if family == "firefox" else "--new-tab"
     try:
         subprocess.Popen([executable, option, address], stdin=subprocess.DEVNULL,
@@ -164,12 +164,12 @@ def generate_guide(output: Path, chromium: Path, firefox_manifest: Path, commit:
     # special characters, even when the home folder contains HTML-like text.
     serial = json.dumps(data, ensure_ascii=True).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
     template = TEMPLATE.read_text(encoding="utf-8")
-    if template.count("__GLG_INSTALLATION_DATA__") != 1:
+    if template.count("__AIG_INSTALLATION_DATA__") != 1:
         raise ValueError("Missing or duplicate template placeholder")
     output = output.expanduser().absolute()
     output.parent.mkdir(parents=True, exist_ok=True)
     temporary = output.with_suffix(".html.tmp")
-    temporary.write_text(template.replace("__GLG_INSTALLATION_DATA__", serial), encoding="utf-8")
+    temporary.write_text(template.replace("__AIG_INSTALLATION_DATA__", serial), encoding="utf-8")
     temporary.chmod(0o600)
     temporary.replace(output)
     return output

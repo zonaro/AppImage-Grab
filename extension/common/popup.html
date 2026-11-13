@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Gear Lever Grab</title>
+  <title>AppImage Grab</title>
   <link rel="stylesheet" href="popup.css">
   <script defer src="build-revision.js"></script>
   <script defer src="i18n.js"></script>
@@ -14,7 +14,7 @@
 <body>
   <main>
     <header><img src="icons/icon-48.png" class="brand-mark" width="42" height="42" alt=""><div class="header-title">
-      <h1>Gear Lever Grab</h1><p>AppImages no navegador</p>
+      <h1>AppImage Grab</h1><p>AppImages no navegador</p>
     </div><span class="version-label"></span></header>
     <p id="popup-error" class="popup-error" role="alert" hidden></p>
     <section class="toggle-card">
@@ -24,9 +24,17 @@
         <span class="track"></span>
       </label>
     </section>
+    <section class="backend-picker">
+      <label for="integration-backend">Gerenciador de AppImages</label>
+      <select id="integration-backend" aria-label="Escolher gerenciador de AppImages">
+        <option value="gearlever">Gear Lever</option>
+        <option value="shelly">Shelly</option>
+      </select>
+      <small id="backend-status" role="status">Verificando gerenciadores instalados…</small>
+    </section>
 
     <section id="update-notice" class="update-notice" hidden aria-live="polite">
-      <strong id="update-title">Gear Lever Grab update available</strong>
+      <strong id="update-title">AppImage Grab update available</strong>
       <p id="update-details"></p>
       <div class="update-actions">
         <button type="button" id="copy-updater">Copy update command</button>
@@ -43,7 +51,7 @@
       <label class="offer-asset-label" for="offer-asset">Escolha a AppImage e a arquitetura</label>
       <select id="offer-asset"></select>
       <div class="offer-actions">
-        <button type="button" id="install-offer" class="offer-install">Instalar no Gear Lever</button>
+        <button type="button" id="install-offer" class="offer-install">Instalar no gerenciador</button>
         <button type="button" id="open-offer-manager" class="offer-secondary">Ver no gerenciador</button>
       </div>
       <p id="offer-status" class="muted" role="status" aria-live="polite"></p>
@@ -60,7 +68,7 @@
       <button type="button" id="manage-notifications" class="manage-button">Notificações e diagnóstico <span aria-hidden="true">↗</span></button>
     </section>
     <section class="history"><strong>Última atividade</strong><p id="activity" role="status">Nenhuma atividade ainda.</p></section>
-    <footer>O Gear Lever continua responsável pelas instalações e atualizações. A integração só roda com ON.</footer>
+    <footer>O gerenciador selecionado é responsável pelas instalações e atualizações. A integração automática só roda com ON.</footer>
   </main>
 </body>
 </html>

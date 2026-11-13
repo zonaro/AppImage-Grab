@@ -9,7 +9,7 @@ const notificationHelper = fs.readFileSync('extension/common/notifications.js','
 const parsed = vm.createContext({URL,console});
 parsed.globalThis = parsed;
 vm.runInContext(helper,parsed);
-const parse = parsed.GLGPageOffers.parse;
+const parse = parsed.AIGPageOffers.parse;
 
 const examples = [
   ['https://github.com/acme/widget','https://github.com/acme/widget','GitHub'],
@@ -83,7 +83,7 @@ async function scenario({suggestionsEnabled=true}={}) {
   const context=vm.createContext({
     URL,console,Date,Map,Set,Object,Promise,Number,String,Boolean,
     browser:api,
-    GLGNative:{async request(req){
+    AIGNative:{async request(req){
       assert.equal(req.action,'resolveLink');
       requests++;
       const source=parse(req.url);

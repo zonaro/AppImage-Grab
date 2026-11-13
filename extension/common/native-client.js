@@ -1,8 +1,13 @@
 /* Direct privileged Native Messaging client shared by popup and manager. */
-globalThis.GLGNative = (() => {
+globalThis.AIGNative = (() => {
   const browserApi = globalThis.browser || globalThis.chrome;
-  const HOST = "br.com.redclaw.gear_lever_grab";
-  const request = (message) => new Promise((resolve, reject) => {
+  const HOST = "br.com.redclaw.appimage_grab";
+  const request = async (message) => {
+    // Shared setting applies to popup, manager, background downloads and
+    // notifications. Never silently use another backend after a storage error.
+    const saved = await browserApi.storage.local.get('integrationBackend');
+    const backend = message.backend || (saved.integrationBackend === 'shelly' ? 'shelly' : 'gearlever');
+    return new Promise((resolve, reject) => {
     let port;
     try {
       port = browserApi.runtime.connectNative(HOST);
@@ -15,8 +20,9 @@ globalThis.GLGNative = (() => {
       if (finished) return;
       finished = true;
       port.disconnect();
-      reject(new Error("O Gear Lever demorou muito a responder."));
-    }, message.action === "updateApp" ? 3605000 : message.action === "listUpdates" ? 135000 : 190000);
+      reject(new Error("O gerenciador de AppImages demorou muito a responder."));
+    }, ["updateApp", "updateAllAppImages"].includes(message.action) ? 3605000
+      : message.action === "listUpdates" ? 185000 : 390000);
     port.onMessage.addListener(reply => {
       if (finished) return;
       finished = true;
@@ -29,10 +35,10 @@ globalThis.GLGNative = (() => {
       if (finished) return;
       finished = true;
       clearTimeout(timer);
-      reject(new Error(browserApi.runtime.lastError?.message || "Conexão com o serviço Gear Lever Grab indisponível. Execute o instalador novamente."));
+      reject(new Error(browserApi.runtime.lastError?.message || "Conexão com o serviço AppImage Grab indisponível. Execute o instalador novamente."));
     });
     try {
-      port.postMessage(message);
+      port.postMessage({...message, backend});
     } catch (error) {
       if (finished) return;
       finished = true;
@@ -40,6 +46,7 @@ globalThis.GLGNative = (() => {
       port.disconnect();
       reject(new Error(String(error?.message || error)));
     }
-  });
+    });
+  };
   return Object.freeze({ request });
 })();

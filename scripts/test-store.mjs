@@ -10,7 +10,7 @@ const background = fs.readFileSync('extension/common/background.js', 'utf8');
 
 const catalogContext = vm.createContext({URL, console});
 vm.runInContext(catalog, catalogContext);
-const C = catalogContext.GLGCatalog;
+const C = catalogContext.AIGCatalog;
 const samplePool = {
   items: [{name: 'Music', description: '<b>Musical</b> app', categories: ['Audio'],
     authors: [{name:'Developer'}], links:[{type:'Download',url:'https://github.com/org/music/releases'}],
@@ -59,7 +59,7 @@ const context = vm.createContext({
   window:{confirm:()=>{throw Error('Install must not request extra confirmation');}},
   document:{getElementById(id){assert.ok(elements[id],id);return elements[id];},createElement(tag){return new Element(tag);}},
   browser:{runtime:{async sendMessage(message){sent.push(message);return {ok:true,name:'Spotube-linux-x86_64.AppImage'};}}},
-  GLGNative:{async request(){return {choices:[{name:'Music-x86_64.AppImage',url:'https://github.com/org/music/releases/download/v1/Music-x86_64.AppImage',architecture:'x86_64'}]};}},
+  AIGNative:{async request(){return {choices:[{name:'Music-x86_64.AppImage',url:'https://github.com/org/music/releases/download/v1/Music-x86_64.AppImage',architecture:'x86_64'}]};}},
   async fetch(url) {
     fetchCalls.push(url);
     let payload;
@@ -72,7 +72,7 @@ const context = vm.createContext({
 vm.runInContext(catalog, context);
 vm.runInContext(store, context);
 const tick = async () => {await new Promise(resolve => setTimeout(resolve, 15));};
-context.GLGStore.activate();
+context.AIGStore.activate();
 await tick();
 assert.equal(elements['store-results'].children.length, 3);
 assert.match(elements['store-count'].textContent, /3 resultado/);
@@ -105,7 +105,7 @@ const backgroundContext = vm.createContext({
     notifications:{async create(){}}
   },
   async fetch(){return {ok:true,async text(){return JSON.stringify({status:'ok',data:[sampleHub]});}};},
-  GLGNative:{async request(){throw Error('Pling downloads should not require native resolution');}}
+  AIGNative:{async request(){throw Error('Pling downloads should not require native resolution');}}
 });
 vm.runInContext(background, backgroundContext);
 const request = {contentId:1687212,fileName:'Spotube-linux-x86_64.AppImage',confirmed:true};

@@ -2,7 +2,7 @@
  * Source phrases are the existing UI strings; translations never interpret HTML.
  * Template markers {{value}} preserve dynamic app names, URLs and counts.
  */
-globalThis.GLGI18n = (() => {
+globalThis.AIGI18n = (() => {
   const browserApi = globalThis.browser || globalThis.chrome;
   function detect(value) {
     const code = String(value || '').replace('_', '-').toLowerCase();
@@ -30,7 +30,7 @@ globalThis.GLGI18n = (() => {
     ['Ver no gerenciador', 'View in manager', 'Ver en el administrador'],
     ['Sugerir AppImages ao visitar repositórios', 'Suggest AppImages when visiting repositories', 'Sugerir AppImages al visitar repositorios'],
     ['Meus AppImages', 'My AppImages', 'Mis AppImages'],
-    ['Meus AppImages — Gear Lever Grab', 'My AppImages — Gear Lever Grab', 'Mis AppImages — Gear Lever Grab'],
+    ['Meus AppImages — AppImage Grab', 'My AppImages — AppImage Grab', 'Mis AppImages — AppImage Grab'],
     ['Atualizar lista', 'Refresh list', 'Actualizar lista'],
     ['Carregando…', 'Loading…', 'Cargando…'],
     ['Gerenciar no navegador', 'Manage in browser', 'Administrar en el navegador'],
@@ -293,7 +293,7 @@ globalThis.GLGI18n = (() => {
     ["Em andamento", "In progress", "En curso"],
     ["Cancelados", "Cancelled", "Cancelados"],
     ["Log do serviço local", "Local service log", "Registro del servicio local"],
-    ["Erros anteriores registrados pelo Gear Lever Grab no host.log. Não é o log interno do Gear Lever.", "Previous errors recorded by Gear Lever Grab in host.log. This is not Gear Lever's own log.", "Errores previos registrados por Gear Lever Grab en host.log. No es el registro interno de Gear Lever."],
+    ["Erros anteriores registrados pelo AppImage Grab no host.log. Não é o log interno do Gear Lever.", "Previous errors recorded by AppImage Grab in host.log. This is not Gear Lever's own log.", "Errores previos registrados por AppImage Grab en host.log. No es el registro interno de Gear Lever."],
     ["Consultar log local", "Read local log", "Consultar registro local"],
     ["Aguardando", "Waiting", "Esperando"],
     ["Baixando", "Downloading", "Descargando"],
@@ -387,7 +387,7 @@ globalThis.GLGI18n = (() => {
     ['Não foi possível verificar atualizações: {{error}}',
       'Could not check for updates: {{error}}',
       'No se pudieron comprobar las actualizaciones: {{error}}'],
-    ['Teste de notificação Gear Lever Grab', 'Gear Lever Grab notification test', 'Prueba de notificación de Gear Lever Grab'],
+    ['Teste de notificação AppImage Grab', 'AppImage Grab notification test', 'Prueba de notificación de AppImage Grab'],
     ['Se você está vendo esta mensagem, os avisos do navegador estão aparecendo.',
       'If you can see this message, browser alerts are appearing.',
       'Si puedes ver este mensaje, los avisos del navegador están apareciendo.'],
@@ -443,9 +443,9 @@ globalThis.GLGI18n = (() => {
     ['Escolher AppImage', 'Choose AppImage', 'Elegir AppImage'],
     ['O Gear Lever demorou muito a responder.', 'Gear Lever took too long to respond.', 'Gear Lever tardó demasiado en responder.'],
     ['Erro inesperado do serviço local', 'Unexpected local service error', 'Error inesperado del servicio local'],
-    ['Conexão com o serviço Gear Lever Grab indisponível. Execute o instalador novamente.',
-      'Cannot connect to the Gear Lever Grab service. Run the installer again.',
-      'No se puede conectar con el servicio Gear Lever Grab. Ejecuta el instalador de nuevo.'],
+    ['Conexão com o serviço AppImage Grab indisponível. Execute o instalador novamente.',
+      'Cannot connect to the AppImage Grab service. Run the installer again.',
+      'No se puede conectar con el servicio AppImage Grab. Ejecuta el instalador de nuevo.'],
 
     // Error messages returned by the local Python bridge and displayed by the UI.
     ['Origem da API não confiável', 'Untrusted API source', 'Origen de API no fiable'],
@@ -519,9 +519,9 @@ globalThis.GLGI18n = (() => {
       'Integrated in {{destination}}, but could not configure updates: {{error}}',
       'Integrada en {{destination}}, pero no se pudieron configurar las actualizaciones: {{error}}'],
 
-    ['Atualização do Gear Lever Grab disponível', 'Gear Lever Grab update available', 'Actualización de Gear Lever Grab disponible'],
-    ['Novo commit do Gear Lever Grab disponível', 'New Gear Lever Grab commit available', 'Nuevo commit de Gear Lever Grab disponible'],
-    ['Um novo commit do Gear Lever Grab está disponível', 'A new Gear Lever Grab commit is available', 'Hay un nuevo commit de Gear Lever Grab disponible'],
+    ['Atualização do AppImage Grab disponível', 'AppImage Grab update available', 'Actualización de AppImage Grab disponible'],
+    ['Novo commit do AppImage Grab disponível', 'New AppImage Grab commit available', 'Nuevo commit de AppImage Grab disponible'],
+    ['Um novo commit do AppImage Grab está disponível', 'A new AppImage Grab commit is available', 'Hay un nuevo commit de AppImage Grab disponible'],
     ['Recarregue a extensão do navegador', 'Reload your browser extension', 'Vuelve a cargar la extensión del navegador'],
     ['Recarregue a extensão', 'Reload the browser extension', 'Vuelve a cargar la extensión del navegador'],
     ['Copiar comando de atualização', 'Copy update command', 'Copiar comando de actualización'],

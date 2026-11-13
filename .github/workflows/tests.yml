@@ -34,6 +34,8 @@ jobs:
           node --check extension/common/popup.js
           node scripts/test-update-check.mjs
           node scripts/test-manager-ui.mjs
+          node scripts/test-backend-routing.mjs
+          node scripts/test-rebrand.mjs
           node scripts/test-install-click.mjs
           node scripts/test-popup-errors.mjs
           node scripts/test-store.mjs
@@ -105,11 +107,11 @@ jobs:
               assert head in Path('dist', family, 'build-revision.js').read_text()
           PY
           python3 scripts/generate_install_guide.py \
-            --output /tmp/gear-lever-grab-guide.html \
+            --output /tmp/appimage-grab-guide.html \
             --chromium dist/chromium \
             --firefox-manifest dist/firefox/manifest.json \
             --commit "$(git rev-parse HEAD)"
-          test -f /tmp/gear-lever-grab-guide.html
-          grep -q 'id="copy-path"' /tmp/gear-lever-grab-guide.html
-          grep -q 'id="copy-url"' /tmp/gear-lever-grab-guide.html
+          test -f /tmp/appimage-grab-guide.html
+          grep -q 'id="copy-path"' /tmp/appimage-grab-guide.html
+          grep -q 'id="copy-url"' /tmp/appimage-grab-guide.html
           test ! -e dist/packages

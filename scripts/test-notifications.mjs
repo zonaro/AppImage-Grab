@@ -49,8 +49,8 @@ const host = {
     throw new Error('Unexpected native action ' + request.action);
   }
 };
-const context = vm.createContext({browser: api, GLGNative: host,
-  GLGUpdate: {async check() {}}, crypto: webcrypto, TextEncoder,
+const context = vm.createContext({browser: api, AIGNative: host,
+  AIGUpdate: {async check() {}}, crypto: webcrypto, TextEncoder,
   console, Date, Set, Map, Object, Promise, String, Number, Boolean});
 context.globalThis = context;
 for (const path of ['extension/common/notifications.js', 'extension/common/background.js']) {

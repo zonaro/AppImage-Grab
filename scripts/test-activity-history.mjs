@@ -19,7 +19,7 @@ const api = {
 const ctx = vm.createContext({browser: api, console, Date, Promise});
 ctx.globalThis = ctx;
 vm.runInContext(fs.readFileSync('extension/common/activity-log.js', 'utf8'),ctx);
-const history = ctx.GLGActivity;
+const history = ctx.AIGActivity;
 await history.record({id:'download-20',status:'downloading',phase:'download',
   filename:'/home/user/Downloads/mechvibes-3.5.6.AppImage',
   detail:'Downloading https://example.com/secret.AppImage?token=abcd', source:'manual'});
@@ -60,16 +60,16 @@ elements['history-filter'].value='all'; // Real select defaults to its first opt
 const copied=[];
 const context=vm.createContext({
   browser:api,
-  GLGNative:{async request({action}){assert.equal(action,'getHostLog');return {ok:true,entries:[
+  AIGNative:{async request({action}){assert.equal(action,'getHostLog');return {ok:true,entries:[
     {at:'2026-11-12 12:00:00,000',level:'WARNING',detail:'Gear Lever returned 1: permission denied'}]};}},
-  GLGI18n:{translate:v=>v, locale:'pt-BR'},
+  AIGI18n:{translate:v=>v, locale:'pt-BR'},
   document:{getElementById:id=>elements[id], createElement:tag=>new Element(tag)},
   window:{confirm:()=>true}, navigator:{clipboard:{async writeText(value){copied.push(value);}}},
   console, Date, Promise
 });
 context.globalThis=context;
 vm.runInContext(fs.readFileSync('extension/common/activity-history.js','utf8'),context);
-context.GLGActivityUI.activate();
+context.AIGActivityUI.activate();
 await new Promise(resolve=>setTimeout(resolve,30));
 assert.equal(elements['history-list'].children.length,200);
 assert.equal(elements['host-log-list'].children.length,1);

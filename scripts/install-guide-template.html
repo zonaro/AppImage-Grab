@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <title>Gear Lever Grab · Installation Guide</title>
+  <title>AppImage Grab · Installation Guide</title>
   <style>
     :root {color-scheme:dark;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--bg:#0c111a;--card:#171f2b;--line:#35404c;--text:#eff5f9;--muted:#a6b6c6;--accent:#b9f68c}
     *{box-sizing:border-box}
@@ -52,7 +52,7 @@
 </head>
 <body>
   <header class="shell">
-    <div class="brand"><span class="mark" aria-hidden="true">↓</span>Gear Lever Grab</div>
+    <div class="brand"><span class="mark" aria-hidden="true">↓</span>AppImage Grab</div>
     <div class="lang" role="group" aria-label="Language">
       <button type="button" data-lang="pt-BR" aria-pressed="true">PT</button>
       <button type="button" data-lang="en" aria-pressed="false">EN</button>
@@ -61,7 +61,7 @@
   </header>
   <main class="shell">
     <span class="eyebrow" data-text="eyebrow">INSTALAÇÃO MANUAL NO NAVEGADOR</span>
-    <h1 data-text="title">Seu Gear Lever Grab está preparado.</h1>
+    <h1 data-text="title">Seu AppImage Grab está preparado.</h1>
     <p class="lead" data-text="intro">O serviço Python já está instalado. Falta carregar a extensão descompactada no seu navegador. Leva poucos cliques e não exige instalar nenhum pacote.</p>
     <div class="status"><span data-text="ready">Versão instalada (commit da main):</span> <strong id="commit"></strong></div>
     <div class="grid">
@@ -90,14 +90,14 @@
     </section>
     <section class="panel">
       <h2 data-text="nextTitle">Pronto para usar</h2>
-      <p data-text="nextText">Depois de carregar a extensão, abra seu popup e ative o toggle ON somente se desejar integrar downloads automaticamente. O Gear Lever continua responsável pelos aplicativos e atualizações.</p>
-      <p class="fineprint" data-text="updates">Para atualizar o Gear Lever Grab depois, rode o mesmo install.sh e recarregue a extensão pelo gerenciador do navegador. O controle ON/OFF permanece independente.</p>
+      <p data-text="nextText">Depois de carregar a extensão, abra seu popup e ative o toggle ON somente se desejar integrar downloads automaticamente. O gerenciador selecionado, Gear Lever ou Shelly, continua responsável pelos aplicativos e atualizações.</p>
+      <p class="fineprint" data-text="updates">Para atualizar o AppImage Grab depois, rode o mesmo install.sh e recarregue a extensão pelo gerenciador do navegador. O controle ON/OFF permanece independente.</p>
     </section>
     <p class="fineprint" data-text="privacy">Este guia é um arquivo HTML local: não instala nada no navegador, não altera configurações e não transmite dados. Os botões apenas abrem ou copiam endereços.</p>
     <p id="copy-status" class="sr-only" role="status" aria-live="polite"></p>
   </main>
-  <footer class="shell"><span>Gear Lever Grab · Linux</span><a href="https://github.com/zonaro/gear-lever-grab" target="_blank" rel="noopener noreferrer">GitHub ↗</a></footer>
-  <script type="application/json" id="guide-data">__GLG_INSTALLATION_DATA__</script>
+  <footer class="shell"><span>AppImage Grab · Linux</span><a href="https://github.com/zonaro/AppImage-Grab" target="_blank" rel="noopener noreferrer">GitHub ↗</a></footer>
+  <script type="application/json" id="guide-data">__AIG_INSTALLATION_DATA__</script>
   <script>
   (() => {
     "use strict";
@@ -105,7 +105,7 @@
     const $ = id => document.getElementById(id);
     const strings = {
       'pt-BR': {
-        eyebrow:'INSTALAÇÃO MANUAL NO NAVEGADOR',title:'Seu Gear Lever Grab está preparado.',
+        eyebrow:'INSTALAÇÃO MANUAL NO NAVEGADOR',title:'Seu AppImage Grab está preparado.',
         intro:'O serviço Python já está instalado. Falta carregar a extensão descompactada no navegador. Leva poucos cliques e não exige pacotes adicionais.',
         ready:'Versão instalada (commit da main):',
         browserTitle:'1. Escolha seu navegador',browserIntro:'Navegadores detectados neste computador. Selecione onde deseja carregar a extensão.',browserLabel:'Navegador',
@@ -133,7 +133,7 @@
         noBrowser:'Chromium / Edge (manual)',firefoxManual:'Firefox (manual)'
       },
       en: {
-        eyebrow:'MANUAL BROWSER INSTALLATION',title:'Gear Lever Grab is ready.',
+        eyebrow:'MANUAL BROWSER INSTALLATION',title:'AppImage Grab is ready.',
         intro:'The Python bridge is installed. You only need to load the unpacked extension in your browser. No extension packages or system policy changes.',
         ready:'Installed revision (main commit):',
         browserTitle:'1. Select your browser',browserIntro:'Browsers detected on this computer. Choose where to load the extension.',browserLabel:'Browser',
@@ -142,7 +142,7 @@
         pathTitle:'2. Copy the exact path',pathIntro:'This is the actual absolute path. Select the directory for Chromium browsers, or manifest.json for Firefox.',copyPath:'Copy path',
         pathNote:'In the file chooser, try Ctrl+L to paste the path when supported.',
         stepsTitle:'3. Load the extension',nextTitle:'Ready to go',
-        nextText:'Open the extension popup and turn ON only when you want to integrate downloads automatically. Gear Lever remains responsible for installed apps.',
+        nextText:'Open the extension popup and turn ON only when you want to integrate downloads automatically. Your selected manager, Gear Lever or Shelly, remains responsible for installed apps.',
         updates:'To update later, run the same install.sh and reload the extension in your browser. The ON/OFF setting is independent.',
         privacy:'This local HTML guide does not install extensions, modify browser profiles or send data. Buttons only copy addresses.',
         copied:'Copied!',selectCopy:'Select the text and press Ctrl+C.',
@@ -161,7 +161,7 @@
         noBrowser:'Chromium / Edge (manual)',firefoxManual:'Firefox (manual)'
       },
       es: {
-        eyebrow:'INSTALACIÓN MANUAL EN EL NAVEGADOR',title:'Gear Lever Grab está preparado.',
+        eyebrow:'INSTALACIÓN MANUAL EN EL NAVEGADOR',title:'AppImage Grab está preparado.',
         intro:'El servicio Python ya está instalado. Solo falta cargar la extensión descomprimida. No se requieren paquetes ni cambios en las políticas del navegador.',
         ready:'Versión instalada (commit de main):',
         browserTitle:'1. Elige tu navegador',browserIntro:'Navegadores detectados en este equipo. Elige dónde cargar la extensión.',browserLabel:'Navegador',
@@ -170,7 +170,7 @@
         pathTitle:'2. Copia la ruta exacta',pathIntro:'Esta es la ruta absoluta real. En Chromium selecciona la carpeta; en Firefox, el archivo manifest.json.',copyPath:'Copiar ruta',
         pathNote:'En el selector de archivos prueba Ctrl+L para pegar la ruta, cuando sea posible.',
         stepsTitle:'3. Carga la extensión',nextTitle:'Listo para usar',
-        nextText:'Abre la extensión y activa ON solo cuando quieras integrar descargas automáticamente. Gear Lever sigue gestionando las aplicaciones.',
+        nextText:'Abre la extensión y activa ON solo cuando quieras integrar descargas automáticamente. Tu gestor seleccionado, Gear Lever o Shelly, sigue gestionando las aplicaciones.',
         updates:'Para actualizar, ejecuta el mismo install.sh y recarga la extensión en el navegador. El ON/OFF es independiente.',
         privacy:'Esta guía HTML local no instala extensiones, no modifica perfiles ni envía datos. Los botones solo copian direcciones.',
         copied:'¡Copiado!',selectCopy:'Selecciona el texto y presiona Ctrl+C.',
@@ -210,7 +210,7 @@
 
     function display() {
       document.documentElement.lang = locale;
-      document.title = 'Gear Lever Grab · ' + txt('stepsTitle');
+      document.title = 'AppImage Grab · ' + txt('stepsTitle');
       document.querySelectorAll('[data-text]').forEach(element => {
         element.textContent = txt(element.dataset.text);
       });

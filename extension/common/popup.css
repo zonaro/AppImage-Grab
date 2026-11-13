@@ -63,3 +63,8 @@ img.brand-mark{object-fit:contain;padding:0}
 /* Recoverable failures in popup actions are visible without breaking the UI. */
 .popup-error{margin:0 0 13px;padding:11px 12px;border:1px solid light-dark(#e1a9ae,#864752);border-radius:10px;background:light-dark(#fff0f1,#422a31);color:light-dark(#9a2634,#ffc8ce);font-size:11px;line-height:1.5;overflow-wrap:anywhere}
 .popup-error[hidden]{display:none}
+
+.backend-picker{margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.backend-picker label{font-weight:700;display:block;margin-bottom:6px}
+.backend-picker select{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text)}
+.backend-picker small{font-size:11px;line-height:1.5}

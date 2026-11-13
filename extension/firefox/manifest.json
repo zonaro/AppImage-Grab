@@ -14,7 +14,7 @@
     "tabs"
   ],
   "action": {
-    "default_title": "Gear Lever Grab",
+    "default_title": "AppImage Grab",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon-16.png",
@@ -37,7 +37,7 @@
   },
   "browser_specific_settings": {
     "gecko": {
-      "id": "gear-lever-grab@redclaw.com.br",
+      "id": "appimage-grab@redclaw.com.br",
       "strict_min_version": "109.0"
     }
   },

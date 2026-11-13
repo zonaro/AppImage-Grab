@@ -36,8 +36,8 @@ async function scenario(mode, buttons = false) {
   const context = vm.createContext({browser: api, console: {warn() {}}, Date, Promise});
   context.globalThis = context;
   vm.runInContext(source, context, {filename: 'notifications.js'});
-  const reply = await context.GLGNotifications.emit({kind: 'integrationSuccess',
-    id: 'glg-test-event', title: 'Test', message: 'Test message',
+  const reply = await context.AIGNotifications.emit({kind: 'integrationSuccess',
+    id: 'aig-test-event', title: 'Test', message: 'Test message',
     ...(buttons ? {buttons: [{title: 'View'}]} : {})});
   return {reply, attempts, history: data.notificationHistory};
 }

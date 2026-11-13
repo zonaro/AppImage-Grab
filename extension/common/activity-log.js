@@ -1,7 +1,7 @@
 /* Local installation/activity history, shared by Chromium and Firefox backgrounds.
  * Extension-local only: never synchronize, transmit or retain source URLs.
  */
-globalThis.GLGActivity = (() => {
+globalThis.AIGActivity = (() => {
   const api = globalThis.browser || globalThis.chrome;
   const LIMIT = 200;
   let writing = Promise.resolve();

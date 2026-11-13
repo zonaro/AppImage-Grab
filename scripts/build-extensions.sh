@@ -2,12 +2,12 @@
 # Build two unpacked WebExtensions and stamp them with the source commit.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-REVISION="$(printenv GLG_BUILD_SHA || :)"
+REVISION="$(printenv AIG_BUILD_SHA || :)"
 if [[ -z "$REVISION" ]] && command -v git >/dev/null 2>&1; then
   REVISION="$(git -C "$ROOT" rev-parse --verify HEAD 2>/dev/null || true)"
 fi
 if [[ ! "$REVISION" =~ ^[[:xdigit:]]{40}$ ]]; then
-  echo "A full Git commit SHA is required (set GLG_BUILD_SHA or run from a Git clone)." >&2
+  echo "A full Git commit SHA is required (set AIG_BUILD_SHA or run from a Git clone)." >&2
   exit 1
 fi
 COMMIT_ISO="$(git -C "$ROOT" show -s --format=%cI "$REVISION" 2>/dev/null || true)"
@@ -26,12 +26,12 @@ for family in chromium firefox; do
   cp -a "$ROOT/extension/common/." "$ROOT/dist/$family/"
   VERSION_INFO="$(python3 "$ROOT/scripts/manifest_version.py" \
     "$ROOT/extension/$family/manifest.json" "$ROOT/dist/$family/manifest.json" "$COMMIT_ISO")"
-  printf '{"commit":"%s","branch":"main","repository":"zonaro/gear-lever-grab"}\n' \
+  printf '{"commit":"%s","branch":"main","repository":"zonaro/AppImage-Grab"}\n' \
     "$REVISION" > "$ROOT/dist/$family/version.json"
-  printf 'globalThis.GLG_BUILD_COMMIT = "%s";\n' "$REVISION" > "$ROOT/dist/$family/build-revision.js"
+  printf 'globalThis.AIG_BUILD_COMMIT = "%s";\n' "$REVISION" > "$ROOT/dist/$family/build-revision.js"
 done
 python3 "$ROOT/scripts/check-icons.py" "$ROOT/dist/chromium/icons" "$ROOT/dist/firefox/icons"
-printf '{"commit":"%s","branch":"main","repository":"zonaro/gear-lever-grab"}\n' \
+printf '{"commit":"%s","branch":"main","repository":"zonaro/AppImage-Grab"}\n' \
   "$REVISION" > "$ROOT/version.json"
 printf 'Build revision: %s\nExtension version: %s\nExtensions prepared in:\n  %s\n  %s\n' \
   "$REVISION" "$VERSION_INFO" "$ROOT/dist/chromium" "$ROOT/dist/firefox"

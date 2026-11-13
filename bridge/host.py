@@ -6,12 +6,15 @@ import logging
 import os
 from pathlib import Path
 import re
+import shutil
 import stat
+import subprocess
 import struct
 import sys
 
 from .gearlever import GearLever, GearLeverError
 from .manager import AppManager
+from .shelly import Shelly, ShellyManager, ShellyError
 from .link_resolver import resolve_link
 
 def installed_commit() -> str | None:
@@ -28,7 +31,7 @@ def installed_commit() -> str | None:
 
 
 MAX_BYTES = 1024 * 1024
-STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local/state"))) / "gear-lever-grab"
+STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local/state"))) / "appimage-grab"
 
 
 def _read_exact(stream, length):
@@ -79,7 +82,7 @@ def validate_file(value):
     return file
 
 
-def _integrate(request, adapter_factory):
+def _integrate(request, adapter_factory, backend="gearlever"):
     # The browser decides whether a completed download has an .AppImage name.
     # This native bridge only checks that the local path is safe to hand to the
     # Gear Lever CLI; it never inspects or classifies the AppImage's bytes.
@@ -93,7 +96,7 @@ def _integrate(request, adapter_factory):
     STATE_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
     # Fingerprint prevents processing one completed download more than once.
     # File metadata is used only for idempotence, not format validation.
-    identity = json.dumps([str(file), file.stat().st_size, file.stat().st_mtime_ns, origin])
+    identity = json.dumps([backend, str(file), file.stat().st_size, file.stat().st_mtime_ns, origin])
     key = hashlib.sha256(identity.encode()).hexdigest()
     with (STATE_DIR / "integrations.lock").open("a+") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
@@ -107,11 +110,12 @@ def _integrate(request, adapter_factory):
         if key in previous:
             return {"ok": True, "status": "already_processed", **previous[key]}
 
-        # Gear Lever is the sole authority on format support, destination,
-        # existing installations and built-in update sources. In particular,
-        # never register/overwrite an update source automatically.
+        # The selected AppImage manager is the sole authority on format support,
+        # destination, existing installations and built-in update sources.
+        # Never register/overwrite an update source automatically.
         result = adapter_factory().integrate(file)
         saved = {
+            "backend": backend,
             "installedPath": result.installed_path,
             "updateManager": result.manager,
             "sourceOrigin": result.origin,
@@ -157,7 +161,19 @@ def read_host_log():
     return entries[-80:]
 
 
+def available_backends():
+    try:
+        GearLever()
+        gear_available = True
+    except (GearLeverError, OSError, ValueError, subprocess.TimeoutExpired):
+        gear_available = False
+    return {"gearlever": gear_available, "shelly": bool(shutil.which("shelly"))}
+
+
 def handle(request, adapter_factory=GearLever):
+    backend = request.get("backend", "gearlever")
+    if backend not in ("gearlever", "shelly"):
+        raise ValueError("Gerenciador inválido")
     action = request.get("action")
     if action == "ping":
         return {"ok": True, "status": "ready", "version": 2}
@@ -165,22 +181,31 @@ def handle(request, adapter_factory=GearLever):
         return {"ok": True, "commit": installed_commit(), "branch": "main"}
     if action == "getHostLog":
         return {"ok": True, "entries": read_host_log()}
+    if action == "getBackends":
+        return {"ok": True, "available": available_backends()}
     if action == "resolveLink":
         return {"ok": True, "choices": resolve_link(request.get("url"))}
     if action == "integrate":
-        return _integrate(request, adapter_factory)
-    if action not in ("listInstalled", "listUpdates", "updateApp", "removeApp",
-                      "setSource", "unsetSource"):
+        return _integrate(request, adapter_factory if backend == "gearlever" else Shelly, backend)
+    if action not in ("listInstalled", "listUpdates", "updateApp", "updateAllAppImages",
+                      "removeApp", "setSource", "unsetSource"):
         raise ValueError("Ação inválida")
-    if action in ("updateApp", "removeApp", "setSource", "unsetSource") and request.get("confirmed") is not True:
+    if action in ("updateApp", "updateAllAppImages", "removeApp", "setSource",
+                  "unsetSource") and request.get("confirmed") is not True:
         raise ValueError("Confirmação explícita obrigatória")
-    manager = AppManager(adapter_factory())
+    if action == "updateAllAppImages" and backend != "shelly":
+        raise ValueError("Atualização coletiva disponível somente no Shelly")
+    manager = AppManager(adapter_factory()) if backend == "gearlever" else ShellyManager(Shelly())
     if action == "listInstalled":
         return {"ok": True, "apps": manager.list_installed()}
     if action == "listUpdates":
         return {"ok": True, "apps": manager.updates()}
     if action == "updateApp":
         return {"ok": True, **manager.update(request.get("path"))}
+    if action == "updateAllAppImages":
+        if backend != "shelly":
+            raise ValueError("Atualização coletiva disponível somente no Shelly")
+        return {"ok": True, **manager.update_all()}
     if action == "removeApp":
         return {"ok": True, **manager.remove(request.get("path"))}
     if action == "setSource":
@@ -199,7 +224,7 @@ def main():
             return 0
         try:
             response = handle(request)
-        except (OSError, ValueError, GearLeverError) as exc:
+        except (OSError, ValueError, GearLeverError, ShellyError) as exc:
             logging.warning("Request failed: %s", exc)
             response = {"ok": False, "error": str(exc)}
         except Exception:

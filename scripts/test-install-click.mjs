@@ -49,9 +49,9 @@ const api = {
 };
 const context = vm.createContext({
   browser:api,
-  GLGNative:{async request(){return {ok:true,apps:[]};}},
-  GLGUpdate:{COMMAND:'test',async check(){return {};}},
-  GLGI18n:{translate:value=>value, locale:'pt-BR'},
+  AIGNative:{async request(){return {ok:true,apps:[]};}},
+  AIGUpdate:{COMMAND:'test',async check(){return {};}},
+  AIGI18n:{translate:value=>value, locale:'pt-BR'},
   window:{confirm(){throw Error('Unexpected confirmation dialog');}},
   document:{
     querySelector(){return versionLabel;},

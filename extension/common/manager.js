@@ -1,8 +1,9 @@
 /* Gear Lever-like management flow in an extension tab. No shell or arbitrary paths. */
 const api = globalThis.browser || globalThis.chrome;
-const tr = globalThis.GLGI18n?.translate || (message => message);
+const tr = globalThis.AIGI18n?.translate || (message => message);
 const state = { apps: [], updatePaths: new Set(), checked: false, filter: 'all', view: 'installed',
-                query: '', busy: false, editor: null };
+                query: '', busy: false, editor: null, backend: 'gearlever' };
+const backendName = () => state.backend === 'shelly' ? 'Shelly' : 'Gear Lever';
 const $ = id => document.getElementById(id);
 
 function node(tag, className = '', text = '') {
@@ -21,7 +22,7 @@ function summary() {
   $('total-count').textContent = String(state.apps.length);
   $('sources-count').textContent = String(state.apps.filter(app => app.manager).length);
   $('updates-count').textContent = state.checked ? String(state.updatePaths.size) : '—';
-  $('list-subtitle').textContent = state.apps.length + ' aplicativo(s) integrados ao Gear Lever';
+  $('list-subtitle').textContent = state.apps.length + ' aplicativo(s) integrados ao ' + backendName();
 }
 
 function filters() {
@@ -44,6 +45,11 @@ function filters() {
       : state.view === 'history' ? 'Histórico'
         : state.filter === 'updates' ? 'Atualizações' : 'Instalados';
   $('catalog-title').textContent = state.filter === 'updates' ? 'Atualizações disponíveis' : 'Aplicativos instalados';
+  $('integration-backend').value = state.backend;
+  $('backend-title').textContent = backendName().toUpperCase();
+  $('backend-side-name').textContent = backendName();
+  $('update-all-shelly').hidden = state.backend !== 'shelly' || !state.checked ||
+    state.updatePaths.size === 0;
 }
 
 function addButton(holder, label, action, style = 'secondary', disabled = false) {
@@ -60,18 +66,18 @@ function render() {
   summary();
   const content = $('apps');
   content.replaceChildren();
-  const search = state.query.toLocaleLowerCase(globalThis.GLGI18n?.locale || 'en');
+  const search = state.query.toLocaleLowerCase(globalThis.AIGI18n?.locale || 'en');
   const apps = state.apps
     .filter(app => state.filter !== 'updates' || state.updatePaths.has(app.path))
-    .filter(app => ((app.name || '') + ' ' + (app.path || '') + ' ' + (app.manager || '')).toLocaleLowerCase(globalThis.GLGI18n?.locale || 'en').includes(search))
-    .sort((a, b) => (a.name || '').localeCompare(b.name || '', globalThis.GLGI18n?.locale || 'en'));
+    .filter(app => ((app.name || '') + ' ' + (app.path || '') + ' ' + (app.manager || '')).toLocaleLowerCase(globalThis.AIGI18n?.locale || 'en').includes(search))
+    .sort((a, b) => (a.name || '').localeCompare(b.name || '', globalThis.AIGI18n?.locale || 'en'));
 
   if (!apps.length) {
     const message = state.filter === 'updates' && !state.checked
-      ? 'Clique em "Verificar atualizações" para consultar o Gear Lever.'
+      ? 'Clique em "Verificar atualizações" para consultar o ' + backendName() + '.'
       : state.filter === 'updates' ? 'Nenhuma atualização encontrada para este filtro.'
       : state.query ? 'Nenhum aplicativo corresponde à sua busca.'
-      : 'Nenhuma AppImage integrada ao Gear Lever.';
+      : 'Nenhuma AppImage integrada ao ' + backendName() + '.';
     content.append(node('div', 'empty', message));
     return;
   }
@@ -100,7 +106,7 @@ function render() {
         [origin, pattern].filter(Boolean).join(' • ')));
     } else if (app.manager && app.source_status === 'embedded') {
       description.append(node('div', 'app-details', 'Fonte incorporada ao AppImage'));
-    } else if (app.manager && app.source_status !== 'loaded') {
+    } else if (state.backend === 'gearlever' && app.manager && app.source_status !== 'loaded') {
       description.append(node('div', 'app-details source-warning',
         'Configuração da fonte não pôde ser recuperada; somente leitura'));
     }
@@ -111,11 +117,15 @@ function render() {
     const actions = node('div', 'app-actions');
     // Only Gear Lever's --list-updates --json can confirm an available update.
     // Having a manager (GitHub, GitLab, etc.) does NOT imply a new version.
-    if (state.checked && state.updatePaths.has(app.path)) {
+    if (state.backend === 'gearlever' && state.checked && state.updatePaths.has(app.path)) {
       addButton(actions, 'Atualizar', () => updateApp(app), 'primary', app.running === true);
     }
-    addButton(actions, app.embedded_source ? 'Fonte embutida' : 'Fonte', () => editSource(app),
-      'secondary');
+    // Shelly exposes only collective AppImage upgrades. Never present a
+    // single-app update action that would silently upgrade all installations.
+    if (state.backend === 'gearlever') {
+      addButton(actions, app.embedded_source ? 'Fonte embutida' : 'Fonte', () => editSource(app),
+        'secondary');
+    }
     addButton(actions, 'Remover', () => removeApp(app), 'danger-outline', app.running === true);
     card.append(avatar, description, actions);
     content.append(card);
@@ -127,6 +137,7 @@ async function withBusy(operation, label) {
   state.busy = true;
   $('refresh').disabled = true;
   $('check-updates').disabled = true;
+  $('update-all-shelly').disabled = true;
   notice(label);
   render();
   try {
@@ -137,12 +148,13 @@ async function withBusy(operation, label) {
     state.busy = false;
     $('refresh').disabled = false;
     $('check-updates').disabled = false;
+    $('update-all-shelly').disabled = false;
     render();
   }
 }
 
 async function fetchApps({ keepNotice = false } = {}) {
-  const reply = await GLGNative.request({ action: 'listInstalled' });
+  const reply = await AIGNative.request({ action: 'listInstalled' });
   state.apps = Array.isArray(reply.apps) ? reply.apps : [];
   // A refresh can change the files and their sources. Old update results must
   // not survive a manual refresh or a source edit.
@@ -159,17 +171,17 @@ function checkUpdates() {
   return withBusy(async () => {
     state.checked = false;
     state.updatePaths.clear();
-    const reply = await GLGNative.request({ action: 'listUpdates' });
-    if (!Array.isArray(reply.apps)) throw new Error('A lista de atualizações do Gear Lever é inválida.');
+    const reply = await AIGNative.request({ action: 'listUpdates' });
+    if (!Array.isArray(reply.apps)) throw new Error('A lista de atualizações do gerenciador é inválida.');
     const installed = new Set(state.apps.map(app => app.path));
     state.updatePaths = new Set(reply.apps.map(app => app.path).filter(path => installed.has(path)));
     state.checked = true;
-    notice(state.updatePaths.size + ' atualização(ões) confirmada(s) pelo Gear Lever.', 'success');
-  }, 'Verificando atualizações no Gear Lever…');
+    notice(state.updatePaths.size + ' atualização(ões) confirmada(s) pelo ' + backendName() + '.', 'success');
+  }, 'Verificando atualizações no ' + backendName() + '…');
 }
 
 async function updateApp(app) {
-  if (!state.checked || !state.updatePaths.has(app.path)) return;
+  if (state.backend !== 'gearlever' || !state.checked || !state.updatePaths.has(app.path)) return;
   if (!window.confirm(tr('Atualizar "' + app.name + '" pelo Gear Lever? Uma nova verificação será feita antes de atualizar.'))) return;
   return withBusy(async () => {
     const reply = await api.runtime.sendMessage({action: 'startAppUpdate',
@@ -182,13 +194,32 @@ async function updateApp(app) {
   }, 'Atualizando ' + app.name + '…');
 }
 
-async function removeApp(app) {
-  if (!window.confirm(tr('Mover "' + app.name + '" para a lixeira usando o Gear Lever?'))) return;
+async function updateAllShelly() {
+  if (state.backend !== 'shelly' || !state.checked || !state.updatePaths.size) return;
+  if (!window.confirm(tr('Atualizar TODOS os AppImages com atualização disponível no Shelly? ' +
+      'O comando Shelly não permite selecionar aplicativos individualmente.'))) return;
   return withBusy(async () => {
-    await GLGNative.request({ action: 'removeApp', path: app.path, confirmed: true });
+    const reply = await AIGNative.request({
+      action: 'updateAllAppImages', backend: 'shelly', confirmed: true
+    });
+    if (!reply?.ok || reply.status !== 'updated_all') {
+      throw Error(reply?.error || 'O Shelly não confirmou a atualização coletiva.');
+    }
+    await fetchApps({keepNotice: true});
+    notice('O Shelly concluiu a atualização coletiva de AppImages.', 'success');
+  }, 'Atualizando todos os AppImages pelo Shelly…');
+}
+
+async function removeApp(app) {
+  const question = state.backend === 'shelly'
+    ? 'Remover "' + app.name + '" pelo Shelly?'
+    : 'Mover "' + app.name + '" para a lixeira usando o Gear Lever?';
+  if (!window.confirm(tr(question))) return;
+  return withBusy(async () => {
+    await AIGNative.request({ action: 'removeApp', path: app.path, confirmed: true });
     state.updatePaths.delete(app.path);
     await fetchApps({ keepNotice: true });
-    notice('Removido pelo Gear Lever: ' + app.name, 'success');
+    notice('Removido pelo ' + backendName() + ': ' + app.name, 'success');
   }, 'Removendo ' + app.name + '…');
 }
 
@@ -270,7 +301,7 @@ async function saveSource(event) {
   $('save-source').disabled = true;
   $('dialog-error').hidden = true;
   try {
-    await GLGNative.request({ action: 'setSource', path: app.path, manager, options, confirmed: true });
+    await AIGNative.request({ action: 'setSource', path: app.path, manager, options, confirmed: true });
     $('source-dialog').close();
     await fetchApps({ keepNotice: true });
     notice('Fonte salva no Gear Lever para ' + app.name, 'success');
@@ -288,7 +319,7 @@ async function unsetSource() {
   if (!app || $('unset-source').hidden || !window.confirm(tr('Remover a fonte personalizada de "' + app.name + '"?'))) return;
   $('unset-source').disabled = true;
   try {
-    await GLGNative.request({ action: 'unsetSource', path: app.path, confirmed: true });
+    await AIGNative.request({ action: 'unsetSource', path: app.path, confirmed: true });
     $('source-dialog').close();
     await fetchApps({ keepNotice: true });
     notice('Fonte personalizada removida de ' + app.name, 'success');
@@ -308,17 +339,18 @@ function showUpdates() {
   if (!state.checked) void checkUpdates();
 }
 
-$('refresh').addEventListener('click', () => state.view === 'store' ? GLGStore.refresh()
-  : state.view === 'notifications' ? GLGNotificationUI.refresh()
-    : state.view === 'history' ? GLGActivityUI.refresh() : refreshApps());
+$('refresh').addEventListener('click', () => state.view === 'store' ? AIGStore.refresh()
+  : state.view === 'notifications' ? AIGNotificationUI.refresh()
+    : state.view === 'history' ? AIGActivityUI.refresh() : refreshApps());
 $('check-updates').addEventListener('click', checkUpdates);
+$('update-all-shelly').addEventListener('click', updateAllShelly);
 $('nav-installed').addEventListener('click', () => { state.view = 'installed'; state.filter = 'all'; render(); });
-$('nav-store').addEventListener('click', () => { state.view = 'store'; render(); GLGStore.activate(); });
+$('nav-store').addEventListener('click', () => { state.view = 'store'; render(); AIGStore.activate(); });
 $('nav-notifications').addEventListener('click', () => {
-  state.view = 'notifications'; render(); GLGNotificationUI.activate();
+  state.view = 'notifications'; render(); AIGNotificationUI.activate();
 });
 $('nav-history').addEventListener('click', () => {
-  state.view = 'history'; render(); GLGActivityUI.activate();
+  state.view = 'history'; render(); AIGActivityUI.activate();
 });
 $('filter-all').addEventListener('click', () => { state.filter = 'all'; render(); });
 $('nav-updates').addEventListener('click', showUpdates);
@@ -336,6 +368,14 @@ toggle.addEventListener('change', () => { void api.storage.local.set({ enabled: 
 api.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local') return;
   if (changes.enabled) toggle.checked = Boolean(changes.enabled.newValue);
+  if (changes.integrationBackend) {
+    state.backend = changes.integrationBackend.newValue === 'shelly' ? 'shelly' : 'gearlever';
+    state.checked = false;
+    state.apps = [];
+    state.updatePaths.clear();
+    render();
+    if (!state.busy) void refreshApps();
+  }
   // Reflect a completed browser download in the manager without manual refresh.
   const result = changes.lastResult?.newValue;
   if (result?.status === 'success' && !state.busy) {
@@ -344,16 +384,32 @@ api.storage.onChanged.addListener((changes, area) => {
     notice(tr(result.detail || 'Ocorreu um erro na integração.'), 'error');
   }
 });
-void refreshApps();
+$('integration-backend').addEventListener('change', () => {
+  const previous = state.backend;
+  state.backend = $('integration-backend').value === 'shelly' ? 'shelly' : 'gearlever';
+  void api.storage.local.set({integrationBackend: state.backend}).catch(error => {
+    state.backend = previous;
+    render();
+    notice(String(error?.message || error), 'error');
+  });
+  state.checked = false;
+  state.updatePaths.clear();
+  render();
+});
+void api.storage.local.get('integrationBackend').then(data => {
+  state.backend = data.integrationBackend === 'shelly' ? 'shelly' : 'gearlever';
+  render();
+  return refreshApps();
+}).catch(error => notice(error?.message || String(error), 'error'));
 
 
-// Separate app updates from Gear Lever Grab's own Git commit updates.
+// Separate app updates from AppImage Grab's own Git commit updates.
 function renderGrabUpdate(update) {
   const banner = $('grab-update-banner');
   banner.hidden = !(update?.updateAvailable || update?.needsReload);
   if (banner.hidden) return;
   $('grab-update-title').textContent = update.updateAvailable
-    ? 'A new Gear Lever Grab commit is available' : 'Reload the browser extension';
+    ? 'A new AppImage Grab commit is available' : 'Reload the browser extension';
   $('grab-update-description').textContent =
     'Latest main: ' + (update.latestCommit?.slice(0, 12) || 'unknown') +
     ' • Extension: ' + (update.bundleCommit?.slice(0, 12) || 'unknown') +
@@ -362,17 +418,17 @@ function renderGrabUpdate(update) {
 }
 $('grab-update-copy').addEventListener('click', async () => {
   try {
-    await navigator.clipboard.writeText(GLGUpdate.COMMAND);
+    await navigator.clipboard.writeText(AIGUpdate.COMMAND);
     $('grab-update-copy').textContent = 'Copied!';
   } catch {
-    window.prompt(tr('Copy and run in your terminal:'), GLGUpdate.COMMAND);
+    window.prompt(tr('Copy and run in your terminal:'), AIGUpdate.COMMAND);
   }
 });
 api.storage.local.get('updateStatus').then(data => renderGrabUpdate(data.updateStatus));
 api.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.updateStatus) renderGrabUpdate(changes.updateStatus.newValue);
 });
-void GLGUpdate.check();
+void AIGUpdate.check();
 
 
 // Explicit user-initiated downloads are independent from the automatic ON/OFF toggle.
@@ -387,7 +443,7 @@ $('link-form').addEventListener('submit', async event => {
   resolvedLink = '';
   $('link-feedback').textContent = 'Consultando a fonte…';
   try {
-    const reply = await GLGNative.request({action: 'resolveLink', url});
+    const reply = await AIGNative.request({action: 'resolveLink', url});
     if (!Array.isArray(reply.choices) || !reply.choices.length) throw Error('Nenhuma AppImage compatível');
     resolvedAssets = reply.choices;
     resolvedLink = url;
@@ -418,7 +474,7 @@ $('link-download').addEventListener('click', async () => {
     });
     if (!result?.ok) throw Error(result?.error || 'Falha ao iniciar download');
     $('link-feedback').textContent = 'Download iniciado: ' + result.name +
-      '. Uma notificação confirmará quando o Gear Lever concluir a integração.';
+      '. Uma notificação confirmará quando o ' + backendName() + ' concluir a integração.';
   } catch (error) {
     $('link-feedback').textContent = 'Não foi possível baixar: ' + (error?.message || String(error));
   } finally {

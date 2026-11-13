@@ -1,5 +1,5 @@
 /* Public catalogs are metadata, never an authority to execute an AppImage. */
-globalThis.GLGCatalog = (() => {
+globalThis.AIGCatalog = (() => {
   const POOL_FEED = 'https://appimage.github.io/feed.json';
   const DATABASE = 'https://raw.githubusercontent.com/AppImage/appimage.github.io/master/database/';
   const HUB_API = 'https://api.opendesktop.org/ocs/v1/';

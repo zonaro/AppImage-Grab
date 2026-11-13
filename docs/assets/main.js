@@ -1,7 +1,7 @@
 /* Landing interactions: locale switching + copy installer. */
 (() => {
   "use strict";
-  const translations = globalThis.GLG_I18N;
+  const translations = globalThis.AIG_I18N;
   const languages = ["pt-BR", "en", "es"];
   const command = document.getElementById("install-command");
   const copy = document.getElementById("copy-command");
@@ -20,7 +20,7 @@
 
   function savedLanguage() {
     try {
-      return normalized(localStorage.getItem("gearLeverGrab.language"));
+      return normalized(localStorage.getItem("appImageGrab.language"));
     } catch {
       return null;
     }
@@ -28,7 +28,7 @@
 
   function saveLanguage(value) {
     try {
-      localStorage.setItem("gearLeverGrab.language", value);
+      localStorage.setItem("appImageGrab.language", value);
     } catch {
       /* Private browsing / blocked storage: URL still works. */
     }

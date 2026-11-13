@@ -100,3 +100,8 @@ dialog{padding:0;border:1px solid var(--line);background:var(--panel);color:var(
 .activity-host-row .activity-detail{padding:11px 0 0;margin-top:9px}
 .activity-host-meta{display:flex;gap:11px;align-items:center;font-size:12px}
 @media(max-width:700px){.activity-actions{width:100%}.activity-actions .button{flex:1}.activity-summary{flex-wrap:wrap}.activity-expand{display:none}}
+
+/* Backend selection shared with the popup and automatic download integration. */
+.backend-select{display:flex;gap:6px;align-items:center;font-size:12px;font-weight:650}
+.backend-select select{min-width:113px;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--surface);color:var(--text)}
+#update-all-shelly[hidden]{display:none}

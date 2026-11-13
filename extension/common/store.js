@@ -1,8 +1,8 @@
 /* AppImage store: metadata is untrusted; downloads require a second validation. */
-globalThis.GLGStore = (() => {
+globalThis.AIGStore = (() => {
   const api = globalThis.browser || globalThis.chrome;
-  const tr = globalThis.GLGI18n?.translate || (message => message);
-  const C = GLGCatalog;
+  const tr = globalThis.AIGI18n?.translate || (message => message);
+  const C = AIGCatalog;
   const $ = id => document.getElementById(id);
   const PAGE_SIZE = 24;
   const CACHE_MS = 15 * 60 * 1000;
@@ -45,14 +45,14 @@ globalThis.GLGStore = (() => {
     if (s.source !== 'all' && s.source !== app.source) return false;
     if (s.category !== 'all' && !app.categories.includes(s.category)) return false;
     if (!s.query) return true;
-    const searchable = [app.name, app.description, app.author, ...app.categories].join(' ').toLocaleLowerCase(globalThis.GLGI18n?.locale || 'en');
-    return searchable.includes(s.query.toLocaleLowerCase(globalThis.GLGI18n?.locale || 'en'));
+    const searchable = [app.name, app.description, app.author, ...app.categories].join(' ').toLocaleLowerCase(globalThis.AIGI18n?.locale || 'en');
+    return searchable.includes(s.query.toLocaleLowerCase(globalThis.AIGI18n?.locale || 'en'));
   }
 
   function sorted(items) {
-    if (s.sort === 'score') return items.sort((a, b) => (b.score ?? -1) - (a.score ?? -1) || a.name.localeCompare(b.name, globalThis.GLGI18n?.locale || 'en'));
-    if (s.sort === 'recent') return items.sort((a, b) => (b.changed || '').localeCompare(a.changed || '') || a.name.localeCompare(b.name, globalThis.GLGI18n?.locale || 'en'));
-    return items.sort((a, b) => a.name.localeCompare(b.name, globalThis.GLGI18n?.locale || 'en'));
+    if (s.sort === 'score') return items.sort((a, b) => (b.score ?? -1) - (a.score ?? -1) || a.name.localeCompare(b.name, globalThis.AIGI18n?.locale || 'en'));
+    if (s.sort === 'recent') return items.sort((a, b) => (b.changed || '').localeCompare(a.changed || '') || a.name.localeCompare(b.name, globalThis.AIGI18n?.locale || 'en'));
+    return items.sort((a, b) => a.name.localeCompare(b.name, globalThis.AIGI18n?.locale || 'en'));
   }
 
   function renderCategories() {
@@ -61,7 +61,7 @@ globalThis.GLGStore = (() => {
     if (s.category !== 'all' && !available.has(s.category)) s.category = 'all';
     category.replaceChildren();
     const all = elem('option', '', 'Todas as categorias'); all.value = 'all'; category.append(all);
-    [...available].filter(Boolean).sort((a, b) => a.localeCompare(b, globalThis.GLGI18n?.locale || 'en')).forEach(name => {
+    [...available].filter(Boolean).sort((a, b) => a.localeCompare(b, globalThis.AIGI18n?.locale || 'en')).forEach(name => {
       const option = elem('option', '', name); option.value = name; category.append(option);
     });
     category.value = s.category;
@@ -243,7 +243,7 @@ globalThis.GLGStore = (() => {
     }
     if (!app.releaseUrl) { setChoices([]); return; }
     try {
-      const response = await GLGNative.request({action: 'resolveLink', url: app.releaseUrl});
+      const response = await AIGNative.request({action: 'resolveLink', url: app.releaseUrl});
       if (token !== s.selectionToken) return;
       const files = Array.isArray(response.choices) ? response.choices.filter(choice =>
         typeof choice.name === 'string' && /\.appimage$/i.test(choice.name) && C.httpsUrl(choice.url)) : [];
@@ -266,7 +266,7 @@ globalThis.GLGStore = (() => {
         : {action: 'startManagedDownload', link: app.releaseUrl, assetUrl: choice.url};
       const reply = await api.runtime.sendMessage(message);
       if (!reply?.ok) throw Error(reply?.error || 'Download não iniciado');
-      text('store-detail-status', 'Download iniciado: ' + reply.name + '. A integração será confirmada pelo Gear Lever após concluir.');
+      text('store-detail-status', 'Download iniciado: ' + reply.name + '. A integração será confirmada pelo gerenciador selecionado após concluir.');
     } catch (error) {
       text('store-detail-status', 'Falha ao baixar: ' + (error?.message || String(error)));
     } finally { button.disabled = false; }

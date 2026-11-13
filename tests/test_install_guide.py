@@ -34,7 +34,7 @@ class InstallGuideTests(unittest.TestCase):
             self.assertIn('id="copy-url"', page)
             self.assertNotIn('id="open-browser-page"', page)
             self.assertIn('O instalador tenta abrir esta página diretamente', page)
-            self.assertNotIn("__GLG_INSTALLATION_DATA__", page)
+            self.assertNotIn("__AIG_INSTALLATION_DATA__", page)
             self.assertNotIn(".crx", page.lower())
             self.assertNotIn(".xpi", page.lower())
 
@@ -74,7 +74,7 @@ class InstallGuideTests(unittest.TestCase):
                        return_value=SimpleNamespace(returncode=0, stdout="microsoft-edge.desktop\\n")) as query:
                 with patch("scripts.generate_install_guide.subprocess.Popen") as popen:
                     with patch.dict("scripts.generate_install_guide.os.environ",
-                                    {"GLG_OPEN_BROWSER": "1", "DISPLAY": ":0"}):
+                                    {"AIG_OPEN_BROWSER": "1", "DISPLAY": ":0"}):
                         selected = open_browser_extensions()
         self.assertEqual(selected, "Microsoft Edge")
         self.assertEqual(query.call_args.args[0],
@@ -93,13 +93,13 @@ class InstallGuideTests(unittest.TestCase):
                        return_value=SimpleNamespace(returncode=0, stdout="microsoft-edge.desktop")):
                 with patch("scripts.generate_install_guide.subprocess.Popen") as popen:
                     with patch.dict("scripts.generate_install_guide.os.environ",
-                                    {"GLG_OPEN_BROWSER": "1", "DISPLAY": ":0"}):
+                                    {"AIG_OPEN_BROWSER": "1", "DISPLAY": ":0"}):
                         selected = open_browser_extensions(updating=True)
         self.assertEqual(selected, "Microsoft Edge")
         popen.assert_called_once()
         self.assertEqual(popen.call_args.args[0],
                          ["/usr/bin/microsoft-edge", "--new-tab",
-                          "edge://extensions/?q=Gear%20Lever%20Grab"])
+                          "edge://extensions/?q=AppImage%20Grab"])
 
     def test_other_chromium_browsers_get_query_only_during_update(self):
         cases = [
@@ -117,12 +117,12 @@ class InstallGuideTests(unittest.TestCase):
                            if executable == binary else None):
                     with patch("scripts.generate_install_guide.subprocess.Popen") as popen:
                         with patch.dict("scripts.generate_install_guide.os.environ",
-                                        {"GLG_OPEN_BROWSER": "1", "DISPLAY": ":0"}):
+                                        {"AIG_OPEN_BROWSER": "1", "DISPLAY": ":0"}):
                             selected = open_browser_extensions(updating=True)
                 self.assertEqual(selected, name)
                 self.assertEqual(popen.call_args.args[0],
                                  ["/usr/bin/" + binary, "--new-tab",
-                                  base + "?q=Gear%20Lever%20Grab"])
+                                  base + "?q=AppImage%20Grab"])
 
     def test_opens_firefox_debugging_using_firefox_executable(self):
         binaries = {
@@ -135,7 +135,7 @@ class InstallGuideTests(unittest.TestCase):
                        return_value=SimpleNamespace(returncode=0, stdout="org.mozilla.firefox.desktop")):
                 with patch("scripts.generate_install_guide.subprocess.Popen") as popen:
                     with patch.dict("scripts.generate_install_guide.os.environ",
-                                    {"GLG_OPEN_BROWSER": "1", "WAYLAND_DISPLAY": "wayland-0"}):
+                                    {"AIG_OPEN_BROWSER": "1", "WAYLAND_DISPLAY": "wayland-0"}):
                         selected = open_browser_extensions()
         self.assertEqual(selected, "Firefox")
         self.assertEqual(popen.call_args.args[0],
@@ -149,7 +149,7 @@ class InstallGuideTests(unittest.TestCase):
                        return_value=SimpleNamespace(returncode=0, stdout="org.mozilla.firefox.desktop")):
                 with patch("scripts.generate_install_guide.subprocess.Popen") as popen:
                     with patch.dict("scripts.generate_install_guide.os.environ",
-                                    {"GLG_OPEN_BROWSER": "1", "DISPLAY": ":0"}):
+                                    {"AIG_OPEN_BROWSER": "1", "DISPLAY": ":0"}):
                         self.assertEqual(open_browser_extensions(updating=True), "Firefox")
         popen.assert_called_once()
         self.assertEqual(popen.call_args.args[0],
@@ -166,7 +166,7 @@ class InstallGuideTests(unittest.TestCase):
                        return_value=SimpleNamespace(returncode=0, stdout="microsoft-edge-beta.desktop")):
                 with patch("scripts.generate_install_guide.subprocess.Popen") as popen:
                     with patch.dict("scripts.generate_install_guide.os.environ",
-                                    {"GLG_OPEN_BROWSER": "1", "DISPLAY": ":0"}):
+                                    {"AIG_OPEN_BROWSER": "1", "DISPLAY": ":0"}):
                         selected = open_browser_extensions()
         self.assertEqual(selected, "Microsoft Edge")
         self.assertEqual(popen.call_args.args[0][0], "/usr/bin/microsoft-edge-beta")
@@ -177,7 +177,7 @@ class InstallGuideTests(unittest.TestCase):
         with patch("scripts.generate_install_guide.shutil.which", side_effect=binaries.get):
             with patch("scripts.generate_install_guide.subprocess.Popen") as popen:
                 with patch.dict("scripts.generate_install_guide.os.environ",
-                                {"GLG_OPEN_BROWSER": "1", "DISPLAY": ":0"}):
+                                {"AIG_OPEN_BROWSER": "1", "DISPLAY": ":0"}):
                     selected = open_browser_extensions()
         self.assertEqual(selected, "Chromium")
         popen.assert_called_once()
@@ -188,8 +188,8 @@ class InstallGuideTests(unittest.TestCase):
         browsers = [{"name": "Microsoft Edge", "family": "chromium",
                      "url": "edge://extensions/"}]
         for environment in (
-            {"GLG_OPEN_BROWSER": "0", "DISPLAY": ":0"},
-            {"GLG_OPEN_BROWSER": "1", "DISPLAY": "", "WAYLAND_DISPLAY": ""},
+            {"AIG_OPEN_BROWSER": "0", "DISPLAY": ":0"},
+            {"AIG_OPEN_BROWSER": "1", "DISPLAY": "", "WAYLAND_DISPLAY": ""},
         ):
             with patch.dict("scripts.generate_install_guide.os.environ", environment):
                 with patch("scripts.generate_install_guide.subprocess.Popen") as popen:
@@ -201,7 +201,7 @@ class InstallGuideTests(unittest.TestCase):
                     "url": "edge://extensions/"}]
         with patch("scripts.generate_install_guide.shutil.which", return_value=None):
             with patch.dict("scripts.generate_install_guide.os.environ",
-                            {"GLG_OPEN_BROWSER": "1", "DISPLAY": ":0"}):
+                            {"AIG_OPEN_BROWSER": "1", "DISPLAY": ":0"}):
                 with patch("scripts.generate_install_guide.subprocess.Popen") as popen:
                     self.assertIsNone(open_browser_extensions(browser))
                     popen.assert_not_called()
@@ -248,7 +248,7 @@ class InstallGuideTests(unittest.TestCase):
         self.assertLess(contents.index('PREVIOUS_COMMIT='), contents.index('mv -f "$DEST/version.json.pending"'))
 
     def test_opt_out_does_not_open_browser(self):
-        with patch.dict("scripts.generate_install_guide.os.environ", {"GLG_OPEN_BROWSER": "0",
+        with patch.dict("scripts.generate_install_guide.os.environ", {"AIG_OPEN_BROWSER": "0",
                                                                        "DISPLAY": ":0"}):
             with patch("scripts.generate_install_guide.subprocess.Popen") as popen:
                 self.assertFalse(open_guide(Path("/tmp/example.html")))

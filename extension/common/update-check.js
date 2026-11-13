@@ -1,14 +1,14 @@
-/* Commit-based update discovery for Gear Lever Grab. No automatic code execution. */
-globalThis.GLGUpdate = (() => {
+/* Commit-based update discovery for AppImage Grab. No automatic code execution. */
+globalThis.AIGUpdate = (() => {
   const api = globalThis.browser || globalThis.chrome;
-  const URL = 'https://api.github.com/repos/zonaro/gear-lever-grab/commits/main';
-  const COMMAND = 'curl -fsSL https://raw.githubusercontent.com/zonaro/gear-lever-grab/main/install.sh | bash';
+  const URL = 'https://api.github.com/repos/zonaro/AppImage-Grab/commits/main';
+  const COMMAND = 'curl -fsSL https://raw.githubusercontent.com/zonaro/AppImage-Grab/main/install.sh | bash';
   const INTERVAL = 12 * 60 * 60 * 1000;
   const isSha = value => typeof value === 'string' && /^[0-9a-f]{40}$/i.test(value);
   let inFlight = null;
 
   async function getBundleCommit() {
-    if (isSha(globalThis.GLG_BUILD_COMMIT)) return globalThis.GLG_BUILD_COMMIT.toLowerCase();
+    if (isSha(globalThis.AIG_BUILD_COMMIT)) return globalThis.AIG_BUILD_COMMIT.toLowerCase();
     try {
       const response = await fetch(api.runtime.getURL('version.json'));
       if (response.ok) {
@@ -23,8 +23,8 @@ globalThis.GLGUpdate = (() => {
 
   async function getHostCommit() {
     try {
-      if (!globalThis.GLGNative?.request) return null;
-      const info = await globalThis.GLGNative.request({ action: 'getVersion' });
+      if (!globalThis.AIGNative?.request) return null;
+      const info = await globalThis.AIGNative.request({ action: 'getVersion' });
       return isSha(info.commit) ? info.commit.toLowerCase() : null;
     } catch {
       return null;

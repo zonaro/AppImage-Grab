@@ -10,13 +10,13 @@ function createContext(uiLanguage, navigatorLanguage = 'en-US', document = undef
     browser: {i18n: {getUILanguage: () => uiLanguage}}, document};
   context.globalThis = context;
   vm.runInNewContext(source, context, {filename: 'i18n.js'});
-  return context.GLGI18n;
+  return context.AIGI18n;
 }
 
 const english = createContext('fr-FR', 'pt-BR');
 assert.equal(english.language, 'en', 'unsupported browser UI locale falls back to English');
 assert.equal(english.translate('Loja de AppImages'), 'AppImage Store');
-assert.equal(english.translate('Meus AppImages — Gear Lever Grab'), 'My AppImages — Gear Lever Grab');
+assert.equal(english.translate('Meus AppImages — AppImage Grab'), 'My AppImages — AppImage Grab');
 assert.equal(english.translate('Notificações e diagnóstico'), 'Notifications and diagnostics');
 assert.equal(english.translate('AppImage atualizada'), 'AppImage updated');
 assert.equal(english.translate('7 aplicativo(s) integrados ao Gear Lever'), '7 apps integrated with Gear Lever');
@@ -32,14 +32,14 @@ assert.equal(portuguese.translate('O Gear Lever permanece no controle.'), 'O Gea
 const spanish = createContext('es-MX', 'en-US');
 assert.equal(spanish.language, 'es');
 assert.equal(spanish.translate('Loja de AppImages'), 'Tienda de AppImages');
-assert.equal(spanish.translate('Meus AppImages — Gear Lever Grab'), 'Mis AppImages — Gear Lever Grab');
+assert.equal(spanish.translate('Meus AppImages — AppImage Grab'), 'Mis AppImages — AppImage Grab');
 assert.equal(spanish.translate('Nova versão'), 'Nueva versión');
 assert.equal(spanish.translate('Integração parcial da AppImage'), 'Integración parcial de AppImage');
 assert.equal(spanish.translate('AppImage integrada; listagem pendente'),
   'AppImage integrada; listado pendiente');
 assert.equal(spanish.translate('Mechvibes.AppImage: o Gear Lever confirmou a integração, mas ainda não listou o aplicativo.'),
   'Mechvibes.AppImage: Gear Lever confirmó la integración, pero todavía no muestra la aplicación.');
-assert.equal(spanish.translate('Teste de notificação Gear Lever Grab'), 'Prueba de notificación de Gear Lever Grab');
+assert.equal(spanish.translate('Teste de notificação AppImage Grab'), 'Prueba de notificación de AppImage Grab');
 assert.equal(spanish.translate('3 AppImages disponíveis neste repositório.'), '3 AppImages disponibles en este repositorio.');
 assert.equal(spanish.translate('Baixar "App.AppImage" de GitHub e adicionar ao Gear Lever? Confirme que você confia nesta origem.'),
   '¿Descargar «App.AppImage» de GitHub y añadirla a Gear Lever? Confirma que confías en esta fuente.');
@@ -97,7 +97,7 @@ for (const page of ['popup', 'manager']) {
   assert.match(htmlText, /<script defer src="i18n\.js"><\/script>/);
   // Guard against untranslated static strings being introduced in the screens.
   // Product names, release URLs and command placeholders are intentionally literal.
-  const invariant = new Set(['Gear Lever Grab', 'Gear Lever Grab update available',
+  const invariant = new Set(['AppImage Grab', 'AppImage Grab update available',
     'Copy update command', 'Check again', 'BETA', 'AppImagePool', 'AppImageHub',
     'GitHub Releases', 'GitLab Releases', 'Codeberg Releases',
     'MeuApp-*-x86_64.AppImage', 'https://github.com/autor/projeto/releases/latest']);
@@ -122,7 +122,7 @@ for (const commit of ['a'.repeat(40), '']) {
   const context = {
     browser: {runtime: {getManifest: () => ({version: '26.315.457', version_name: '26.315.0457'})}},
     document: {querySelector: () => versionLabel},
-    GLG_BUILD_COMMIT: commit
+    AIG_BUILD_COMMIT: commit
   };
   context.globalThis = context;
   vm.runInNewContext(popupHeaderCode, context);

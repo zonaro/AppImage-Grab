@@ -4,9 +4,9 @@
  */
 (() => {
   const api = globalThis.browser || globalThis.chrome;
-  const tr = globalThis.GLGI18n?.translate || (message => message);
-  if (!api?.tabs || !api?.notifications || !globalThis.GLGPageOffers ||
-      !globalThis.GLGNotifications) return;
+  const tr = globalThis.AIGI18n?.translate || (message => message);
+  if (!api?.tabs || !api?.notifications || !globalThis.AIGPageOffers ||
+      !globalThis.AIGNotifications) return;
 
   const CACHE_MS = 15 * 60 * 1000;
   const NOTIFY_MS = 24 * 60 * 60 * 1000;
@@ -14,7 +14,7 @@
   const inFlight = new Map();
   const cache = new Map();
   const notifying = new Set();
-  const PREFIX = 'glg-repo-offer:';
+  const PREFIX = 'aig-repo-offer:';
 
   function suggestionStatus(status) {
     return api.storage.local.set({lastSuggestionStatus: {
@@ -23,13 +23,13 @@
   }
 
   async function resolveOffer(url) {
-    const page = GLGPageOffers.parse(url);
+    const page = AIGPageOffers.parse(url);
     if (!page) return null;
     const cached = cache.get(page.source);
     if (cached && Date.now() - cached.at < CACHE_MS) return cached.offer;
     if (inFlight.has(page.source)) return inFlight.get(page.source);
     const request = (async () => {
-      const reply = await GLGNative.request({action: 'resolveLink', url: page.source});
+      const reply = await AIGNative.request({action: 'resolveLink', url: page.source});
       const choices = Array.isArray(reply?.choices) ? reply.choices.filter(choice =>
         typeof choice?.url === 'string' && choice.url.startsWith('https://') &&
         typeof choice?.name === 'string' && /\.appimage$/i.test(choice.name)
@@ -47,13 +47,13 @@
   async function activeOffer() {
     const tabs = await api.tabs.query({active:true,lastFocusedWindow:true});
     const tab = tabs.find(candidate => candidate.active && !candidate.incognito);
-    if (!tab?.url || !GLGPageOffers.parse(tab.url)) return null;
+    if (!tab?.url || !AIGPageOffers.parse(tab.url)) return null;
     return resolveOffer(tab.url);
   }
 
   async function notifyIfAvailable(tab) {
-    if (!tab?.active || tab.incognito || !GLGPageOffers.parse(tab.url)) return;
-    const page = GLGPageOffers.parse(tab.url);
+    if (!tab?.active || tab.incognito || !AIGPageOffers.parse(tab.url)) return;
+    const page = AIGPageOffers.parse(tab.url);
     if (notifying.has(page.key)) return;
     notifying.add(page.key);
     try {
@@ -69,7 +69,7 @@
       if (!offer?.choices?.length) {await suggestionStatus('no-assets'); return;}
       // Avoid a notification after the user has navigated away.
       const current = await api.tabs.get(tab.id);
-      if (!current?.active || GLGPageOffers.parse(current.url)?.key !== page.key) {
+      if (!current?.active || AIGPageOffers.parse(current.url)?.key !== page.key) {
         await suggestionStatus('inactive'); return;
       }
       const count = offer.choices.length;
@@ -79,11 +79,11 @@
         iconUrl:api.runtime.getURL('icons/icon-48.png'),
         title:tr('AppImage disponível neste repositório'),
         message:count === 1
-          ? tr(offer.choices[0].name + ' pode ser adicionada ao Gear Lever.')
+          ? tr(offer.choices[0].name + ' pode ser adicionada ao gerenciador selecionado.')
           : tr(count + ' AppImages encontradas em ' + page.repository + '. Escolha a arquitetura correta.'),
         buttons:[{title: tr(count === 1 ? 'Ver e instalar' : 'Escolher AppImage')}]
       };
-      const emitted = await GLGNotifications.emit({kind: 'suggestions', id,
+      const emitted = await AIGNotifications.emit({kind: 'suggestions', id,
         title: options.title, message: options.message, buttons: options.buttons});
       await suggestionStatus(emitted.status);
       if (!['requested', 'blocked'].includes(emitted.status)) return;
@@ -101,7 +101,7 @@
     } catch (error) {
       // Browser notifications are best-effort; never treat a page as installed.
       await suggestionStatus('error').catch(() => {});
-      console.warn('Gear Lever Grab repository suggestion unavailable:', error);
+      console.warn('AppImage Grab repository suggestion unavailable:', error);
     } finally {
       notifying.delete(page.key);
     }
@@ -111,7 +111,7 @@
     if (typeof notificationId !== 'string' || !notificationId.startsWith(PREFIX)) return;
     const {offerNotifications = {}} = await api.storage.local.get('offerNotifications');
     const record = offerNotifications[notificationId];
-    const parsed = GLGPageOffers.parse(record?.source);
+    const parsed = AIGPageOffers.parse(record?.source);
     if (!parsed || Date.now() - Number(record.at || 0) > 7 * NOTIFY_MS) return;
     await api.tabs.create({
       url:api.runtime.getURL('manager.html') + '?source=' + encodeURIComponent(parsed.source)

@@ -1,9 +1,9 @@
 const api = globalThis.browser || globalThis.chrome;
-const tr = globalThis.GLGI18n?.translate || (message => message);
+const tr = globalThis.AIGI18n?.translate || (message => message);
 const manifest = api.runtime.getManifest();
 const versionLabel = document.querySelector('.version-label');
-const buildCommit = typeof globalThis.GLG_BUILD_COMMIT === 'string' &&
-  /^[0-9a-f]{40}$/i.test(globalThis.GLG_BUILD_COMMIT) ? globalThis.GLG_BUILD_COMMIT : '';
+const buildCommit = typeof globalThis.AIG_BUILD_COMMIT === 'string' &&
+  /^[0-9a-f]{40}$/i.test(globalThis.AIG_BUILD_COMMIT) ? globalThis.AIG_BUILD_COMMIT : '';
 versionLabel.textContent = 'v' + (manifest.version_name || manifest.version) +
   (buildCommit ? ' · ' + buildCommit.slice(0, 12) : '');
 versionLabel.title = buildCommit ? 'Build commit: ' + buildCommit : 'Build commit unavailable';
@@ -14,6 +14,41 @@ const appsList = document.getElementById('apps-list');
 const appsStatus = document.getElementById('apps-status');
 const refreshButton = document.getElementById('refresh');
 const popupError = document.getElementById('popup-error');
+const backendSelect = document.getElementById('integration-backend');
+const backendStatus = document.getElementById('backend-status');
+const backendName = () => backendSelect.value === 'shelly' ? 'Shelly' : 'Gear Lever';
+
+async function loadBackend() {
+  const stored = await api.storage.local.get('integrationBackend');
+  backendSelect.value = stored.integrationBackend === 'shelly' ? 'shelly' : 'gearlever';
+  try {
+    const info = await AIGNative.request({action: 'getBackends'});
+    const available = info.available || {};
+    // Preserve existing Gear Lever users. If unconfigured and only Shelly
+    // exists, select Shelly on first popup opening.
+    if (!stored.integrationBackend && !available.gearlever && available.shelly) {
+      await api.storage.local.set({integrationBackend: 'shelly'});
+      backendSelect.value = 'shelly';
+    }
+    backendStatus.textContent = available[backendSelect.value]
+      ? backendName() + ' disponível. Os dois gerenciadores mantêm bibliotecas separadas.'
+      : backendName() + ' não encontrado. Instale o gerenciador escolhido antes de integrar.';
+  } catch (error) {
+    backendStatus.textContent = 'Não foi possível detectar os gerenciadores: ' +
+      String(error?.message || error).slice(0, 140);
+  }
+}
+backendSelect.addEventListener('change', async () => {
+  try {
+    await api.storage.local.set({integrationBackend: backendSelect.value});
+    await loadBackend();
+    await loadApps();
+    clearPopupError();
+  } catch (error) {
+    reportPopupError('Não foi possível trocar de gerenciador', error);
+  }
+});
+void loadBackend().catch(error => reportPopupError('Preferência de gerenciador', error));
 
 function reportPopupError(label, error) {
   const message = String(error?.message || error);
@@ -36,19 +71,20 @@ function render(data = {}) {
   if (!event) activity.textContent = 'Nenhuma atividade ainda.';
   else {
     const status = { working: 'Processando', success: 'Concluído', error: 'Erro' }[event.status] || event.status;
-    const date = event.at ? new Date(event.at).toLocaleString(globalThis.GLGI18n?.locale || 'en') : '';
+    const date = event.at ? new Date(event.at).toLocaleString(globalThis.AIGI18n?.locale || 'en') : '';
     activity.textContent = tr(status) + ' · ' + date + '\n' + tr(event.detail || '');
   }
 }
 
 async function loadApps() {
   refreshButton.disabled = true;
-  appsStatus.textContent = 'Consultando o Gear Lever…';
+  appsStatus.textContent = 'Consultando ' + backendName() + '…';
   appsList.replaceChildren();
   try {
-    const reply = await GLGNative.request({ action: 'listInstalled' });
+    const reply = await AIGNative.request({ action: 'listInstalled' });
     const apps = Array.isArray(reply.apps) ? reply.apps : [];
-    appsStatus.textContent = apps.length ? apps.length + ' integrado(s)' : 'Nenhuma AppImage integrada';
+    appsStatus.textContent = apps.length ? apps.length + ' integrado(s) no ' + backendName()
+      : 'Nenhuma AppImage integrada no ' + backendName();
     for (const app of apps.slice(0, 4)) {
       const li = document.createElement('li');
       const avatar = document.createElement('span');
@@ -91,6 +127,11 @@ toggle.addEventListener('change', async () => {
   }
 });
 api.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.integrationBackend) {
+    backendSelect.value = changes.integrationBackend.newValue === 'shelly' ? 'shelly' : 'gearlever';
+    void loadBackend().catch(error => reportPopupError('Preferência de gerenciador', error));
+    void loadApps();
+  }
   if (area === 'local' && (changes.enabled || changes.lastResult)) {
     void api.storage.local.get(['enabled', 'lastResult']).then(render)
       .catch(error => reportPopupError('Falha ao atualizar o estado', error));
@@ -122,14 +163,14 @@ function showGrabUpdate(status) {
   panel.hidden = !available;
   if (!available) return;
   document.getElementById('update-title').textContent = status.updateAvailable
-    ? 'New Gear Lever Grab commit available' : 'Reload your browser extension';
+    ? 'New AppImage Grab commit available' : 'Reload your browser extension';
   const short = value => value ? value.slice(0, 12) : 'unknown';
   document.getElementById('update-details').textContent =
     'Extension: ' + short(status.bundleCommit) +
     ' · Native bridge: ' + short(status.hostCommit) +
     ' · Latest main: ' + short(status.latestCommit) +
     (status.needsReload ? '\nReload the extension after running the installer.' : '');
-  document.getElementById('update-command').textContent = GLGUpdate.COMMAND;
+  document.getElementById('update-command').textContent = AIGUpdate.COMMAND;
 }
 
 void api.storage.local.get('updateStatus')
@@ -140,10 +181,10 @@ api.storage.onChanged.addListener((changes, area) => {
 });
 document.getElementById('copy-updater').addEventListener('click', async () => {
   try {
-    await navigator.clipboard.writeText(GLGUpdate.COMMAND);
+    await navigator.clipboard.writeText(AIGUpdate.COMMAND);
     document.getElementById('copy-updater').textContent = 'Copied!';
   } catch {
-    window.prompt(tr('Copy this command into your Linux terminal:'), GLGUpdate.COMMAND);
+    window.prompt(tr('Copy this command into your Linux terminal:'), AIGUpdate.COMMAND);
   }
 });
 // DOM Event.currentTarget is only valid while the event is being dispatched.
@@ -153,7 +194,7 @@ recheckButton.addEventListener('click', async () => {
   if (recheckButton.disabled) return;
   recheckButton.disabled = true;
   try {
-    showGrabUpdate(await GLGUpdate.check({force: true}));
+    showGrabUpdate(await AIGUpdate.check({force: true}));
     clearPopupError();
   } catch (error) {
     reportPopupError('Não foi possível verificar atualizações', error);
@@ -161,7 +202,7 @@ recheckButton.addEventListener('click', async () => {
     recheckButton.disabled = false;
   }
 });
-void GLGUpdate.check().catch(error => reportPopupError('Falha na verificação de atualizações', error));
+void AIGUpdate.check().catch(error => reportPopupError('Falha na verificação de atualizações', error));
 
 
 // The active repository suggestion is independent from automatic downloads.
@@ -219,7 +260,7 @@ installOffer.addEventListener('click',async () => {
     });
     if (!result?.ok) throw Error(result?.error || 'Não foi possível iniciar o download');
     offerStatus.textContent='Download iniciado: '+result.name+
-      '. Você receberá uma notificação após a confirmação do Gear Lever.';
+      '. Você receberá uma notificação após a confirmação do '+backendName()+'.';
   } catch(error) {
     offerStatus.textContent=error?.message || String(error);
   } finally {

@@ -52,10 +52,10 @@ const document = {
   createElement(tag) {return new Element(tag);}
 };
 const context = vm.createContext({browser, document, console, Date, Number,
-  GLGI18n: {locale: 'pt-BR', translate: value => value}});
+  AIGI18n: {locale: 'pt-BR', translate: value => value}});
 context.globalThis = context;
 vm.runInContext(readFileSync('extension/common/notification-settings.js', 'utf8'), context);
-const ui = context.GLGNotificationUI;
+const ui = context.AIGNotificationUI;
 const flush = () => new Promise(resolve => setTimeout(resolve, 10));
 
 ui.activate();

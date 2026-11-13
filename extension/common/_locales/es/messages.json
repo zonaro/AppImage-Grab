@@ -1,4 +1,8 @@
 {
-  "extensionName": { "message": "Gear Lever Grab" },
-  "extensionDescription": { "message": "Importa descargas de AppImage a Gear Lever y configura fuentes de actualización." }
+  "extensionName": {
+    "message": "AppImage Grab"
+  },
+  "extensionDescription": {
+    "message": "Integra descargas AppImage desde el navegador con Gear Lever o Shelly."
+  }
 }

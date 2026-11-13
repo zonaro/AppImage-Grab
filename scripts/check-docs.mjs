@@ -9,7 +9,7 @@ const html = fs.readFileSync(path.join(root, 'docs/index.html'), 'utf8');
 const messages = fs.readFileSync(path.join(root, 'docs/assets/i18n.js'), 'utf8');
 const context = { globalThis: {} };
 vm.runInNewContext(messages, context, { timeout: 1000 });
-const locales = context.globalThis.GLG_I18N;
+const locales = context.globalThis.AIG_I18N;
 const requiredLocales = ['pt-BR', 'en', 'es'];
 const knownKeys = Object.keys(locales['pt-BR']).sort();
 const errors = [];
@@ -42,7 +42,7 @@ for (const required of [
 for (const feature of ['id="install-command"', 'id="copy-command"', 'id="faq"', 'id="benefits"', 'id="how"']) {
   if (!html.includes(feature)) errors.push('Missing landing element: ' + feature);
 }
-const command = 'curl -fsSL https://raw.githubusercontent.com/zonaro/gear-lever-grab/main/install.sh | bash';
+const command = 'curl -fsSL https://raw.githubusercontent.com/zonaro/AppImage-Grab/main/install.sh | bash';
 if (!html.includes(command)) errors.push('Installation command differs from documented one-liner.');
 if (errors.length) {
   console.error(errors.join('\n'));

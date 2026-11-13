@@ -1,7 +1,7 @@
 /* Local WebExtensions notifications. No remote push service or page access. */
-globalThis.GLGNotifications = (() => {
+globalThis.AIGNotifications = (() => {
   const api = globalThis.browser || globalThis.chrome;
-  const tr = globalThis.GLGI18n?.translate || (value => value);
+  const tr = globalThis.AIGI18n?.translate || (value => value);
   const DEFAULTS = Object.freeze({
     suggestions: true, integrationSuccess: true, integrationError: true,
     updatesAvailable: true, updatesCompleted: true, updatesError: true
@@ -102,7 +102,7 @@ globalThis.GLGNotifications = (() => {
       return {status: 'requested', id: notificationId};
     } catch (error) {
       await record({...entry, status: 'error', error: safe(error?.message || error, 140)});
-      console.warn('Gear Lever Grab notification unavailable:', error);
+      console.warn('AppImage Grab notification unavailable:', error);
       return {status: 'error'};
     }
   }
@@ -114,8 +114,8 @@ globalThis.GLGNotifications = (() => {
     ]);
     let host = 'unavailable';
     try {
-      if (globalThis.GLGNative?.request) {
-        const reply = await GLGNative.request({action: 'ping'});
+      if (globalThis.AIGNative?.request) {
+        const reply = await AIGNative.request({action: 'ping'});
         host = reply?.ok ? 'ready' : 'unavailable';
       }
     } catch { /* Report state without exposing local service errors. */ }
@@ -123,7 +123,7 @@ globalThis.GLGNotifications = (() => {
       history: Array.isArray(settings.notificationHistory) ? settings.notificationHistory : [],
       lastAppUpdateCheck: settings.lastAppUpdateCheck || null,
       lastSuggestionStatus: settings.lastSuggestionStatus || null,
-      buildCommit: globalThis.GLG_BUILD_COMMIT || null,
+      buildCommit: globalThis.AIG_BUILD_COMMIT || null,
       preferences: await preferences()};
   }
 
@@ -136,9 +136,9 @@ globalThis.GLGNotifications = (() => {
   });
 
   function openManager(id) {
-    if (!/^glg-(integrated-|integration-error-|app-update-|update-completed-|update-error-)/.test(id)) return;
-    const view = id.startsWith('glg-app-update-') ? '?view=updates'
-      : (id.startsWith('glg-integration-error-') || id.startsWith('glg-update-error-'))
+    if (!/^aig-(integrated-|integration-error-|app-update-|update-completed-|update-error-)/.test(id)) return;
+    const view = id.startsWith('aig-app-update-') ? '?view=updates'
+      : (id.startsWith('aig-integration-error-') || id.startsWith('aig-update-error-'))
         ? '?view=history' : '';
     void api.tabs.create({url: api.runtime.getURL('manager.html') + view});
   }
@@ -146,7 +146,7 @@ globalThis.GLGNotifications = (() => {
   api.notifications?.onButtonClicked?.addListener(openManager);
 
   return Object.freeze({DEFAULTS, preferences, setPreference, emit, diagnostics,
-    test: () => emit({kind: 'test', id: 'glg-test-' + Date.now(), force: true,
-      title: 'Teste de notificação Gear Lever Grab',
+    test: () => emit({kind: 'test', id: 'aig-test-' + Date.now(), force: true,
+      title: 'Teste de notificação AppImage Grab',
       message: 'Se você está vendo esta mensagem, os avisos do navegador estão aparecendo.'})});
 })();

@@ -53,7 +53,7 @@ const sandbox = {
   window: {confirm() {return true;},prompt() {}},
   navigator: {clipboard: {async writeText() {}}},
   console,
-  GLGNative: {
+  AIGNative: {
     async request(req) {
       called.push(req);
       if (req.action === 'listInstalled') return {ok: true, apps: [app]};
@@ -63,10 +63,11 @@ const sandbox = {
          url: 'https://github.com/publisher/myapp/releases/download/v1/MyApp-x86_64.AppImage',
          architecture: 'x86_64'}]};
       if (req.action === 'updateApp') return {ok: true};
+      if (req.action === 'updateAllAppImages') return {ok: true, status: 'updated_all'};
       throw Error('Unexpected native action: ' + req.action);
     }
   },
-  GLGUpdate: {COMMAND: 'test command', async check() {}},
+  AIGUpdate: {COMMAND: 'test command', async check() {}},
   browser: {
     runtime: {async sendMessage(message) {
       called.push(message);
@@ -130,5 +131,23 @@ await elements['link-download'].handlers.click();
 assert.ok(called.some(request => request.action === 'startManagedDownload' &&
   request.assetUrl.includes('/MyApp-x86_64.AppImage')));
 assert.match(elements['link-feedback'].textContent, /Download iniciado/);
+
+// Shelly's update command affects ALL AppImages. The manager must never
+// misleadingly render a per-app Update or Gear Lever source editor for it.
+sandbox.window.confirm=()=>true;
+vm.runInContext("state.backend = 'shelly'; state.checked = false; render()", context);
+updates = [{path: app.path, name: app.name}];
+await vm.runInContext('checkUpdates()', context);
+assert.equal(labels().includes('Atualizar'), false,
+  'Shelly must never show a per-app update button');
+assert.equal(labels().includes('Fonte'), false,
+  'Gear Lever source editor must not be offered for Shelly');
+assert.equal(elements['update-all-shelly'].hidden, false,
+  'Collective Shelly update action must be visible when updates exist');
+await vm.runInContext('updateAllShelly()', context);
+assert.ok(called.some(req => req.action === 'updateAllAppImages' &&
+  req.backend === 'shelly' && req.confirmed === true));
+assert.equal(elements['update-all-shelly'].hidden, true,
+  'Collective update button hides when results become stale');
 
 console.log('Browser manager regression tests passed.');

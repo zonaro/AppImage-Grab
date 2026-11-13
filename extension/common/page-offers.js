@@ -2,7 +2,7 @@
  * Only the URL is inspected; no page contents, cookies or tokens are read.
  * Keep matching narrowly scoped to paths supported by the native resolver.
  */
-globalThis.GLGPageOffers = (() => {
+globalThis.AIGPageOffers = (() => {
   const PART = /^[A-Za-z0-9_.-]+$/;
   const valid = token => PART.test(token) && token !== '.' && token !== '..';
   const partsOf = path => path.split('/').filter(Boolean);

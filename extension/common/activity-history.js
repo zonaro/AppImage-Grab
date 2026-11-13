@@ -1,7 +1,7 @@
 /* Read-only installation history and Native Messaging diagnostics UI. */
-globalThis.GLGActivityUI = (() => {
+globalThis.AIGActivityUI = (() => {
   const api = globalThis.browser || globalThis.chrome;
-  const tr = globalThis.GLGI18n?.translate || (value => value);
+  const tr = globalThis.AIGI18n?.translate || (value => value);
   const $ = id => document.getElementById(id);
   let entries = [];
   let hostEntries = [];
@@ -17,7 +17,7 @@ globalThis.GLGActivityUI = (() => {
   function date(value) {
     const parsed = Date.parse(value);
     return Number.isFinite(parsed) ? new Date(parsed).toLocaleString(
-      globalThis.GLGI18n?.locale || 'pt-BR') : String(value || '');
+      globalThis.AIGI18n?.locale || 'pt-BR') : String(value || '');
   }
 
   const statusNames = {
@@ -98,7 +98,7 @@ globalThis.GLGActivityUI = (() => {
   async function refreshHost() {
     $('host-log-refresh').disabled = true;
     try {
-      const result = await globalThis.GLGNative.request({action: 'getHostLog'});
+      const result = await globalThis.AIGNative.request({action: 'getHostLog'});
       hostEntries = Array.isArray(result.entries) ? result.entries.slice(-80) : [];
       renderHost();
     } catch (error) {
@@ -109,7 +109,7 @@ globalThis.GLGActivityUI = (() => {
   }
 
   async function copyReport() {
-    const lines = ['Gear Lever Grab — histórico local',
+    const lines = ['AppImage Grab — histórico local',
       ...filtered().map(item =>
         [date(item.at), item.status, item.phase, item.name, item.detail].join(' | ')),
       '', 'Log do serviço local (host.log; não é log interno do Gear Lever)',

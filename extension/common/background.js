@@ -1,23 +1,23 @@
 // Background revision is loaded once when the browser starts the extension.
-if (typeof importScripts === 'function' && !globalThis.GLGUpdate) {
+if (typeof importScripts === 'function' && !globalThis.AIGUpdate) {
   importScripts('build-revision.js', 'i18n.js', 'native-client.js', 'update-check.js',
     'notifications.js', 'activity-log.js',
     'page-offers.js', 'page-offer-background.js');
 }
 /* Chromium MV3 / Firefox MV3: observe completed downloads, never intercept. */
 const api = globalThis.browser || globalThis.chrome;
-const tr = globalThis.GLGI18n?.translate || (message => message);
-const HOST = 'br.com.redclaw.gear_lever_grab';
+const tr = globalThis.AIGI18n?.translate || (message => message);
+const HOST = 'br.com.redclaw.appimage_grab';
 const working = new Set();
 const SUCCESSFUL_INTEGRATIONS = new Set([
-  'integrated_by_gearlever', // The CLI alone accepts or rejects the AppImage.
+  'integrated_by_gearlever', 'integrated_by_shelly', // The chosen CLI owns format checks.
   'integrated_with_source', 'integrated_without_source',
   'embedded_source_preserved', 'existing_source_preserved',
   'integrated_unlisted' // Gear Lever confirmed the copied file but CLI list is stale.
 ]);
 
 async function logActivity(data) {
-  try { await globalThis.GLGActivity?.record(data); }
+  try { await globalThis.AIGActivity?.record(data); }
   catch (error) { console.warn('Activity history unavailable:', error); }
 }
 
@@ -26,14 +26,15 @@ async function notifyIntegrated(download, reply) {
   const name = ((reply.installedPath || download.filename || '').split('/').pop() || 'AppImage').slice(0, 100);
   const unlisted = reply.status === 'integrated_unlisted';
   try {
-    await GLGNotifications.emit({kind: 'integrationSuccess', id: 'glg-integrated-' + download.id,
-      title: unlisted ? 'AppImage integrada; listagem pendente' : 'AppImage adicionada ao Gear Lever',
+    await AIGNotifications.emit({kind: 'integrationSuccess', id: 'aig-integrated-' + download.id,
+      title: unlisted ? 'AppImage integrada; listagem pendente'
+        : 'AppImage adicionada ao ' + (reply.backend === 'shelly' ? 'Shelly' : 'Gear Lever'),
       message: unlisted
         ? name + ': o Gear Lever confirmou a integração, mas ainda não listou o aplicativo.'
         : name + ' foi integrada com sucesso.'});
   } catch (error) {
     // Notification/storage failures must not turn a real integration into an error.
-    console.warn('Gear Lever Grab notification unavailable:', error);
+    console.warn('AppImage Grab notification unavailable:', error);
   }
 }
 
@@ -42,8 +43,10 @@ async function enqueueManualDownload(asset, filename = '') {
   if (filename) options.filename = filename;
   const id = await api.downloads.download(options);
   if (!Number.isInteger(id)) throw new Error('O navegador não iniciou o download');
-  const {pending = {}} = await api.storage.local.get('pending');
-  pending[id] = {manual: true, url: asset.url, sourceName: asset.name};
+  const {pending = {}, integrationBackend} =
+    await api.storage.local.get(['pending', 'integrationBackend']);
+  pending[id] = {manual: true, url: asset.url, sourceName: asset.name,
+    backend: integrationBackend === 'shelly' ? 'shelly' : 'gearlever'};
   await api.storage.local.set({pending});
   await logActivity({id: 'download-' + id, phase: 'download', status: 'downloading',
     filename: asset.name, detail: 'Download iniciado pelo usuário.', source: 'manual'});
@@ -57,7 +60,7 @@ async function startManagedDownload(request) {
   const link = String(request.link || '');
   const selected = String(request.assetUrl || '');
   // Revalidate in the privileged background, not just in the manager UI.
-  const resolution = await GLGNative.request({action: 'resolveLink', url: link});
+  const resolution = await AIGNative.request({action: 'resolveLink', url: link});
   const asset = (resolution.choices || []).find(candidate => candidate.url === selected);
   if (!asset || !asset.name || !/\.appimage$/i.test(asset.name)) {
     throw new Error('Arquivo não pertence à fonte selecionada');
@@ -111,7 +114,7 @@ async function startCatalogDownload(request) {
     if (!['github.com', 'gitlab.com', 'codeberg.org'].includes(parsed.hostname)) {
       throw new Error('Arquivo em origem externa não validada. Abra a página do AppImageHub.');
     }
-    const resolved = await GLGNative.request({action:'resolveLink', url:downloadUrl});
+    const resolved = await AIGNative.request({action:'resolveLink', url:downloadUrl});
     if (!(resolved.choices || []).some(item => item.url === downloadUrl && item.name === name)) {
       throw new Error('O release do provedor não confirmou este arquivo');
     }
@@ -148,7 +151,11 @@ async function result(status, detail) {
   });
 }
 
-function sendNative(download) {
+async function sendNative(download) {
+  const {integrationBackend} = await api.storage.local.get('integrationBackend');
+  const backend = download.backend === 'shelly' ? 'shelly'
+    : download.backend === 'gearlever' ? 'gearlever'
+      : integrationBackend === 'shelly' ? 'shelly' : 'gearlever';
   return new Promise((resolve, reject) => {
     let port;
     try { port = api.runtime.connectNative(HOST); }
@@ -166,7 +173,7 @@ function sendNative(download) {
       reject(new Error(api.runtime.lastError?.message || 'Serviço local indisponível'));
     });
     port.postMessage({
-      action: 'integrate',
+      action: 'integrate', backend,
       filename: download.filename,
       url: download.url || '',
       finalUrl: download.finalUrl || '',
@@ -183,13 +190,14 @@ function appimage(item) {
 // to an opaque CDN/signed URL rather than its GitHub Releases source.
 async function created(item) {
   if (!appimage(item)) return;
-  const state = await api.storage.local.get(['enabled', 'pending']);
+  const state = await api.storage.local.get(['enabled', 'pending', 'integrationBackend']);
   if (!state.enabled) return;
   const pending = state.pending || {};
   if (pending[item.id]?.manual) return;
   pending[item.id] = {
     url: item.url || '', finalUrl: item.finalUrl || '',
-    referrer: item.referrer || ''
+    referrer: item.referrer || '',
+    backend: state.integrationBackend === 'shelly' ? 'shelly' : 'gearlever'
   };
   const keys = Object.keys(pending);
   for (const id of keys.slice(0, Math.max(0, keys.length - 120))) delete pending[id];
@@ -226,19 +234,20 @@ async function finished(delta) {
     await result('working', item.filename);
     await logActivity({id: 'download-' + delta.id, phase: 'integration',
       status: 'integrating', filename: item.filename,
-      detail: 'Download concluído; aguardando resultado do Gear Lever.',
+      detail: 'Download concluído; aguardando resultado do gerenciador selecionado.',
       source: manual ? 'manual' : 'automatic'});
     const original = (settings.pending || {})[delta.id] || {};
     const payload = {
       ...item,
       url: original.url || item.url,
       finalUrl: item.finalUrl || original.finalUrl,
-      referrer: original.referrer || item.referrer
+      referrer: original.referrer || item.referrer,
+      backend: original.backend
     };
     const reply = await sendNative(payload);
     if (!reply?.ok) throw new Error(reply?.error || 'Falha não identificada');
     if (!SUCCESSFUL_INTEGRATIONS.has(reply.status) && reply.status !== 'already_processed') {
-      throw new Error('O Gear Lever não confirmou uma integração concluída');
+      throw new Error('O gerenciador não confirmou uma integração concluída');
     }
 
     const latest = await api.storage.local.get(['processed', 'pending']);
@@ -246,7 +255,9 @@ async function finished(delta) {
     const pending = latest.pending || {};
     delete pending[delta.id];
     await api.storage.local.set({ processed, pending });
-    const details = reply.status === 'integrated_by_gearlever'
+    const details = reply.status === 'integrated_by_shelly'
+      ? 'Integração concluída pelo Shelly.'
+      : reply.status === 'integrated_by_gearlever'
       ? 'Integração concluída pelo Gear Lever.'
       : reply.status === 'integrated_unlisted'
       ? 'Gear Lever confirmou a integração, mas ainda não listou o aplicativo; confira o gerenciador.'
@@ -272,8 +283,8 @@ async function finished(delta) {
       source: manual ? 'manual' : 'automatic'});
     const name = (item.filename.split('/').pop() || 'AppImage').slice(0, 100);
     const partial = String(error?.message || '').includes('Integrado em ');
-    void GLGNotifications.emit({kind: 'integrationError',
-      id: 'glg-integration-error-' + delta.id,
+    void AIGNotifications.emit({kind: 'integrationError',
+      id: 'aig-integration-error-' + delta.id,
       title: partial ? 'Integração parcial da AppImage' : 'Erro ao integrar AppImage',
       message: partial
         ? name + ': confira a fonte de atualização no gerenciador.'
@@ -287,11 +298,12 @@ api.downloads.onCreated.addListener(item => { void created(item); });
 api.downloads.onChanged.addListener(delta => { void finished(delta); });
 api.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && (changes.enabled || changes.updateStatus)) void badge();
+  if (area === 'local' && changes.integrationBackend) void checkAppUpdates(true);
 });
 
 async function checkGrabUpdates() {
-  if (globalThis.GLGUpdate) {
-    try { await globalThis.GLGUpdate.check(); } catch { /* Offline or host unavailable. */ }
+  if (globalThis.AIGUpdate) {
+    try { await globalThis.AIGUpdate.check(); } catch { /* Offline or host unavailable. */ }
   }
   await badge();
 }
@@ -300,14 +312,17 @@ let appUpdateScan = null;
 function checkAppUpdates(force = false) {
   if (appUpdateScan) return appUpdateScan;
   appUpdateScan = (async () => {
-    if (!(await GLGNotifications.preferences()).updatesAvailable) return {status: 'disabled'};
+    if (!(await AIGNotifications.preferences()).updatesAvailable) return {status: 'disabled'};
     try {
+      const {integrationBackend} = await api.storage.local.get('integrationBackend');
+      const backend = integrationBackend === 'shelly' ? 'shelly' : 'gearlever';
+      const backendName = backend === 'shelly' ? 'Shelly' : 'Gear Lever';
       const [updates, installed] = await Promise.all([
-        GLGNative.request({action: 'listUpdates'}),
-        GLGNative.request({action: 'listInstalled'})
+        AIGNative.request({action: 'listUpdates'}),
+        AIGNative.request({action: 'listInstalled'})
       ]);
       if (!Array.isArray(updates.apps) || !Array.isArray(installed.apps)) {
-        throw new Error('Invalid Gear Lever update result');
+        throw new Error('Invalid AppImage manager update result');
       }
       const known = new Map(installed.apps.filter(app => typeof app.path === 'string')
         .map(app => [app.path, app]));
@@ -321,13 +336,14 @@ function checkAppUpdates(force = false) {
       const {appUpdateAlerts = {}} = await api.storage.local.get('appUpdateAlerts');
       const next = {};
       for (const [path, app] of available) {
-        next[path] = app.fingerprint;
-        if (appUpdateAlerts[path] === app.fingerprint) continue;
-        const id = 'glg-app-update-' + await digestPath(path, app.fingerprint);
-        await GLGNotifications.emit({kind: 'updatesAvailable', id,
+        const key = backend + ':' + path;
+        next[key] = app.fingerprint;
+        if (appUpdateAlerts[key] === app.fingerprint) continue;
+        const id = 'aig-app-update-' + await digestPath(backend + ':' + path, app.fingerprint);
+        await AIGNotifications.emit({kind: 'updatesAvailable', id,
           title: 'Atualização de AppImage disponível',
           message: String(app.name).slice(0, 100) +
-            (app.version ? ': versão ' + app.version : ': nova versão confirmada pelo Gear Lever.')})
+            (app.version ? ': versão ' + app.version : ': nova versão confirmada pelo ' + backendName + '.')})
           .catch(error => console.warn('Update notification unavailable:', error));
       }
       await api.storage.local.set({appUpdateAlerts: Object.fromEntries(
@@ -336,7 +352,7 @@ function checkAppUpdates(force = false) {
       return {status: 'success', count: available.size};
     } catch (error) {
       await api.storage.local.set({lastAppUpdateCheck: {
-        at: new Date().toISOString(), status: 'error', error: 'Gear Lever unavailable'}});
+        at: new Date().toISOString(), status: 'error', error: 'AppImage manager unavailable'}});
       return {status: 'error'};
     }
   })().finally(() => { appUpdateScan = null; });
@@ -355,9 +371,9 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
     'startAppUpdate'].includes(message?.action)) return false;
   if (sender?.id !== api.runtime.id) return false;
   const operation = message.action === 'notificationDiagnostics'
-    ? GLGNotifications.diagnostics()
+    ? AIGNotifications.diagnostics()
     : message.action === 'testNotification'
-      ? GLGNotifications.test()
+      ? AIGNotifications.test()
       : message.action === 'checkAppUpdates'
         ? checkAppUpdates(true)
         : (async () => {
@@ -376,7 +392,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
               status: 'integrating', filename: name,
               detail: 'Atualização manual iniciada.', source: 'update'});
             try {
-              const reply = await GLGNative.request({action: 'updateApp',
+              const reply = await AIGNative.request({action: 'updateApp',
                 path: message.path, confirmed: true});
               if (reply.status !== 'updated' || reply.path !== message.path) {
                 throw new Error('Gear Lever did not confirm the requested update');
@@ -384,8 +400,8 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
               await logActivity({id: activityId, phase: 'update',
                 status: 'success', filename: name,
                 detail: 'Atualização concluída pelo Gear Lever.', source: 'update'});
-              await GLGNotifications.emit({kind: 'updatesCompleted',
-                id: 'glg-update-completed-' + operationId,
+              await AIGNotifications.emit({kind: 'updatesCompleted',
+                id: 'aig-update-completed-' + operationId,
                 title: 'AppImage atualizada', message: name + ' foi atualizada com sucesso.'})
                 .catch(error => console.warn('Update notification unavailable:', error));
               return {status: 'updated'};
@@ -393,8 +409,8 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
               await logActivity({id: activityId, phase: 'update',
                 status: 'error', filename: name,
                 detail: String(error?.message || error), source: 'update'});
-              await GLGNotifications.emit({kind: 'updatesError',
-                id: 'glg-update-error-' + operationId,
+              await AIGNotifications.emit({kind: 'updatesError',
+                id: 'aig-update-error-' + operationId,
                 title: 'Falha ao atualizar AppImage',
                 message: name + ': confira os detalhes no gerenciador.'})
                 .catch(() => {});
