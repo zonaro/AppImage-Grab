@@ -23,7 +23,7 @@ class IntegrationResult:
 class GearLever:
     def __init__(self, runner=subprocess.run):
         self.runner = runner
-        override = os.environ.get("GEAR_LEVER_GRAB_COMMAND")
+        override = os.environ.get("APPIMAGE_GRAB_GEARLEVER_COMMAND")
         if override:
             self.command = [override]
         elif shutil.which("flatpak") and subprocess.run(

@@ -13,7 +13,7 @@ class Result:
 
 class AdapterTests(unittest.TestCase):
     def adapter(self, callback):
-        with patch.dict(os.environ, {"GEAR_LEVER_GRAB_COMMAND": "/fake/gearlever"}):
+        with patch.dict(os.environ, {"APPIMAGE_GRAB_GEARLEVER_COMMAND": "/fake/gearlever"}):
             return GearLever(runner=callback)
 
     def test_delegates_directly_to_cli_without_file_inspection(self):
