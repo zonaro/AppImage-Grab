@@ -19,7 +19,7 @@ function setup({host = OLD, remote = NEW, fail = false, saved = null} = {}) {
     fetch: async (url) => {
       calls++;
       if (fail) throw Error('offline');
-      assert.match(url, /api\.github\.com\/repos\/zonaro\/appimage-grab\/commits\/main/);
+      assert.match(url, /api\.github\.com\/repos\/zonaro\/AppImage-Grab\/commits\/main/);
       return {ok: true, json: async () => ({sha: remote})};
     },
     globalThis: {
