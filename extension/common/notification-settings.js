@@ -32,6 +32,7 @@ globalThis.AIGNotificationUI = (() => {
         ? new Date(event.at).toLocaleString(globalThis.AIGI18n?.locale || 'en') : '';
       info.textContent = stamp + ' · ' + tr({requested: 'Solicitada ao navegador',
         shown: 'Exibida (confirmada pela API)', blocked: 'Bloqueada',
+        resolved: 'Encerrada (atualização não pendente)',
         error: 'Erro ao solicitar'}[event.status] || event.status || '');
       if (event.error) info.textContent += ' · ' + event.error;
       item.append(title, message, info);
@@ -49,9 +50,14 @@ globalThis.AIGNotificationUI = (() => {
           : 'Permissão não consultável';
       const host = reply.host === 'ready' ? 'Conectado' : 'Indisponível';
       const last = reply.lastAppUpdateCheck;
+      const scanBackend = last?.backend === 'shelly' ? 'Shelly'
+        : last?.backend === 'gearlever' ? 'Gear Lever' : 'gerenciador não identificado';
+      const checkedAt = last?.at && !Number.isNaN(Date.parse(last.at))
+        ? ' · ' + new Date(last.at).toLocaleString(globalThis.AIGI18n?.locale || 'en') : '';
       const scan = last ? (last.status === 'success'
-        ? last.count + ' atualização(ões) na última checagem'
-        : 'Última checagem falhou') : 'Nenhuma checagem de AppImages registrada';
+        ? last.count + ' atualização(ões) confirmada(s) pelo ' + scanBackend + checkedAt
+        : 'Última checagem falhou' + checkedAt)
+        : 'Nenhuma checagem de AppImages registrada';
       const suggestion = reply.lastSuggestionStatus?.status;
       const suggestionLabels = {disabled: 'Sugestões desativadas',
         cooldown: 'Sugestão já exibida nas últimas 24 horas',
@@ -107,8 +113,10 @@ globalThis.AIGNotificationUI = (() => {
     try {
       const reply = await api.runtime.sendMessage({action: 'checkAppUpdates'});
       if (!reply?.ok || reply.status === 'error') throw new Error(reply?.error || 'Gear Lever indisponível');
+      const manager = reply.backend === 'shelly' ? 'Shelly' : 'Gear Lever';
       feedback(reply.status === 'disabled' ? 'Ative avisos de atualização para verificar.'
-        : reply.count + ' atualização(ões) confirmada(s) pelo Gear Lever.');
+        : reply.status === 'superseded' ? 'Gerenciador alterado; nova checagem iniciada.'
+          : reply.count + ' atualização(ões) confirmada(s) pelo ' + manager + '.');
       await refresh();
     } catch (error) { feedback('Não foi possível verificar atualizações: ' + (error?.message || error), true); }
     finally { $('notification-check-updates').disabled = false; }
