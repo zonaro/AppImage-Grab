@@ -6,10 +6,13 @@ import vm from 'node:vm';
 
 const handlers = [];
 const notifications = [];
+const cleared = [];
 const state = {enabled: false, pending: {}, processed: []};
 let permission = 'granted';
 let updates = [{path: '/home/test/AppImages/tool.AppImage', name: 'Tool', available_version: '2.0'}];
 let updateFails = false;
+let scanFails = false;
+const updateRequests = [];
 let shown;
 const local = {
   async get(keys) {
@@ -28,6 +31,7 @@ const api = {
   notifications: {
     async getPermissionLevel() {return permission;},
     async create(id, options) {notifications.push({id, options}); return id;},
+    async clear(id) {cleared.push(id); return true;},
     onShown: {addListener(callback) {shown = callback;}},
     onClicked: {addListener() {}}, onButtonClicked: {addListener() {}}
   },
@@ -39,9 +43,17 @@ const api = {
 const host = {
   async request(request) {
     if (request.action === 'ping') return {ok: true};
-    if (request.action === 'listInstalled') return {ok: true, apps: [
-      {name: 'Tool', path: '/home/test/AppImages/tool.AppImage'}]};
-    if (request.action === 'listUpdates') return {ok: true, apps: updates};
+    if (request.action === 'listInstalled') {
+      updateRequests.push({action: request.action, backend: request.backend});
+      return {ok: true, apps: [
+        {name: 'Tool', path: '/home/test/AppImages/tool.AppImage'},
+        {name: 'NoUpdate', path: '/home/test/AppImages/other.AppImage', manager: 'GithubUpdater'}]};
+    }
+    if (request.action === 'listUpdates') {
+      updateRequests.push({action: request.action, backend: request.backend});
+      if (scanFails) throw new Error('Backend unavailable');
+      return {ok: true, apps: updates};
+    }
     if (request.action === 'updateApp') {
       if (updateFails) throw new Error('Update failed');
       return {ok: true, path: request.path, status: 'updated'};
@@ -93,25 +105,61 @@ assert.equal(notifications.length, 2, 'persistent update alert deduplication');
 updates = [{...updates[0], available_version: '2.1'}];
 await send('checkAppUpdates');
 assert.equal(notifications.length, 3, 'new confirmed version should notify');
+assert.ok(cleared.includes(notifications[1].id), 'superseded version toast is withdrawn');
+assert.equal(state.notificationHistory.find(item => item.id === notifications[1].id).status, 'resolved');
+shown(notifications[1].id);
+await flush();
+assert.equal(state.notificationHistory.find(item => item.id === notifications[1].id).status,
+  'resolved', 'late onShown must not revive an obsolete alert');
 assert.ok(state.notificationHistory.every(event => !event.message.includes('/home/test')));
+assert.equal(state.lastAppUpdateCheck.backend, 'gearlever');
+assert.ok(updateRequests.every(request => request.backend === 'gearlever'),
+  'installed and update lists must query the same backend');
+
+updates = [];
+reply = await send('checkAppUpdates');
+assert.equal(reply.count, 0, 'no update comes from the manager');
+assert.ok(cleared.includes(notifications[2].id), 'a resolved update leaves the desktop notification center');
+assert.deepEqual(Object.keys(state.appUpdateAlerts), []);
+assert.equal(notifications.length, 3, 'an installed app with a source is not automatically updatable');
+
+updates = [{path: '/home/test/AppImages/tool.AppImage', name: 'Tool', available_version: '3.0'}];
+await send('checkAppUpdates');
+assert.equal(notifications.length, 4);
+scanFails = true;
+reply = await send('checkAppUpdates');
+assert.equal(reply.status, 'error');
+assert.ok(!cleared.includes(notifications[3].id), 'failed checks must retain last confirmed alerts');
+assert.equal(state.appUpdateAlerts['gearlever:/home/test/AppImages/tool.AppImage'], '3.0');
+scanFails = false;
 
 state.notificationPreferences = {updatesAvailable: false};
 reply = await send('checkAppUpdates');
 assert.equal(reply.status, 'disabled');
-assert.equal(notifications.length, 3);
+assert.equal(notifications.length, 4);
 state.notificationPreferences = {updatesAvailable: true, updatesCompleted: true, updatesError: true};
 
 reply = await send('startAppUpdate', {
   path: '/home/test/AppImages/tool.AppImage', name: 'Tool', confirmed: true});
 assert.equal(reply.status, 'updated');
-assert.equal(notifications.length, 4);
-assert.match(notifications[3].options.title, /atualizada/);
+assert.equal(notifications.length, 5);
+assert.match(notifications[4].options.title, /atualizada/);
+assert.ok(cleared.includes(notifications[3].id), 'a successful manual update retires its alert');
+assert.deepEqual(Object.keys(state.appUpdateAlerts), []);
 updateFails = true;
 reply = await send('startAppUpdate', {
   path: '/home/test/AppImages/tool.AppImage', name: 'Tool', confirmed: true});
 assert.equal(reply.ok, false);
-assert.equal(notifications.length, 5);
-assert.match(notifications[4].options.title, /Falha/);
+assert.equal(notifications.length, 6);
+assert.match(notifications[5].options.title, /Falha/);
+
+state.integrationBackend = 'shelly';
+updates = [{path: '/home/test/AppImages/tool.AppImage', name: 'Tool', available_version: '4.0'}];
+reply = await send('checkAppUpdates');
+assert.equal(reply.backend, 'shelly');
+assert.match(notifications[6].options.message, /Shelly/);
+assert.equal(state.lastAppUpdateCheck.backend, 'shelly');
+assert.deepEqual(updateRequests.slice(-2).map(item => item.backend), ['shelly', 'shelly']);
 await assert.rejects(send('startAppUpdate', {path: '/test', confirmed: true}, false));
 
 console.log('Notification permissions, history, updates, and operation tests passed.');
