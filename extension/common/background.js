@@ -309,54 +309,102 @@ async function checkGrabUpdates() {
 }
 
 let appUpdateScan = null;
+let appUpdateRescanQueued = false;
 function checkAppUpdates(force = false) {
-  if (appUpdateScan) return appUpdateScan;
+  if (appUpdateScan) {
+    // A manager switch during an in-flight scan must be checked afterwards.
+    if (force) appUpdateRescanQueued = true;
+    return appUpdateScan;
+  }
   appUpdateScan = (async () => {
     if (!(await AIGNotifications.preferences()).updatesAvailable) return {status: 'disabled'};
     try {
       const {integrationBackend} = await api.storage.local.get('integrationBackend');
       const backend = integrationBackend === 'shelly' ? 'shelly' : 'gearlever';
       const backendName = backend === 'shelly' ? 'Shelly' : 'Gear Lever';
+      // Only the selected manager determines whether an update exists.
+      // Pin BOTH requests to one backend, even if the user switches managers.
       const [updates, installed] = await Promise.all([
-        AIGNative.request({action: 'listUpdates'}),
-        AIGNative.request({action: 'listInstalled'})
+        AIGNative.request({action: 'listUpdates', backend}),
+        AIGNative.request({action: 'listInstalled', backend})
       ]);
       if (!Array.isArray(updates.apps) || !Array.isArray(installed.apps)) {
         throw new Error('Invalid AppImage manager update result');
+      }
+      const {integrationBackend: currentBackend} = await api.storage.local.get('integrationBackend');
+      if ((currentBackend === 'shelly' ? 'shelly' : 'gearlever') !== backend) {
+        appUpdateRescanQueued = true;
+        return {status: 'superseded'};
       }
       const known = new Map(installed.apps.filter(app => typeof app.path === 'string')
         .map(app => [app.path, app]));
       const available = new Map();
       for (const app of updates.apps) {
+        // Source configuration or an available_version on its own is NOT proof.
+        // The manager must return the exact installed path in listUpdates.
         if (typeof app?.path !== 'string' || !known.has(app.path)) continue;
         const version = String(app.available_version || '').slice(0, 80);
         available.set(app.path, {name: known.get(app.path).name || 'AppImage',
           fingerprint: version || 'available', version});
       }
-      const {appUpdateAlerts = {}} = await api.storage.local.get('appUpdateAlerts');
+      const {appUpdateAlerts: savedAlerts = {}} = await api.storage.local.get('appUpdateAlerts');
+      const previous = savedAlerts && typeof savedAlerts === 'object' ? savedAlerts : {};
       const next = {};
       for (const [path, app] of available) {
         const key = backend + ':' + path;
-        next[key] = app.fingerprint;
-        if (appUpdateAlerts[key] === app.fingerprint) continue;
-        const id = 'aig-app-update-' + await digestPath(backend + ':' + path, app.fingerprint);
-        await AIGNotifications.emit({kind: 'updatesAvailable', id,
-          title: 'Atualização de AppImage disponível',
-          message: String(app.name).slice(0, 100) +
-            (app.version ? ': versão ' + app.version : ': nova versão confirmada pelo ' + backendName + '.')})
-          .catch(error => console.warn('Update notification unavailable:', error));
+        if (previous[key] === app.fingerprint) {
+          next[key] = app.fingerprint;
+          continue;
+        }
+        const id = 'aig-app-update-' + await digestPath(key, app.fingerprint);
+        let result;
+        try {
+          result = await AIGNotifications.emit({kind: 'updatesAvailable', id,
+            title: 'Atualização de AppImage disponível',
+            message: String(app.name).slice(0, 100) +
+              (app.version ? ': versão ' + app.version : ': nova versão') +
+              ' · confirmada pelo ' + backendName + '.'});
+        } catch (error) { console.warn('Update notification unavailable:', error); }
+        // A blocked/failed request must not suppress a later real notification.
+        if (result?.status === 'requested') next[key] = app.fingerprint;
+      }
+      // An old toast may remain in GNOME's notification center even after the
+      // manager no longer reports the update. Retire only on a complete scan;
+      // offline/invalid scans leave previous alerts untouched.
+      for (const [key, fingerprint] of Object.entries(previous)) {
+        if (next[key] === fingerprint || typeof fingerprint !== 'string' ||
+            !/^(gearlever|shelly):\//.test(key)) continue;
+        await AIGNotifications.retire('aig-app-update-' + await digestPath(key, fingerprint));
       }
       await api.storage.local.set({appUpdateAlerts: Object.fromEntries(
         Object.entries(next).slice(-250)),
-        lastAppUpdateCheck: {at: new Date().toISOString(), count: available.size, status: 'success'}});
-      return {status: 'success', count: available.size};
+        lastAppUpdateCheck: {at: new Date().toISOString(), backend,
+          count: available.size, status: 'success'}});
+      return {status: 'success', backend, count: available.size};
     } catch (error) {
       await api.storage.local.set({lastAppUpdateCheck: {
         at: new Date().toISOString(), status: 'error', error: 'AppImage manager unavailable'}});
       return {status: 'error'};
     }
-  })().finally(() => { appUpdateScan = null; });
+  })().finally(() => {
+    appUpdateScan = null;
+    if (appUpdateRescanQueued) {
+      appUpdateRescanQueued = false;
+      void checkAppUpdates();
+    }
+  });
   return appUpdateScan;
+}
+
+async function forgetAppUpdateAlert(backend, path) {
+  const {appUpdateAlerts = {}} = await api.storage.local.get('appUpdateAlerts');
+  const key = backend + ':' + path;
+  const fingerprint = appUpdateAlerts?.[key];
+  if (typeof fingerprint !== 'string') return;
+  const next = {...appUpdateAlerts};
+  delete next[key];
+  await api.storage.local.set({appUpdateAlerts: next});
+  await AIGNotifications.retire('aig-app-update-' + await digestPath(key, fingerprint));
 }
 
 async function digestPath(path, version) {
@@ -392,11 +440,14 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
               status: 'integrating', filename: name,
               detail: 'Atualização manual iniciada.', source: 'update'});
             try {
-              const reply = await AIGNative.request({action: 'updateApp',
+              const reply = await AIGNative.request({action: 'updateApp', backend: 'gearlever',
                 path: message.path, confirmed: true});
               if (reply.status !== 'updated' || reply.path !== message.path) {
                 throw new Error('Gear Lever did not confirm the requested update');
               }
+              // Notification cleanup must not turn a successful update into a failure.
+              try { await forgetAppUpdateAlert('gearlever', message.path); }
+              catch (error) { console.warn('Could not retire completed update alert:', error); }
               await logActivity({id: activityId, phase: 'update',
                 status: 'success', filename: name,
                 detail: 'Atualização concluída pelo Gear Lever.', source: 'update'});

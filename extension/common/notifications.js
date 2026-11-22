@@ -107,6 +107,21 @@ globalThis.AIGNotifications = (() => {
     }
   }
 
+  // Withdraw an outdated update alert after the manager's next successful check.
+  // Clearing an OS notification is best-effort; never change an update result.
+  async function retire(id) {
+    const notificationId = safe(id, 450);
+    if (!notificationId.startsWith('aig-app-update-')) return;
+    try { await api.notifications?.clear?.(notificationId); }
+    catch (error) { console.warn('Could not clear obsolete update alert:', error); }
+    const {notificationHistory = []} = await api.storage.local.get('notificationHistory');
+    const previous = Array.isArray(notificationHistory)
+      ? notificationHistory.find(item => item.id === notificationId) : null;
+    if (previous && previous.status !== 'resolved') {
+      await record({...previous, status: 'resolved'});
+    }
+  }
+
   async function diagnostics() {
     const [settings, level] = await Promise.all([
       api.storage.local.get(['notificationHistory', 'lastAppUpdateCheck',
@@ -131,7 +146,7 @@ globalThis.AIGNotifications = (() => {
     void (async () => {
       const {notificationHistory = []} = await api.storage.local.get('notificationHistory');
       const previous = notificationHistory.find(item => item.id === id);
-      if (previous) await record({...previous, status: 'shown'});
+      if (previous && previous.status !== 'resolved') await record({...previous, status: 'shown'});
     })().catch(() => {});
   });
 
@@ -145,7 +160,7 @@ globalThis.AIGNotifications = (() => {
   api.notifications?.onClicked?.addListener(openManager);
   api.notifications?.onButtonClicked?.addListener(openManager);
 
-  return Object.freeze({DEFAULTS, preferences, setPreference, emit, diagnostics,
+  return Object.freeze({DEFAULTS, preferences, setPreference, emit, retire, diagnostics,
     test: () => emit({kind: 'test', id: 'aig-test-' + Date.now(), force: true,
       title: 'Teste de notificação AppImage Grab',
       message: 'Se você está vendo esta mensagem, os avisos do navegador estão aparecendo.'})});
